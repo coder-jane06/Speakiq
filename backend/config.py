@@ -1,6 +1,7 @@
 """
-app/config.py — Settings and Supabase client
-All environment variables loaded here. Import `settings` and `get_db` everywhere else.
+backend/config.py — Settings and Supabase client
+All environment variables loaded here.
+Import `settings` and `get_db` everywhere else.
 """
 
 import logging
@@ -17,12 +18,13 @@ BASE_DIR = Path(__file__).resolve().parent
 class Settings(BaseSettings):
     supabase_url: str
     supabase_service_key: str
-    openai_api_key: str
-    anthropic_api_key: str
+    openai_api_key: str = ""
+    anthropic_api_key: str = ""
+    groq_api_key: str = ""
     environment: str = "development"
 
     class Config:
-        env_file = str(BASE_DIR / ".env")
+        env_file = ".env"
         env_file_encoding = "utf-8"
 
 
@@ -32,15 +34,12 @@ def get_settings() -> Settings:
     return Settings()
 
 
+@lru_cache
 def get_db() -> Client:
-    """
-    Returns a Supabase client using the service role key.
-    Use as a FastAPI dependency:
-        db: Client = Depends(get_db)
-    """
+    """Returns a cached Supabase client using the service role key."""
     s = get_settings()
     return create_client(s.supabase_url, s.supabase_service_key)
 
 
-# Convenience singleton for use outside FastAPI dependency injection
+# Convenience singleton
 settings = get_settings()

@@ -1,0 +1,339 @@
+2026-05-17 15:11:39  INFO      speakiq  ----------------------------------------
+2026-05-17 15:11:39  INFO      speakiq  SpeakIQ API starting up
+2026-05-17 15:11:43  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+2026-05-17 15:11:43  INFO      speakiq  Supabase      : connected
+2026-05-17 15:11:43  INFO      speakiq  Docs          : http://localhost:8000/docs
+2026-05-17 15:11:43  INFO      speakiq  ----------------------------------------
+2026-05-17 15:11:46  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:49700 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:11:53  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id%2Ctext%2Ctier%2Ccategory "HTTP/2 200 OK"
+INFO:     127.0.0.1:49700 - "GET /sessions/topic HTTP/1.1" 200 OK
+2026-05-17 15:12:18  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:65208 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:12:20  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id%2Ctext%2Ctier%2Ccategory "HTTP/2 200 OK"
+INFO:     127.0.0.1:50069 - "GET /sessions/topic HTTP/1.1" 200 OK
+2026-05-17 15:12:35  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:62983 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:12:37  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:64029 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:12:44  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id%2Ctext%2Ctier%2Ccategory "HTTP/2 200 OK"
+INFO:     127.0.0.1:61715 - "GET /sessions/topic HTTP/1.1" 200 OK
+2026-05-17 15:12:46  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id%2Ctext%2Ctier%2Ccategory "HTTP/2 200 OK"
+INFO:     127.0.0.1:50384 - "GET /sessions/topic HTTP/1.1" 200 OK
+2026-05-17 15:12:49  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id%2Ctext%2Ctier%2Ccategory "HTTP/2 200 OK"
+INFO:     127.0.0.1:61715 - "GET /sessions/topic HTTP/1.1" 200 OK
+2026-05-17 15:12:51  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:50384 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:12:54  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id%2Ctext%2Ctier%2Ccategory "HTTP/2 200 OK"
+INFO:     127.0.0.1:61715 - "GET /sessions/topic HTTP/1.1" 200 OK
+2026-05-17 15:13:06  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:64457 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:13:13  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id%2Ctext%2Ctier%2Ccategory "HTTP/2 200 OK"
+INFO:     127.0.0.1:64472 - "GET /sessions/topic HTTP/1.1" 200 OK
+2026-05-17 15:13:17  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:64473 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:13:20  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:55940 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:13:35  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:61327 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:13:50  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:50414 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:13:57  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:50414 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:14:00  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:61006 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:14:13  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:53506 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:14:27  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:53738 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:14:42  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:59890 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:14:57  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:65186 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:15:12  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:59338 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:15:25  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:63463 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:15:28  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:64361 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:15:31  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:52174 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:15:35  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:58162 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:15:38  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:59221 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:15:42  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:59727 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:15:50  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:63387 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:15:56  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:64158 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:16:05  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:58250 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:16:08  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:58258 - "GET /system/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58259 - "OPTIONS /system/status HTTP/1.1" 200 OK
+2026-05-17 15:16:11  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:58330 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:16:21  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:59616 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:16:25  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:57947 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:16:37  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:53272 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:16:44  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:51182 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:16:52  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:60520 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:16:58  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:65331 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:17:06  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:56866 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:17:12  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:51311 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:17:16  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:57087 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:17:19  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:51311 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:17:27  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:56125 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:17:31  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:55925 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:17:41  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:56484 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:17:49  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:59297 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:17:59  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:60618 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:18:04  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:58654 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:18:32  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:62181 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:18:35  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:59292 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:18:48  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:63101 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:19:05  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:63103 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:19:08  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:62095 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:19:12  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:50320 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:19:23  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:53923 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:19:25  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:53926 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:19:29  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id%2Ctext%2Ctier%2Ccategory "HTTP/2 200 OK"
+INFO:     127.0.0.1:53928 - "GET /sessions/topic HTTP/1.1" 200 OK
+2026-05-17 15:19:37  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:53935 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:19:44  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:53191 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:19:48  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:53193 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:19:52  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:53196 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:19:59  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:51662 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:20:06  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:63391 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:20:10  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:53972 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:20:22  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:58578 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:20:25  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:59850 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:20:29  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:59854 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:20:39  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:60462 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:20:42  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:58751 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:20:45  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:63688 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:20:48  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:63748 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:20:59  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:59754 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:21:02  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:59756 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:21:14  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:61878 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:21:19  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:53285 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:21:23  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:51627 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:21:28  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id%2Ctext%2Ctier%2Ccategory "HTTP/2 200 OK"
+INFO:     127.0.0.1:59368 - "GET /sessions/topic HTTP/1.1" 200 OK
+2026-05-17 15:21:32  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:64617 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:21:42  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:57694 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:21:52  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:57700 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:21:57  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:54912 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:22:13  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:61955 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:22:47  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id%2Ctext%2Ctier%2Ccategory "HTTP/2 200 OK"
+INFO:     127.0.0.1:63726 - "GET /sessions/topic HTTP/1.1" 200 OK
+2026-05-17 15:23:55  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:57966 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:23:57  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:54283 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:24:01  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:54287 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:24:04  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:50103 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:24:07  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:52631 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:24:10  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:57569 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:24:18  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:62867 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:24:25  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:64183 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:24:33  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:57832 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:24:38  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:56011 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:24:42  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:57989 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:24:45  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:57993 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:24:51  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:62668 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:24:54  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:61563 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:24:58  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:59567 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:25:01  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:60528 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:25:12  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:52052 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:25:16  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:52054 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:25:27  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:51578 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:25:31  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:51579 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:25:35  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:51581 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:25:43  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:65101 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:25:48  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:65102 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:25:59  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:65367 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:26:02  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:55972 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:26:06  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id%2Ctext%2Ctier%2Ccategory "HTTP/2 200 OK"
+INFO:     127.0.0.1:53201 - "GET /sessions/topic HTTP/1.1" 200 OK
+2026-05-17 15:26:10  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id%2Ctext%2Ctier%2Ccategory "HTTP/2 200 OK"
+INFO:     127.0.0.1:53838 - "GET /sessions/topic HTTP/1.1" 200 OK
+2026-05-17 15:26:14  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:58580 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:26:18  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id%2Ctext%2Ctier%2Ccategory "HTTP/2 200 OK"
+INFO:     127.0.0.1:55610 - "GET /sessions/topic HTTP/1.1" 200 OK
+2026-05-17 15:26:22  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:55612 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:26:25  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id%2Ctext%2Ctier%2Ccategory "HTTP/2 200 OK"
+INFO:     127.0.0.1:61299 - "GET /sessions/topic HTTP/1.1" 200 OK
+2026-05-17 15:26:30  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:58029 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:26:35  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:62230 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:26:43  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:56671 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:27:19  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:64067 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:32:56  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:55054 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:35:04  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:51994 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:37:29  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:62413 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:38:42  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:55261 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:39:21  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:61341 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:39:37  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:64432 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:39:45  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:62327 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:39:49  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:63216 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:39:56  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:65298 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:40:00  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:56605 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:40:06  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:54569 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:40:33  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:63509 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:40:44  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id%2Ctext%2Ctier%2Ccategory "HTTP/2 200 OK"
+INFO:     127.0.0.1:53213 - "GET /sessions/topic HTTP/1.1" 200 OK
+2026-05-17 15:40:53  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:60088 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:40:59  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:64032 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:41:11  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:58604 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:41:42  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:57555 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:42:00  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:54663 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:42:15  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:54260 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:42:36  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:52409 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:43:20  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:52931 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:43:25  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:51241 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:43:41  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:55709 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:43:55  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:53991 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:44:10  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:51301 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:44:26  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:55538 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:44:40  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:63303 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:44:55  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:59423 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:45:10  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:55107 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:45:31  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:51472 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:45:40  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:59124 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:46:23  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:57724 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:46:24  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:55787 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:46:41  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:57338 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:49:08  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:56557 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:49:11  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:52336 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:49:25  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:64694 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:49:39  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:64060 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:49:55  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:60332 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:50:11  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:64519 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:50:25  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:61353 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:51:42  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:63126 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:53:43  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:55941 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:53:55  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:59639 - "GET /system/status HTTP/1.1" 200 OK
+2026-05-17 15:54:10  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+INFO:     127.0.0.1:60024 - "GET /system/status HTTP/1.1" 200 OK

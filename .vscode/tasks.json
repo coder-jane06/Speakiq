@@ -1,0 +1,177 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Start Frontend",
+			"type": "shell",
+			"command": "npm.cmd --prefix frontend run dev"
+		},
+		{
+			"label": "Start Backend",
+			"type": "shell",
+			"command": "cd backend && uvicorn main:app --reload --port 8001"
+		},
+		{
+			"label": "Start Backend Fix",
+			"type": "shell",
+			"command": "cd backend ; uvicorn main:app --reload --port 8001"
+		},
+		{
+			"label": "Start Backend (Restart)",
+			"type": "shell",
+			"command": "cd backend ; python -m uvicorn main:app --reload --port 8001"
+		},
+		{
+			"label": "Run Backend",
+			"type": "shell",
+			"command": "cd backend && uvicorn main:app --reload --host 0.0.0.0 --port 8001",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run Backend (PowerShell)",
+			"type": "shell",
+			"command": "Set-Location backend; uvicorn main:app --reload --host 0.0.0.0 --port 8001",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run Frontend (PowerShell)",
+			"type": "shell",
+			"command": "Set-Location frontend; npm.cmd run dev",
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "Start Backend 8002",
+			"type": "shell",
+			"command": "C:\\Users\\GAMER\\Desktop\\speakiq\\backend\\venv\\Scripts\\python.exe -m uvicorn main:app --port 8002",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "Run Backend 8002",
+			"type": "shell",
+			"command": "cd backend ; .\\venv\\Scripts\\python.exe -m uvicorn main:app --port 8002",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "Run Backend Task 8002",
+			"type": "shell",
+			"command": "cd backend && ..\\backend\\venv\\Scripts\\python.exe -m uvicorn main:app --port 8002",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "Run Backend Task 8002 (Fix)",
+			"type": "shell",
+			"command": "cd backend; ..\\backend\\venv\\Scripts\\python.exe -m uvicorn main:app --port 8002",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "Start Backend (Port 8002)",
+			"type": "shell",
+			"command": "cd backend; ..\\backend\\venv\\Scripts\\python.exe -m uvicorn main:app --port 8002",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "Run Backend PS 8002",
+			"type": "shell",
+			"command": "cd backend; ..\\backend\\venv\\Scripts\\python.exe -m uvicorn main:app --port 8002",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "Backend 8000",
+			"type": "shell",
+			"command": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -Command \"cd backend; C:\\Users\\GAMER\\Desktop\\speakiq\\backend\\venv\\Scripts\\python.exe -m uvicorn main:app --reload --port 8000\"",
+			"isBackground": true
+		},
+		{
+			"label": "Backend Server Run",
+			"type": "shell",
+			"command": "cd backend; .\\venv\\Scripts\\python.exe -m uvicorn main:app --reload --port 8000",
+			"isBackground": true
+		},
+		{
+			"label": "Frontend Server Run",
+			"type": "shell",
+			"command": "cd frontend; npm.cmd run dev",
+			"isBackground": true
+		},
+		{
+			"label": "Start Backend 8002 Task",
+			"type": "shell",
+			"command": "cd backend; .\\venv\\Scripts\\python.exe -m uvicorn main:app --reload --port 8002",
+			"isBackground": true
+		},
+		{
+			"label": "Start Frontend Dev Server",
+			"type": "shell",
+			"command": "cd frontend; npm.cmd run dev",
+			"isBackground": true
+		},
+		{
+			"label": "Run Backend 8002 Background",
+			"type": "shell",
+			"command": "cd backend; .\\venv\\Scripts\\python.exe -m uvicorn main:app --reload --port 8002",
+			"isBackground": true
+		},
+		{
+			"label": "Run Frontend Background",
+			"type": "shell",
+			"command": "cd frontend; npm.cmd run dev",
+			"isBackground": true
+		},
+		{
+			"label": "Start Backend CMD 8002",
+			"type": "shell",
+			"command": "cmd /c \"cd backend && ..\\venv\\Scripts\\python.exe -m uvicorn main:app --port 8002\"",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "Start Backend PS 8002",
+			"type": "shell",
+			"command": "cd backend ; .\\venv\\Scripts\\python.exe -m uvicorn main:app --port 8002",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "npm dev",
+			"type": "shell",
+			"command": "npm.cmd --prefix frontend run dev",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"label": "Start Backend Correct Port",
+			"type": "shell",
+			"command": "cd backend ; .\\venv\\Scripts\\python.exe -m uvicorn main:app --reload --port 8001",
+			"isBackground": true
+		},
+		{
+			"label": "Install Recharts",
+			"type": "shell",
+			"command": "cmd /c \"cd frontend && npm install recharts\""
+		},
+		{
+			"label": "Backend Reloader",
+			"type": "shell",
+			"command": "cd backend ; .\\venv\\Scripts\\python.exe -m uvicorn main:app --reload --port 8001",
+			"isBackground": true
+		}
+	]
+}

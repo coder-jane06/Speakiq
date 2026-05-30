@@ -17,8 +17,7 @@ export async function uploadSession(
 
   const { data } = await apiClient.post<UploadSessionResponse>(
     '/sessions/upload',
-    formData,
-    { headers: { 'Content-Type': 'multipart/form-data' } }
+    formData
   )
   return data
 }

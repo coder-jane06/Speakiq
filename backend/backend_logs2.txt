@@ -1,0 +1,64 @@
+INFO:     Started server process [28224]
+INFO:     Waiting for application startup.
+2026-05-25 18:40:15  INFO      speakiq  ----------------------------------------
+2026-05-25 18:40:15  INFO      speakiq  SpeakIQ API starting up
+2026-05-25 18:40:16  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/topics?select=id&limit=1 "HTTP/2 206 Partial Content"
+2026-05-25 18:40:16  INFO      speakiq  Supabase      : connected
+2026-05-25 18:40:16  INFO      speakiq  Docs          : http://localhost:8000/docs
+2026-05-25 18:40:16  INFO      speakiq  ----------------------------------------
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8003 (Press CTRL+C to quit)
+INFO:     127.0.0.1:50734 - "GET / HTTP/1.1" 200 OK
+2026-05-25 18:40:17  INFO      httpx  HTTP Request: POST https://gakfjshqzwtgqpkftnyd.supabase.co/storage/v1/object/audio-recordings/sessions/0ff752a5-65ac-4f10-a724-ff0e5c274abe/recording.webm "HTTP/2 200 OK"
+2026-05-25 18:40:18  INFO      httpx  HTTP Request: POST https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/sessions "HTTP/2 201 Created"
+2026-05-25 18:40:18  INFO      routers.sessions  [sessions] Created session 0ff752a5-65ac-4f10-a724-ff0e5c274abe
+INFO:     127.0.0.1:50735 - "POST /sessions/upload HTTP/1.1" 201 Created
+2026-05-25 18:40:18  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/user_profiles?select=%2A&limit=1 "HTTP/2 200 OK"
+2026-05-25 18:40:20  INFO      httpx  HTTP Request: GET https://huggingface.co/api/models/Systran/faster-whisper-base/revision/main "HTTP/1.1 200 OK"
+2026-05-25 18:40:20  INFO      analysis.whisper_service  [WhisperService] faster-whisper loaded (base model)
+2026-05-25 18:40:22  INFO      analysis.nlp_service  [NLPService] spaCy model loaded: en_core_web_sm
+2026-05-25 18:40:23  INFO      analysis.coaching_service  [CoachingService] Groq client initialized (llama-3.3-70b)
+2026-05-25 18:40:23  INFO      routers.sessions  [sessions] Starting pipeline for 0ff752a5
+2026-05-25 18:40:23  INFO      analysis.pipeline  [Pipeline] Starting analysis for session 0ff752a5...
+2026-05-25 18:40:23  INFO      analysis.pipeline  [Pipeline] Stage 1: Whisper transcription...
+2026-05-25 18:40:23  INFO      analysis.whisper_service  [WhisperService] Transcribing tmp0cba8zi__recording.webm...
+2026-05-25 18:40:23  ERROR     analysis.whisper_service  [WhisperService] Transcription failed: InvalidDataError: [Errno 1094995529] Invalid data found when processing input: 'C:\\Users\\GAMER\\AppData\\Local\\Temp\\tmp0cba8zi__recording.webm'
+2026-05-25 18:40:23  WARNING   analysis.pipeline  [Pipeline] Transcription returned None — continuing
+2026-05-25 18:40:23  INFO      analysis.pipeline  [Pipeline] Stage 2a: Acoustic analysis...
+2026-05-25 18:40:23  WARNING   analysis.pipeline  [Pipeline] No transcript for NLP — skipping
+2026-05-25 18:40:23  INFO      analysis.acoustic_service  [AcousticService] Analyzing: tmp2kfxhb96_recording.webm
+2026-05-25 18:40:23  ERROR     analysis.acoustic_service  [AcousticService] ffmpeg failed: ffmpeg version 8.1.1-essentials_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers
+  built with gcc 15.2.0 (Rev13, Built by MSYS2 project)
+  configuration: --enable-gpl --enable-version3 --enable-static --disable-w32threads --disable-autodetect --enable-cairo --enable-fontconfig --enable-iconv --enable-gnutls --enable-libxml2 --enable-gmp --enable-bzlib --enable-lzma --enable-zlib --enable-libsrt --enable-libssh --enable-libzmq --enable-avisynth --enable-sdl2 --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxvid --enable-libaom --enable-libopenjpeg --enable-libvpx --enable-mediafoundation --enable-libass --enable-libfreetype --enable-libfribidi --enable-libharfbuzz --enable-libvidstab --enable-libvmaf --enable-libzimg --enable-amf --enable-cuda-llvm --enable-cuvid --enable-dxva2 --enable-d3d11va --enable-d3d12va --enable-ffnvcodec --enable-libvpl --enable-nvdec --enable-nvenc --enable-vaapi --enable-openal --enable-libgme --enable-libopenmpt --enable-libopencore-amrwb --enable-libmp3lame --enable-libtheora --enable-libvo-amrwbenc --enable-libgsm --enable-libopencore-amrnb --enable-libopus --enable-libspeex --enable-libvorbis --enable-librubberband
+  libavutil      60. 26.101 / 60. 26.101
+  libavcodec     62. 28.101 / 62. 28.101
+  libavformat    62. 12.101 / 62. 12.101
+  libavdevice    62.  3.101 / 62.  3.101
+  libavfilter    11. 14.101 / 11. 14.101
+  libswscale      9.  5.101 /  9.  5.101
+  libswresample   6.  3.101 /  6.  3.101
+[in#0 @ 000002606a2b2440] Format matroska,webm detected only with low score of 1, misdetection possible!
+[in#0 @ 000002606a2b2440] EBML header parsing failed
+[in#0 @ 000002606a2d2b80] Error opening input: Invalid data found when processing input
+Error opening input file C:\Users\GAMER\AppData\Local\Temp\tmp2kfxhb96_recording.webm.
+Error opening input files: Invalid data found when processing input
+
+2026-05-25 18:40:23  INFO      analysis.pipeline  [Pipeline] Acoustic analysis complete
+2026-05-25 18:40:23  INFO      analysis.pipeline  [Pipeline] Stage 3: Generating coaching report...
+2026-05-25 18:40:23  INFO      analysis.coaching_service  [CoachingService] Generating report (focus: idea_structure)
+2026-05-25 18:40:25  INFO      httpx  HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-25 18:40:25  INFO      analysis.coaching_service  [CoachingService] Report done — filler=100, delivery=50, confidence=70
+2026-05-25 18:40:25  INFO      analysis.pipeline  [Pipeline] Stage 4: Saving to Supabase...
+2026-05-25 18:40:26  INFO      httpx  HTTP Request: POST https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/session_metrics "HTTP/2 201 Created"
+2026-05-25 18:40:26  INFO      analysis.pipeline  [Pipeline] Saved results for session 0ff752a5
+2026-05-25 18:40:26  INFO      httpx  HTTP Request: PATCH https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/sessions?id=eq.0ff752a5-65ac-4f10-a724-ff0e5c274abe "HTTP/2 200 OK"
+2026-05-25 18:40:26  INFO      analysis.pipeline  [Pipeline] ✓ Pipeline complete for session 0ff752a5
+2026-05-25 18:40:27  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/sessions?select=topic_text%2Ccreated_at%2Cuser_id&id=eq.0ff752a5-65ac-4f10-a724-ff0e5c274abe "HTTP/2 200 OK"
+2026-05-25 18:40:27  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/auth/v1/admin/users?page=&per_page= "HTTP/2 200 OK"
+2026-05-25 18:40:28  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/user_profiles?select=%2A&limit=1 "HTTP/2 200 OK"
+2026-05-25 18:40:28  INFO      httpx  HTTP Request: PATCH https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/user_profiles?id=eq.1c4994f1-f88e-4598-9901-ef597faebb3c "HTTP/2 200 OK"
+2026-05-25 18:40:28  INFO      services.profile_service  [Profile] Updated existing user profile for session 0ff752a5-65ac-4f10-a724-ff0e5c274abe
+2026-05-25 18:40:28  INFO      analysis.pipeline  [Pipeline] User profile updated
+2026-05-25 18:40:54  INFO      httpx  HTTP Request: GET https://gakfjshqzwtgqpkftnyd.supabase.co/rest/v1/sessions?select=%2A%2Csession_metrics%28%2A%29&id=eq.0ff752a5-65ac-4f10-a724-ff0e5c274abe "HTTP/2 200 OK"
+2026-05-25 18:40:54  INFO      routers.sessions  [sessions] get 0ff752a5-65ac-4f10-a724-ff0e5c274abe: 1 rows found
+INFO:     127.0.0.1:60737 - "GET /sessions/0ff752a5-65ac-4f10-a724-ff0e5c274abe HTTP/1.1" 200 OK

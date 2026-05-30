@@ -1,0 +1,11 @@
+- main [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e7]
+      - text: SpeakIQ
+    - heading "Speak better. Every single day." [level=1] [ref=e9]:
+      - text: Speak better.
+      - text: Every single day.
+    - paragraph [ref=e10]: One topic. One minute. Real AI feedback on how you speak — filler words, pacing, delivery, structure.
+    - button "Start today's session" [ref=e11]
+    - paragraph [ref=e12]: 3 minutes total · No account needed to try

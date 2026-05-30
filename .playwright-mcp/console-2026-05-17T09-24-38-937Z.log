@@ -1,0 +1,5 @@
+[     279ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://127.0.0.1:5173/node_modules/.vite/deps/react-dom_client.js?v=9cc5e064:14336
+[    2686ms] [ERROR] Access to fetch at 'http://localhost:8000/system/status' from origin 'http://127.0.0.1:5173' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://127.0.0.1:5173/session:0
+[    2688ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:8000/system/status:0
+[    4482ms] [ERROR] Access to fetch at 'http://localhost:8000/system/status' from origin 'http://127.0.0.1:5173' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://127.0.0.1:5173/session:0
+[    4482ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:8000/system/status:0

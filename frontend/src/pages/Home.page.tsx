@@ -1,48 +1,67 @@
-import { useNavigate } from 'react-router-dom'
-import { ROUTES } from '../constants'
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../constants';
+import { useAuth } from '../context/AuthContext';
+import { TrendingUp, Zap, Target, Mic } from 'lucide-react';
 
 export default function HomePage() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
-    <main className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center px-6">
-      {/* Ambient glow */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-[#C8F97D]/5 blur-[120px]" />
+    <main className="min-h-[85vh] flex flex-col items-center justify-center p-6 bg-primary animate-fadeSlideUp relative">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden flex justify-center items-center">
+        <div className="w-[800px] h-[800px] bg-[var(--accent)]/10 rounded-full blur-[120px] animate-pulse-orb"></div>
       </div>
 
-      <div className="relative z-10 text-center max-w-xl">
-        {/* Logo mark */}
-        <div className="inline-flex items-center gap-2 mb-10">
-          <div className="w-8 h-8 rounded-lg bg-[#C8F97D] flex items-center justify-center">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M8 2C8 2 3 5 3 9C3 11.76 5.24 14 8 14C10.76 14 13 11.76 13 9C13 5 8 2 8 2Z" fill="#0A0A0A"/>
-            </svg>
+      <div className="relative z-10 w-full max-w-[1060px] flex flex-col items-start gap-12">
+        
+        <div className="flex flex-col gap-6 max-w-[600px]">
+          <h1 className="text-[48px] md:text-[64px] font-[700] text-primary tracking-[-0.04em] leading-[1.05]">
+            Start speaking.<br />Start improving.
+          </h1>
+          <p className="text-[18px] text-secondary font-medium leading-relaxed max-w-[480px]">
+            Your daily voice analysis awaits. Practice for just 3 minutes a day and let AI analyze your delivery, structure, and vocabulary.
+          </p>
+          
+          <div className="flex items-center gap-4 mt-2">
+            <button
+              onClick={() => navigate(user ? ROUTES.SESSION : ROUTES.LOGIN)}
+              className="bg-[var(--accent)] text-[var(--bg-base)] font-bold text-[16px] px-8 py-4 rounded-full shadow-[0_0_20px_var(--accent-glow)] hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+            >
+              Start Session
+              <Mic size={18} />
+            </button>
+            <span className="text-[13px] text-tertiary font-bold tracking-widest uppercase">Takes &lt; 3 Min</span>
           </div>
-          <span className="text-white font-semibold tracking-tight text-lg">SpeakIQ</span>
         </div>
 
-        <h1 className="text-5xl font-bold text-white leading-[1.1] tracking-tight mb-4">
-          Speak better.<br />
-          <span className="text-[#C8F97D]">Every single day.</span>
-        </h1>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mt-10">
+          <div className="card border-[var(--border)] bg-[var(--bg-card)] p-8 hover:border-[var(--border-md)] transition-colors">
+            <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center mb-6">
+              <Zap size={24} strokeWidth={2.5} />
+            </div>
+            <h3 className="text-[18px] font-bold text-primary mb-2">AI Analysis</h3>
+            <p className="text-[14px] text-secondary font-medium leading-relaxed">Get instant feedback on your delivery, structure, and vocabulary from our advanced AI.</p>
+          </div>
 
-        <p className="text-[#888] text-lg leading-relaxed mb-10">
-          One topic. One minute. Real AI feedback on how you speak — 
-          filler words, pacing, delivery, structure.
-        </p>
+          <div className="card border-[var(--border)] bg-[var(--bg-card)] p-8 hover:border-[var(--border-md)] transition-colors">
+            <div className="w-12 h-12 rounded-xl bg-[var(--accent-dim)] text-[var(--accent)] flex items-center justify-center mb-6">
+              <Target size={24} strokeWidth={2.5} />
+            </div>
+            <h3 className="text-[18px] font-bold text-primary mb-2">Daily Drills</h3>
+            <p className="text-[14px] text-secondary font-medium leading-relaxed">Personalized exercises designed to improve your weakest areas and reinforce your strengths.</p>
+          </div>
 
-        <button
-          onClick={() => navigate(ROUTES.SESSION)}
-          className="w-full bg-[#C8F97D] text-[#0A0A0A] font-semibold text-base py-4 px-8 rounded-2xl hover:bg-[#d4ff8a] transition-colors duration-150"
-        >
-          Start today's session
-        </button>
-
-        <p className="text-[#555] text-sm mt-4">
-          3 minutes total · No account needed to try
-        </p>
+          <div className="card border-[var(--border)] bg-[var(--bg-card)] p-8 hover:border-[var(--border-md)] transition-colors">
+            <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-6">
+              <TrendingUp size={24} strokeWidth={2.5} />
+            </div>
+            <h3 className="text-[18px] font-bold text-primary mb-2">Streak System</h3>
+            <p className="text-[14px] text-secondary font-medium leading-relaxed">Build consistency with daily streaks, habit tracking, and visualized progress metrics.</p>
+          </div>
+        </div>
+        
       </div>
     </main>
-  )
+  );
 }

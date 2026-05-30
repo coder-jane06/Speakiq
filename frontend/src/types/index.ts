@@ -83,13 +83,17 @@ export type FocusArea =
   | 'vocabulary'
 
 export interface CoachingReport {
-  score: CoachingScores
+  scores: CoachingScores
   what_went_well: string
   priority_fix: string
   example_moment: string | null
   drill_for_tomorrow: string
+  content_feedback: string
   encouragement: string
   focus_area: FocusArea
+  daily_drill: string
+  mechanical_tip: string
+  micro_habit: string
 }
 
 // ─── User Profile ────────────────────────────────────────────
