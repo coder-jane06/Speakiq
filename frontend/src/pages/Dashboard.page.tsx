@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
-import { useAuth } from '../context/AuthContext';
 import { supabase } from '../services/supabase';
-import { API_URL, ROUTES } from '../constants';
+import { API_URL } from '../constants';
 import { useNavigate } from 'react-router-dom';
 
 interface DashboardStats {
@@ -30,7 +29,6 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
-  const { signOut } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,7 +38,7 @@ export default function DashboardPage() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
-        const res = await fetch(`${API_URL}/api/dashboard/stats`, {
+        const res = await fetch(`${API_URL}/dashboard/stats`, {
           headers: {
             'Authorization': token ? `Bearer ${token}` : '',
           }
@@ -205,7 +203,7 @@ export default function DashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--border)]">
-                    {[...stats.sessions].reverse().slice(0, 10).map((s, i) => {
+                    {[...stats.sessions].reverse().slice(0, 10).map((s) => {
                       const avg = Math.round((s.scores.filler + s.scores.delivery + s.scores.structure + s.scores.vocab + s.scores.confidence) / 5);
                       let scoreColor = 'bg-red-500/10 text-[var(--red)] border-red-500/20';
                       if (avg >= 80) scoreColor = 'bg-[var(--accent-dim)] text-[var(--accent)] border-[var(--border-accent)]';

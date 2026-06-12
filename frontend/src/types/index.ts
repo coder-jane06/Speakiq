@@ -11,7 +11,10 @@ export type SessionState =
 export interface Topic {
   id: string
   text: string
-  tier: 'easy' | 'medium' | 'hard'
+  tier?: 'easy' | 'medium' | 'hard'
+  difficulty?: 'easy' | 'medium' | 'hard'
+  target_skill?: string
+  goal_type?: string
   category: string
 }
 
@@ -94,6 +97,17 @@ export interface CoachingReport {
   daily_drill: string
   mechanical_tip: string
   micro_habit: string
+  // Adaptive AI memory fields
+  transcript_highlights?: Array<{
+    text: string
+    type: 'filler_cluster' | 'hedge_words' | 'rushed'
+    suggestion: string
+  }>
+  session_comparison?: string
+  recurring_patterns?: string[]
+  improvement_noted?: string
+  drill_followup?: string
+  next_session_focus?: string
 }
 
 // ─── User Profile ────────────────────────────────────────────
@@ -116,6 +130,12 @@ export interface UserProfile {
   structure_trend: TrendDirection
   current_streak: number
   longest_streak: number
+  // Onboarding & personalization
+  speaking_goal?: 'orator' | 'debater' | 'presenter' | 'interviewer' | 'general'
+  display_name?: string
+  difficulty_tier?: 'beginner' | 'intermediate' | 'advanced'
+  recording_duration_secs?: number
+  onboarding_complete?: boolean
 }
 
 // ─── API responses ───────────────────────────────────────────

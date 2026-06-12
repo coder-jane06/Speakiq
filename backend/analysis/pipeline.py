@@ -173,6 +173,21 @@ async def run_analysis_pipeline(
             )
 
         pre_scores = compute_scores_from_data(transcript_result, acoustic_result, nlp_result)
+        session_history = []
+        speaking_goal = "general"
+        if user_id:
+            try:
+                from config import get_db
+                from services.memory_service import MemoryService
+
+                memory_svc = MemoryService(get_db())
+                session_history = await memory_svc.get_session_history(user_id, limit=7)
+                if user_profile:
+                    speaking_goal = user_profile.get("speaking_goal", "general") or "general"
+                logger.info(f"[Pipeline] Loaded {len(session_history)} past sessions for AI memory")
+            except Exception as e:
+                logger.error(f"[Pipeline] Memory fetch failed: {e}")
+
         coaching_report = await coaching_service.generate_report(
             topic=             topic,
             transcript_result= transcript_result,
@@ -180,7 +195,9 @@ async def run_analysis_pipeline(
             nlp_result=        nlp_result,
             user_profile=      user_profile,
             session_number=    session_number,
-            pre_computed_scores=pre_scores
+            pre_computed_scores=pre_scores,
+            session_history=   session_history,
+            speaking_goal=     speaking_goal,
         )
 
         # ----------------------------------------------------------
@@ -203,6 +220,25 @@ async def run_analysis_pipeline(
         except Exception as e:
             logger.error(f"[Pipeline] DB save failed: {e}")
             # Don't fail — the report is still returned to the user
+
+        if user_id:
+            try:
+                from config import get_db
+                from services.memory_service import MemoryService
+
+                memory_svc = MemoryService(get_db())
+                await memory_svc.generate_session_summary(
+                    session_id=session_id,
+                    user_id=user_id,
+                    session_number=session_number,
+                    topic=topic,
+                    coaching_report=coaching_report,
+                    nlp_result=nlp_result,
+                    acoustic_result=acoustic_result,
+                    speaking_goal=speaking_goal,
+                )
+            except Exception as e:
+                logger.error(f"[Pipeline] Session summary save failed: {e}")
 
         # Update session status to 'complete'
         try:
@@ -233,7 +269,8 @@ async def run_analysis_pipeline(
                 session_id=session_id,
                 nlp_result=nlp_result,
                 acoustic_result=acoustic_result,
-                coaching_report=coaching_report
+                coaching_report=coaching_report,
+                pre_computed_scores=pre_scores,
             )
             logger.info(f"[Pipeline] User profile updated")
         except Exception as e:
@@ -461,6 +498,12 @@ async def save_results_to_db(
             "encouragement":     coaching.encouragement,
             "content_feedback":  coaching.content_feedback,
             "focus_area":        coaching.focus_area,
+            "transcript_highlights": coaching.transcript_highlights,
+            "session_comparison":    coaching.session_comparison,
+            "recurring_patterns":    coaching.recurring_patterns,
+            "improvement_noted":     coaching.improvement_noted,
+            "drill_followup":        coaching.drill_followup,
+            "next_session_focus":    coaching.next_session_focus,
         })
     }
 

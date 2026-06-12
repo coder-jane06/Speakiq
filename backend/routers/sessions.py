@@ -26,16 +26,114 @@ ALLOWED_AUDIO_TYPES = {
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 
 
-@router.get("/topic")
-async def get_random_topic():
+def get_user_id(authorization: Optional[str]) -> Optional[str]:
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
     try:
-        from config import get_db
-        result = get_db().table("topics").select("*").execute()
+        token = authorization.replace("Bearer ", "")
+        decoded = jwt.decode(token, options={"verify_signature": False})
+        return decoded.get("sub")
+    except Exception:
+        return None
+
+
+@router.get("/topic")
+async def get_topic(authorization: Optional[str] = Header(None)):
+    from config import get_db
+
+    db = get_db()
+    user_id = get_user_id(authorization)
+    speaking_goal = "general"
+    weakest_skill = "general"
+    difficulty = "medium"
+    recent_topic_texts = []
+
+    if user_id:
+        try:
+            profile = (
+                db.table("user_profiles")
+                .select("*")
+                .eq("user_id", user_id)
+                .limit(1)
+                .execute()
+            )
+            if profile.data:
+                p = profile.data[0]
+                speaking_goal = p.get("speaking_goal", "general") or "general"
+                tier = p.get("difficulty_tier", "beginner") or "beginner"
+                difficulty = {"beginner": "easy", "advanced": "hard"}.get(tier, "medium")
+
+                skill_scores = {
+                    "structure": p.get("structure_score", 50),
+                    "vocab": p.get("vocab_score", 50),
+                    "delivery": p.get("delivery_score", 50),
+                    "confidence": p.get("confidence_score", 50),
+                }
+                weakest_skill = min(skill_scores, key=skill_scores.get)
+
+            recent = (
+                db.table("sessions")
+                .select("topic_text")
+                .eq("user_id", user_id)
+                .order("created_at", desc=True)
+                .limit(10)
+                .execute()
+            )
+            recent_topic_texts = [
+                r["topic_text"]
+                for r in (recent.data or [])
+                if r.get("topic_text")
+            ]
+        except Exception as e:
+            logger.warning(f"[sessions] Topic personalization skipped: {e}")
+
+    try:
+        # DB column is 'tier' (not 'difficulty') — select it correctly
+        query = db.table("topics").select("id, text, tier, target_skill, category, goal_type")
+        if speaking_goal != "general":
+            query = query.in_("goal_type", [speaking_goal, "general"])
+        result = query.limit(50).execute()
+
         if result.data:
-            return random.choice(result.data)
+            candidates = [t for t in result.data if t.get("text")]
+            # Prefer unseen topics; fall back to full list if all seen
+            unseen = [t for t in candidates if t["text"] not in recent_topic_texts]
+            if unseen:
+                candidates = unseen
+
+            # Prefer topics targeting the user's weakest skill
+            skill_matched = [t for t in candidates if t.get("target_skill") == weakest_skill]
+            if skill_matched:
+                candidates = skill_matched
+
+            # Prefer topics matching the user's difficulty tier
+            tier_matched = [t for t in candidates if t.get("tier") == difficulty]
+            if tier_matched:
+                candidates = tier_matched
+
+            chosen = random.choice(candidates)
+            topic_tier = chosen.get("tier", "medium")
+            return {
+                "id": chosen.get("id", "topic"),
+                "text": chosen["text"],
+                "tier": topic_tier,
+                "difficulty": topic_tier,          # alias for frontend
+                "target_skill": chosen.get("target_skill", "general"),
+                "category": chosen.get("category", "opinion"),
+                "goal_type": chosen.get("goal_type", "general"),
+            }
     except Exception as e:
-        logger.warning(f"[sessions] Supabase fallback: {e}")
-    return random.choice(FALLBACK_TOPICS)
+        logger.warning(f"[sessions] Supabase topic query failed: {e}")
+
+    chosen = random.choice(FALLBACK_TOPICS)
+    return {
+        **chosen,
+        "tier": "medium",
+        "difficulty": "medium",
+        "target_skill": "general",
+        "category": "opinion",
+        "goal_type": "general",
+    }
 
 
 @router.post("/upload", status_code=201)
@@ -59,19 +157,7 @@ async def upload_session(
     session_id = str(uuid.uuid4())
     audio_url = None
 
-    # Extract user_id from JWT if provided
-    user_id = None
-    if authorization and authorization.startswith("Bearer "):
-        token = authorization.replace("Bearer ", "")
-        try:
-            # Decode without verification (Supabase already verified it)
-            decoded = jwt.decode(
-                token, 
-                options={"verify_signature": False}
-            )
-            user_id = decoded.get("sub")
-        except Exception:
-            user_id = None
+    user_id = get_user_id(authorization)
 
     try:
         from config import get_db
@@ -115,13 +201,11 @@ async def trigger_analysis(session_id: str, audio_bytes: bytes, topic_text: str,
     """Background task — runs after the HTTP response is sent."""
     try:
         from config import get_db
-        # To accumulate sessions across multiple uploads, we fetch the first row 
-        # (since a new session UUID is generated every time)
         if user_id:
-            profile_result = get_db().table("user_profiles").select("*").eq("id", user_id).limit(1).execute()
+            profile_result = get_db().table("user_profiles").select("*").eq("user_id", user_id).limit(1).execute()
+            user_profile = profile_result.data[0] if profile_result.data else None
         else:
-            profile_result = get_db().table("user_profiles").select("*").limit(1).execute()
-        user_profile = profile_result.data[0] if profile_result.data else None
+            user_profile = None
     except:
         user_profile = None
 
@@ -148,10 +232,22 @@ async def trigger_analysis(session_id: str, audio_bytes: bytes, topic_text: str,
 
 
 @router.get("/")
-async def list_sessions():
+async def list_sessions(authorization: Optional[str] = Header(None)):
+    """Return only the authenticated user's sessions."""
+    user_id = get_user_id(authorization)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
     try:
         from config import get_db
-        result = get_db().table("sessions").select("*").order("created_at", desc=True).limit(50).execute()
+        result = (
+            get_db()
+            .table("sessions")
+            .select("id, topic_text, created_at, status")
+            .eq("user_id", user_id)
+            .order("created_at", desc=True)
+            .limit(50)
+            .execute()
+        )
         return {"sessions": result.data}
     except Exception as e:
         logger.error(f"[sessions] list failed: {e}")

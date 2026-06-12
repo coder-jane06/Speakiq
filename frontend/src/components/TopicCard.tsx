@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { API_URL } from '../constants'
 import type { Topic } from '../types'
 import { RefreshCw } from 'lucide-react'
+import { supabase } from '../services/supabase'
 
 interface TopicCardProps {
   onReady: (topic: Topic) => void
@@ -15,7 +16,12 @@ export function TopicCard({ onReady }: TopicCardProps) {
   const fetchTopic = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`${API_URL}/sessions/topic`)
+      // Pass auth token so the backend can personalise the topic by speaking goal
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      const res = await fetch(`${API_URL}/sessions/topic`, {
+        headers: { Authorization: token ? `Bearer ${token}` : '' },
+      })
       if (res.ok) {
         const data = await res.json()
         setTopic(data)
@@ -57,6 +63,14 @@ export function TopicCard({ onReady }: TopicCardProps) {
         <h2 className="text-[22px] md:text-[28px] font-medium text-primary leading-snug mb-8">
           {topic?.text || 'Discuss a time when you had to make a difficult decision.'}
         </h2>
+
+        {topic?.goal_type && topic.goal_type !== 'general' && (
+          <div className="mb-6 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--accent-dim)] border border-[var(--border-accent)]">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--accent)]">
+              {topic.goal_type} · {topic.difficulty}
+            </span>
+          </div>
+        )}
 
         <button 
           onClick={() => { setRefreshing(true); fetchTopic(); }}

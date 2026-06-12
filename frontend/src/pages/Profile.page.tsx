@@ -25,7 +25,7 @@ export default function ProfilePage() {
         // Use the SAME auth pattern as Dashboard — supabase.auth.getSession() for a fresh token
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
-        const res = await fetch(`${API_URL}/api/dashboard/stats`, {
+        const res = await fetch(`${API_URL}/dashboard/stats`, {
           headers: { 'Authorization': token ? `Bearer ${token}` : '' }
         });
         if (res.ok) {
@@ -48,8 +48,8 @@ export default function ProfilePage() {
   const currentStreak = stats?.current_streak || 0;
   const longestStreak = stats?.longest_streak || 0;
   const totalSessions = stats?.total_sessions || 0;
-  const bestAvg = stats?.best_session
-    ? Math.round(Object.values(stats.best_session.scores || {}).reduce((a: any, b: any) => a + b, 0) as number / 5)
+  const bestAvg = stats?.best_session?.avg_score
+    ? Math.round(stats.best_session.avg_score)
     : 0;
 
   // Calculate member since from user metadata

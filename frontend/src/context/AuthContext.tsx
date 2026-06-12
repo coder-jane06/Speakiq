@@ -18,40 +18,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const clearAuth = () => {
+    setSession(null)
+    setUser(null)
+    localStorage.removeItem('supabase_token')
+    localStorage.removeItem('sb-' + new URL(import.meta.env.VITE_SUPABASE_URL ?? 'http://x').hostname + '-auth-token')
+  }
+
   useEffect(() => {
-    // Get initial session with robust error handling to prevent infinite loading state
+    // Get initial session — if the stored refresh token is invalid, clear it silently
     supabase.auth.getSession()
-      .then(({ data: { session } }) => {
-        setSession(session)
-        setUser(session?.user ?? null)
-        if (session?.access_token) {
-          localStorage.setItem('supabase_token', session.access_token)
+      .then(({ data: { session }, error }) => {
+        if (error) {
+          // Refresh token is invalid — clear everything so no spammy retries
+          clearAuth()
         } else {
-          localStorage.removeItem('supabase_token')
+          setSession(session)
+          setUser(session?.user ?? null)
+          if (session?.access_token) {
+            localStorage.setItem('supabase_token', session.access_token)
+          } else {
+            localStorage.removeItem('supabase_token')
+          }
         }
         setLoading(false)
       })
-      .catch((err) => {
-        console.error('Supabase getSession failed:', err)
+      .catch(() => {
+        clearAuth()
         setLoading(false)
       })
 
-    // Listen for auth state changes (login, logout, token refresh)
+    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session)
-        setUser(session?.user ?? null)
-        if (session?.access_token) {
-          localStorage.setItem('supabase_token', session.access_token)
+      (event, session) => {
+        if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
+          setSession(session)
+          setUser(session?.user ?? null)
+          if (session?.access_token) {
+            localStorage.setItem('supabase_token', session.access_token)
+          }
+        } else if (event === 'SIGNED_OUT') {
+          clearAuth()
+        } else if (event === 'USER_UPDATED') {
+          setUser(session?.user ?? null)
         } else {
-          localStorage.removeItem('supabase_token')
+          // Handle TOKEN_REFRESH_FAILED and other edge cases
+          setSession(session)
+          setUser(session?.user ?? null)
+          if (!session) {
+            localStorage.removeItem('supabase_token')
+          } else if (session.access_token) {
+            localStorage.setItem('supabase_token', session.access_token)
+          }
         }
         setLoading(false)
       }
     )
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const signUp = async (email: string, password: string) => {
     const { error } = await supabase.auth.signUp({ email, password })

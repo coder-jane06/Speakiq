@@ -1,11 +1,51 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../constants';
+import { ROUTES, API_URL } from '../constants';
 import { useAuth } from '../context/AuthContext';
 import { TrendingUp, Zap, Target, Mic } from 'lucide-react';
+import { supabase } from '../services/supabase';
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
+
+  // Redirect new users to onboarding before their first session
+  useEffect(() => {
+    if (!user) {
+      setCheckingOnboarding(false);
+      return;
+    }
+    const check = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        const res = await fetch(`${API_URL}/dashboard/profile-status`, {
+          headers: { Authorization: token ? `Bearer ${token}` : '' },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (!data.onboarding_complete) {
+            navigate(ROUTES.ONBOARDING, { replace: true });
+            return;
+          }
+        }
+      } catch {
+        // silently ignore — don't block home page
+      } finally {
+        setCheckingOnboarding(false);
+      }
+    };
+    check();
+  }, [user, navigate]);
+
+  if (checkingOnboarding && user) {
+    return (
+      <div className="min-h-[85vh] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-[3px] border-[var(--border-md)] border-t-[var(--accent)] animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-[85vh] flex flex-col items-center justify-center p-6 bg-primary animate-fadeSlideUp relative">
@@ -17,7 +57,7 @@ export default function HomePage() {
         
         <div className="flex flex-col gap-6 max-w-[600px]">
           <h1 className="text-[48px] md:text-[64px] font-[700] text-primary tracking-[-0.04em] leading-[1.05]">
-            Start speaking.<br />Start improving.
+            Start speaking.<br /> Start improving.
           </h1>
           <p className="text-[18px] text-secondary font-medium leading-relaxed max-w-[480px]">
             Your daily voice analysis awaits. Practice for just 3 minutes a day and let AI analyze your delivery, structure, and vocabulary.

@@ -20,7 +20,7 @@ export function useStreak() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
-        const res = await fetch(`${API_URL}/api/dashboard/streak`, {
+        const res = await fetch(`${API_URL}/dashboard/streak`, {
           headers: {
             'Authorization': token ? `Bearer ${token}` : '',
           }

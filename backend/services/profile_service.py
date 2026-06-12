@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import datetime, timedelta
 
@@ -7,7 +8,8 @@ async def update_user_profile(
     session_id: str,
     nlp_result,
     acoustic_result,
-    coaching_report
+    coaching_report,
+    pre_computed_scores: dict | None = None
 ) -> None:
     try:
         from config import get_db
@@ -42,25 +44,28 @@ async def update_user_profile(
                 logger.error(f"[Profile] Failed to fetch users: {e}")
                 return
             
-        # Score Calculations
-        # filler_score: 100 - min(nlp_result.fillers_per_minute * 10, 100)
-        filler_rate = getattr(nlp_result, 'fillers_per_minute', 0)
-        filler_score = max(0, 100 - min(filler_rate * 10, 100))
-        
-        # delivery_score: acoustic_result.monotony_score * 100
-        monotony = getattr(acoustic_result, 'monotony_score', 0.5)
-        delivery_score = min(monotony * 100, 100)
-        
-        # structure_score: min(nlp_result.sentence_count * 10, 100)
-        sentence_count = getattr(nlp_result, 'sentence_count', 0)
-        structure_score = min(sentence_count * 10, 100)
-        
-        # vocab_score: nlp_result.ttr_score * 100
-        ttr_score = getattr(nlp_result, 'ttr_score', 0)
-        vocab_score = min(ttr_score * 100, 100)
-        
-        # confidence_score: coaching_report.scores.confidence
-        confidence_score = getattr(coaching_report.scores, 'confidence', 50)
+        # Score calculations must match the session report. The pipeline owns
+        # scoring; this service only smooths those scores into the profile.
+        if pre_computed_scores:
+            filler_score = pre_computed_scores.get("filler", 50)
+            delivery_score = pre_computed_scores.get("delivery", 50)
+            structure_score = pre_computed_scores.get("structure", 50)
+            vocab_score = pre_computed_scores.get("vocab", 50)
+            confidence_score = pre_computed_scores.get("confidence", 50)
+        else:
+            filler_rate = getattr(nlp_result, 'fillers_per_minute', 0)
+            filler_score = max(0, 100 - min(filler_rate * 10, 100))
+
+            monotony = getattr(acoustic_result, 'monotony_score', 0.5)
+            delivery_score = min(monotony * 100, 100)
+
+            sentence_count = getattr(nlp_result, 'sentence_count', 0)
+            structure_score = min(sentence_count * 10, 100)
+
+            ttr_score = getattr(nlp_result, 'ttr_score', 0)
+            vocab_score = min(ttr_score * 100, 100)
+
+            confidence_score = getattr(coaching_report.scores, 'confidence', 50)
         
         # Extract top fillers
         filler_detail = getattr(nlp_result, 'filler_detail', {})

@@ -1,14 +1,21 @@
-import { useState, type FormEvent } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { ROUTES } from '../constants'
+import { supabase } from '../services/supabase'
 import { Sparkles } from 'lucide-react'
 
 type Mode = 'signin' | 'signup'
 
 export default function LoginPage() {
-  const { signIn, signUp } = useAuth()
+  const { signIn, signUp, user } = useAuth()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    if (user) {
+      navigate(ROUTES.DASHBOARD, { replace: true })
+    }
+  }, [user, navigate])
 
   const [mode, setMode] = useState<Mode>('signin')
   const [email, setEmail] = useState('')
@@ -101,6 +108,28 @@ export default function LoginPage() {
               className="w-full bg-primary border border-[var(--border)] rounded-xl px-4 py-3 text-primary font-medium focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all outline-none"
             />
           </div>
+
+          {mode === 'signin' && (
+            <button
+              type="button"
+              onClick={async () => {
+                if (!email) { setError('Enter your email first, then click Forgot password.'); return }
+                setError(null); setLoading(true)
+                try {
+                  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                    redirectTo: `${window.location.origin}/login`
+                  })
+                  if (error) throw error
+                  setSuccessMsg('Password reset link sent! Check your email.')
+                } catch (err: unknown) {
+                  setError(err instanceof Error ? err.message : 'Failed to send reset email.')
+                } finally { setLoading(false) }
+              }}
+              className="self-end text-[13px] font-medium text-[var(--accent)] hover:underline -mt-2"
+            >
+              Forgot password?
+            </button>
+          )}
 
           {error && (
             <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-[var(--red)] text-sm font-medium">

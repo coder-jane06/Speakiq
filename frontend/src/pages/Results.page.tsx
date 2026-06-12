@@ -34,7 +34,7 @@ export default function ResultsPage() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
-        const res = await fetch(`${API_URL}/api/dashboard/stats`, {
+        const res = await fetch(`${API_URL}/dashboard/stats`, {
           headers: { 'Authorization': token ? `Bearer ${token}` : '' }
         });
         if (res.ok) setStats(await res.json());
@@ -263,7 +263,10 @@ export default function ResultsPage() {
 
           {/* Interactive Drill */}
           <div className="opacity-0 animate-cardEntrance mt-2" style={{ animationDelay: '0.6s', animationFillMode: 'forwards' }}>
-             <InteractiveDrillCard drill={(coaching.daily_drill as string) || "Focus on pausing during important points"} />
+             <InteractiveDrillCard
+               sessionId={session.id}
+               drill={(coaching.daily_drill as string) || "Focus on pausing during important points"}
+             />
           </div>
 
         </div>
@@ -273,8 +276,35 @@ export default function ResultsPage() {
   )
 }
 
-function InteractiveDrillCard({ drill }: { drill: string }) {
+function InteractiveDrillCard({ sessionId, drill }: { sessionId: string, drill: string }) {
   const [done, setDone] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const markPracticed = async () => {
+    setSaving(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch(`${API_URL}/dashboard/complete-drill`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        body: JSON.stringify({
+          session_id: sessionId,
+          drill_text: drill,
+          drill_type: 'daily_drill',
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to save drill completion');
+      setDone(true);
+    } catch (err) {
+      console.error('[Results] Failed to save drill completion:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
   
   return (
     <div className={`card-interactive p-6 transition-all duration-500 overflow-hidden relative ${done ? 'bg-[var(--accent-dim)] border-[var(--border-accent)]' : 'bg-[var(--bg-card)] border-[var(--border)]'}`}>
@@ -292,8 +322,8 @@ function InteractiveDrillCard({ drill }: { drill: string }) {
        <p className="text-primary font-medium text-[16px] leading-[1.6] mb-6 relative z-10">{drill}</p>
        
        <button 
-         onClick={() => setDone(true)}
-         disabled={done}
+         onClick={markPracticed}
+         disabled={done || saving}
          className={`relative z-10 w-full md:w-auto px-8 py-3.5 rounded-xl font-bold text-[14px] transition-all flex items-center justify-center gap-2 active:scale-95 ${
            done 
              ? 'bg-[var(--accent)] text-white dark:text-black shadow-[0_0_20px_var(--accent-glow)]' 
@@ -306,7 +336,7 @@ function InteractiveDrillCard({ drill }: { drill: string }) {
              Completed
            </>
          ) : (
-           'Mark as practiced'
+           saving ? 'Saving...' : 'Mark as practiced'
          )}
        </button>
     </div>

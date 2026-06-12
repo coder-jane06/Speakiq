@@ -38,6 +38,13 @@ class CoachingReport:
     content_feedback:   str = ""
     focus_area:         str = "filler_words"
     session_number:     int = 1
+    # Adaptive memory fields
+    transcript_highlights: list = field(default_factory=list)
+    session_comparison:    str = ""
+    recurring_patterns:    list = field(default_factory=list)
+    improvement_noted:     str = ""
+    drill_followup:        str = ""
+    next_session_focus:    str = ""
 
 
 def pick_focus_area(user_profile: Optional[dict]) -> str:
@@ -68,7 +75,9 @@ def build_coaching_prompt(
     user_profile:      Optional[dict],
     focus_area:        str,
     session_number:    int,
-    pre_scores:        Optional[dict] = None
+    pre_scores:        Optional[dict] = None,
+    session_history:   Optional[list] = None,
+    speaking_goal:     str = "general",
 ) -> str:
     """Build personalized coaching prompt with all session data."""
 
@@ -79,7 +88,7 @@ def build_coaching_prompt(
         the basics: filler words, basic pacing, completing sentences.
         Keep feedback encouraging and simple."""
     elif session_num <= 15:
-        tier = "INTERMEDIATE"  
+        tier = "INTERMEDIATE"
         tier_instruction = """This user has solid basics. Push them 
         on delivery variety, idea structure, and confidence. 
         Stop mentioning basic filler word tips unless count > 5/min."""
@@ -95,7 +104,63 @@ def build_coaching_prompt(
         nuance, presence, rhetorical devices, and mastery-level 
         refinements."""
 
-    # User history section
+    # ── Speaking goal section ──────────────────────────────────────────
+    goal_instructions = {
+        "orator": """The user wants to become a powerful ORATOR. Tailor ALL coaching toward:
+- Storytelling arc and narrative flow
+- Emotional range and vocal expressiveness
+- Rhetorical devices (metaphors, repetition, tricolon)
+- Commanding openings and memorable closings
+- Audience engagement and presence""",
+        "debater": """The user wants to excel at DEBATING. Tailor ALL coaching toward:
+- Logical argument structure and evidence usage
+- Clear thesis statements and counterargument anticipation
+- Assertive but respectful tone
+- Rebuttals and structured responses under pressure
+- Conciseness — every word must earn its place""",
+        "presenter": """The user wants to ace PRESENTATIONS. Tailor ALL coaching toward:
+- Clarity and conciseness above all
+- Professional pacing (not too fast, not too slow)
+- Data-driven communication with precise vocabulary
+- Smooth transitions between points
+- Opening hook and a clear takeaway close""",
+        "interviewer": """The user wants to excel in JOB INTERVIEWS. Tailor ALL coaching toward:
+- STAR method structure (Situation, Task, Action, Result)
+- Confident, concise answers without rambling
+- Professional vocabulary and authoritative tone
+- Strong opening statements
+- Definitive closings — no trailing off""",
+    }
+    goal_text = goal_instructions.get(
+        speaking_goal,
+        "Focus on general speaking improvement across all dimensions."
+    )
+    goal_section = f"\n## Speaking Goal: {speaking_goal.upper()}\n{goal_text}\n"
+
+    # ── Session history / AI memory ────────────────────────────────────
+    if session_history and len(session_history) > 0:
+        history_lines = []
+        for s in session_history[-5:]:
+            line = s.get("summary_text", "")
+            if s.get("drill_completed"):
+                line += " [DRILL DONE ✓]"
+            else:
+                line += " [DRILL SKIPPED]"
+            history_lines.append(f"  - {line}")
+        memory_section = (
+            "\n## Your Memory of This User (past sessions)\n"
+            + "\n".join(history_lines)
+            + "\n\nCRITICAL MEMORY RULES:"
+            + "\n- Reference specific improvements or regressions you see above"
+            + "\n- If the user completed their last drill, acknowledge it warmly in drill_followup"
+            + "\n- If they skipped it, gently suggest trying again in drill_followup"
+            + "\n- If a pattern appears in 3+ sessions, escalate urgency in recurring_patterns"
+            + "\n- NEVER give the exact same advice as the last session\n"
+        )
+    else:
+        memory_section = ""
+
+    # ── User profile history ───────────────────────────────────────────
     if user_profile and user_profile.get("total_sessions", 0) > 1:
         history = f"""
 ## Your coaching history with this user
@@ -121,7 +186,7 @@ This is session #{session_num}. Be encouraging and welcoming.
 {tier_instruction}
 """
 
-    # Transcript (truncated)
+    # Transcript (truncated to keep tokens reasonable)
     transcript_text = (transcript_result.transcript or "")[:800]
 
     # Acoustic data
@@ -158,7 +223,8 @@ This is session #{session_num}. Be encouraging and welcoming.
         pre_scores = {"filler": 50, "delivery": 50, "structure": 50, "vocab": 50, "confidence": 50}
 
     return f"""You are an expert speech coach. Analyze this speaking session and return ONLY a JSON object.
-
+{goal_section}
+{memory_section}
 Topic: "{topic}"
 Session: #{session_number}
 {history}
@@ -176,12 +242,12 @@ Coaching instruction:
 {focus_instruction}
 
 STRICT COACHING RULES:
-RULE 1: NO TECHNICAL NUMBERS IN FEEDBACK. Never mention Hz, WPM numbers, TTR scores, or milliseconds in the feedback fields. You can use these internally to decide what to coach on, but never show them to the user. Instead, use relatable analogies (e.g., "like telling a story to a friend", "sounding like reading a script").
-RULE 2: USE ANALOGIES AND REAL EXAMPLES. Every piece of feedback must use either a relatable analogy, a specific action the user can do right now, or a reference to their actual words from the transcript.
-RULE 3: THE DAILY DRILL MUST BE DOABLE IN 2 MINUTES. It should be a concrete exercise, e.g., "Pick any sentence from today's topic and say it 3 times...".
-RULE 4: THE MECHANICAL TIP MUST BE PHYSICAL AND SIMPLE. It should focus on body/voice mechanics, e.g., "Take one slow breath in through your nose...".
-RULE 5: CONTENT ANALYSIS. Evaluate if they stayed on topic, if they had structure (opening, middle, end), and if they used specific examples instead of generalities. Give 1-2 sentences on their IDEAS, not just delivery.
-RULE 6: TONE MUST BE LIKE A SUPPORTIVE HUMAN COACH. Be warm, encouraging, and human. Do not sound robotic or like a professor.
+RULE 1: NO TECHNICAL NUMBERS IN FEEDBACK. Never mention Hz, WPM numbers, TTR scores, or milliseconds in the feedback fields. Use relatable analogies instead.
+RULE 2: USE ANALOGIES AND REAL EXAMPLES. Every piece of feedback must use a relatable analogy, a specific action, or a reference to their actual words from the transcript.
+RULE 3: THE DAILY DRILL MUST BE DOABLE IN 2 MINUTES. Concrete exercise, e.g., "Pick any sentence from today's topic and say it 3 times...".
+RULE 4: THE MECHANICAL TIP MUST BE PHYSICAL AND SIMPLE. Body/voice mechanics only, e.g., "Take one slow breath in through your nose...".
+RULE 5: CONTENT ANALYSIS. Evaluate if they stayed on topic, had structure (opening, middle, end), and used specific examples. Give 1-2 sentences on their IDEAS.
+RULE 6: TONE MUST BE LIKE A SUPPORTIVE HUMAN COACH. Be warm, encouraging, and human.
 
 Return ONLY this JSON, no other text:
 {{
@@ -195,14 +261,20 @@ Return ONLY this JSON, no other text:
   "what_went_well": "<Specific positive with real examples/analogies>",
   "priority_fix": "<One specific fix using an analogy, NO technical numbers>",
   "example_moment": "<Quote from transcript + what to do instead>",
-  "daily_drill": "<specific 2-5 minute physical exercise with exact instructions. Example: Read a paragraph aloud, pause 2 seconds at every comma>",
+  "daily_drill": "<specific 2-5 minute physical exercise with exact instructions>",
   "mechanical_tip": "<one physical tip about breathing, posture, or mouth movement>",
   "micro_habit": "<one thing to watch for in casual conversation today>",
   "encouragement": "<One warm, supportive sentence>",
-  "content_feedback": "<1-2 sentences on their IDEAS, structure, and use of examples>"
+  "content_feedback": "<1-2 sentences on their IDEAS, structure, and use of examples>",
+  "transcript_highlights": [{{"text": "<exact quoted phrase>", "type": "filler_cluster|hedge_words|rushed", "suggestion": "<better alternative>"}}],
+  "session_comparison": "<1-2 sentences comparing THIS session to the previous one, or empty string if first session>",
+  "recurring_patterns": ["<pattern_name if it appeared in 3+ sessions>"],
+  "improvement_noted": "<specific improvement from past sessions, or empty string>",
+  "drill_followup": "<warm comment on last session's drill — did it help? or empty string if no history>",
+  "next_session_focus": "<recommended focus area: filler_words|delivery_monotony|idea_structure|vocabulary|confidence>"
 }}
 
-Pre-calculated scores (USE THESE EXACTLY, do not change them):
+Pre-calculated scores (USE THESE EXACTLY, copy them into scores):
 {{
   "filler": {pre_scores["filler"]},
   "delivery": {pre_scores["delivery"]},
@@ -211,8 +283,8 @@ Pre-calculated scores (USE THESE EXACTLY, do not change them):
   "confidence": {pre_scores["confidence"]}
 }}
 
-Your ONLY job for scores is to copy these exact numbers into the literal "scores" object.
-Focus your energy on writing excellent coaching text for the other fields, strictly following the STRICT COACHING RULES above."""
+Your ONLY job for scores is to copy these exact numbers.
+Focus energy on writing excellent coaching text, strictly following the STRICT COACHING RULES above."""
 
 
 class CoachingService:
@@ -227,12 +299,17 @@ class CoachingService:
         "mechanical_tip": "Take a deep breath before you start speaking to steady your voice.",
         "micro_habit": "Pause for one second before answering any question today.",
         "encouragement": "Showing up every day is what makes great speakers.",
-        "content_feedback": "We couldn't analyze your ideas this time, but keep sharing your thoughts clearly."
+        "content_feedback": "We couldn't analyze your ideas this time, but keep sharing your thoughts clearly.",
+        "transcript_highlights": [],
+        "session_comparison": "",
+        "recurring_patterns": [],
+        "improvement_noted": "",
+        "drill_followup": "",
+        "next_session_focus": "filler_words",
     }
 
     def __init__(self):
         try:
-            import os
             from dotenv import load_dotenv
             from groq import Groq
             load_dotenv(dotenv_path=os.path.join(
@@ -246,16 +323,17 @@ class CoachingService:
             logger.error(f"[CoachingService] Failed to init Groq: {e}")
             self.client = None
 
-
     async def generate_report(
         self,
-        topic:             str,
-        transcript_result: TranscriptResult,
-        acoustic_result:   Optional[AcousticResult],
-        nlp_result:        Optional[NLPResult],
-        user_profile:      Optional[dict] = None,
-        session_number:    int = 1,
-        pre_computed_scores: Optional[dict] = None
+        topic:               str,
+        transcript_result:   TranscriptResult,
+        acoustic_result:     Optional[AcousticResult],
+        nlp_result:          Optional[NLPResult],
+        user_profile:        Optional[dict] = None,
+        session_number:      int = 1,
+        pre_computed_scores: Optional[dict] = None,
+        session_history:     Optional[list] = None,
+        speaking_goal:       str = "general",
     ) -> CoachingReport:
         """Generate coaching report. Always returns a report — never raises."""
 
@@ -273,20 +351,19 @@ class CoachingService:
             user_profile=user_profile,
             focus_area=focus_area,
             session_number=session_number,
-            pre_scores=pre_computed_scores
+            pre_scores=pre_computed_scores,
+            session_history=session_history,
+            speaking_goal=speaking_goal,
         )
 
-        logger.info(f"[CoachingService] Generating report (focus: {focus_area})")
+        logger.info(f"[CoachingService] Generating report (focus: {focus_area}, goal: {speaking_goal})")
 
         try:
-            # Groq API call
-            # response_format={"type": "json_object"} forces JSON output
-            # This is more reliable than asking nicely in the prompt
             completion = self.client.chat.completions.create(
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
-                max_tokens=1024,
-                temperature=0.3,        # lower = more consistent output
+                max_tokens=1600,
+                temperature=0.3,
                 response_format={"type": "json_object"}
             )
 
@@ -302,25 +379,31 @@ class CoachingService:
             report_data = json.loads(clean.strip())
 
             scores = CoachingScores(
-                filler=     pre_computed_scores["filler"] if pre_computed_scores else report_data["scores"].get("filler", 50),
-                delivery=   pre_computed_scores["delivery"] if pre_computed_scores else report_data["scores"].get("delivery", 50),
-                structure=  pre_computed_scores["structure"] if pre_computed_scores else report_data["scores"].get("structure", 50),
-                vocab=      pre_computed_scores["vocab"] if pre_computed_scores else report_data["scores"].get("vocab", 50),
+                filler=     pre_computed_scores["filler"]     if pre_computed_scores else report_data["scores"].get("filler", 50),
+                delivery=   pre_computed_scores["delivery"]   if pre_computed_scores else report_data["scores"].get("delivery", 50),
+                structure=  pre_computed_scores["structure"]  if pre_computed_scores else report_data["scores"].get("structure", 50),
+                vocab=      pre_computed_scores["vocab"]      if pre_computed_scores else report_data["scores"].get("vocab", 50),
                 confidence= pre_computed_scores["confidence"] if pre_computed_scores else report_data["scores"].get("confidence", 50),
             )
 
             report = CoachingReport(
-                scores=             scores,
-                what_went_well=     report_data.get("what_went_well", ""),
-                priority_fix=       report_data.get("priority_fix", ""),
-                example_moment=     report_data.get("example_moment"),
-                daily_drill=        report_data.get("daily_drill", ""),
-                mechanical_tip=     report_data.get("mechanical_tip", ""),
-                micro_habit=        report_data.get("micro_habit", ""),
-                encouragement=      report_data.get("encouragement", ""),
-                content_feedback=   report_data.get("content_feedback", ""),
-                focus_area=         focus_area,
-                session_number=     session_number
+                scores=                scores,
+                what_went_well=        report_data.get("what_went_well", ""),
+                priority_fix=          report_data.get("priority_fix", ""),
+                example_moment=        report_data.get("example_moment"),
+                daily_drill=           report_data.get("daily_drill", ""),
+                mechanical_tip=        report_data.get("mechanical_tip", ""),
+                micro_habit=           report_data.get("micro_habit", ""),
+                encouragement=         report_data.get("encouragement", ""),
+                content_feedback=      report_data.get("content_feedback", ""),
+                focus_area=            focus_area,
+                session_number=        session_number,
+                transcript_highlights= report_data.get("transcript_highlights", []),
+                session_comparison=    report_data.get("session_comparison", ""),
+                recurring_patterns=    report_data.get("recurring_patterns", []),
+                improvement_noted=     report_data.get("improvement_noted", ""),
+                drill_followup=        report_data.get("drill_followup", ""),
+                next_session_focus=    report_data.get("next_session_focus", ""),
             )
 
             logger.info(
@@ -330,27 +413,24 @@ class CoachingService:
             )
             return report
 
-        except json.JSONDecodeError as e:
-            logger.error(f"[CoachingService] JSON parse failed: {e}")
-            return self._fallback_report(focus_area, session_number)
         except Exception as e:
-            logger.error(f"[CoachingService] Failed: {type(e).__name__}: {e}")
+            logger.error(f"[CoachingService] Failed: {e}")
             return self._fallback_report(focus_area, session_number)
 
     def _fallback_report(self, focus_area: str, session_number: int) -> CoachingReport:
         d = self.FALLBACK_REPORT
         return CoachingReport(
-            scores=CoachingScores(**d["scores"]),
-            what_went_well=     d["what_went_well"],
-            priority_fix=       d["priority_fix"],
-            example_moment=     d["example_moment"],
-            daily_drill=        d["daily_drill"],
-            mechanical_tip=     d["mechanical_tip"],
-            micro_habit=        d["micro_habit"],
-            encouragement=      d["encouragement"],
-            content_feedback=   d["content_feedback"],
-            focus_area=         focus_area,
-            session_number=     session_number
+            scores=          CoachingScores(**d["scores"]),
+            what_went_well=  d["what_went_well"],
+            priority_fix=    d["priority_fix"],
+            example_moment=  d["example_moment"],
+            daily_drill=     d["daily_drill"],
+            mechanical_tip=  d["mechanical_tip"],
+            micro_habit=     d["micro_habit"],
+            encouragement=   d["encouragement"],
+            content_feedback=d["content_feedback"],
+            focus_area=      focus_area,
+            session_number=  session_number,
         )
 
 

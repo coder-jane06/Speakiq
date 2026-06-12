@@ -20,13 +20,18 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    const status: number = error.response?.status ?? 0
     const message: string =
       error.response?.data?.detail ??
       error.response?.data?.message ??
       error.message ??
       'An unexpected error occurred'
 
-    console.error(`[apiClient] ${error.config?.method?.toUpperCase()} ${error.config?.url} failed:`, message)
+    // Only log unexpected errors — 401 (auth required) and 404 (not found)
+    // are handled by callers and don't need console noise.
+    if (status >= 500 || status === 0) {
+      console.error(`[apiClient] ${error.config?.method?.toUpperCase()} ${error.config?.url} → ${status}:`, message)
+    }
 
     return Promise.reject(new Error(message))
   }

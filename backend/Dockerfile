@@ -1,27 +1,52 @@
-FROM python:3.12-slim
+FROM python:3.11-slim
 
-# Install system dependencies (ffmpeg is required for audio processing)
+# Install system dependencies (including libgomp1 for ctranslate2/faster-whisper)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
+    build-essential \
+    libsndfile1 \
+    libgomp1 \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+# Set up a new user named "user" with user ID 1000
+RUN useradd -m -u 1000 user
 
-# Copy requirements first to leverage Docker cache
-COPY requirements.txt .
+# Switch to the "user" user
+USER user
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Set home to the user's home directory
+ENV HOME=/home/user \
+    PATH=/home/user/.local/bin:$PATH
 
-# Download Spacy model (if needed by your backend code)
-# The backend uses spacy, so we should download the english model
+# Set the working directory to the user's home directory
+WORKDIR $HOME/app
+
+# Copy requirements first (for Docker layer caching)
+COPY --chown=user requirements.txt .
+
+# Upgrade pip first
+RUN pip install --upgrade pip
+
+# Install numpy first (required by many packages)
+RUN pip install --prefer-binary "numpy>=1.26.4,<2.0"
+
+# Install heavy ML packages with binary preference (avoids compilation failures)
+RUN pip install --prefer-binary "librosa>=0.10.1"
+RUN pip install --prefer-binary "faster-whisper>=1.0.0"
+RUN pip install --prefer-binary "spacy>=3.7.0,<3.8.0"
+
+# Install remaining requirements
+RUN pip install --prefer-binary -r requirements.txt
+
+# Download spacy English model
 RUN python -m spacy download en_core_web_sm
 
 # Copy the rest of the application code
-COPY . .
+COPY --chown=user . .
 
-# Expose the port FastAPI will run on
-EXPOSE 8000
+# Expose port 7860 for Hugging Face Spaces
+EXPOSE 7860
 
-# Start the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Start the application on port 7860
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]

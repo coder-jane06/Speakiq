@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useRef, useState, useEffect } from 'react'
 import type { SessionState, Topic } from '../types'
 import { PREP_DURATION_SECS, RECORDING_DURATION_SECS, API_URL } from '../constants'
 import { supabase } from '../services/supabase'
@@ -17,6 +17,7 @@ interface UseSessionFlowReturn {
   recSecsLeft:     number
   prepProgress:    number
   recProgress:     number
+  recordingDuration: number
 }
 
 export function useSessionFlow(): UseSessionFlowReturn {
@@ -25,13 +26,42 @@ export function useSessionFlow(): UseSessionFlowReturn {
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [error,     setError]     = useState<string | null>(null)
 
+  // Respect the user's chosen session length from onboarding
+  const [recordingDuration, setRecordingDuration] = useState(RECORDING_DURATION_SECS)
+
   const [prepSecsLeft, setPrepSecsLeft] = useState(PREP_DURATION_SECS)
-  const [recSecsLeft,  setRecSecsLeft]  = useState(RECORDING_DURATION_SECS)
+  const [recSecsLeft,  setRecSecsLeft]  = useState(recordingDuration)
   const prepIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const recIntervalRef  = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Store the topic ref so it's always available in callbacks
   const topicRef = useRef<Topic | null>(null)
+  const recordingDurationRef = useRef(recordingDuration)
+
+  // Load user's preferred recording duration from profile-status endpoint
+  useEffect(() => {
+    const loadDuration = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
+        if (!token) return
+        const res = await fetch(`${API_URL}/dashboard/profile-status`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (res.ok) {
+          const data = await res.json()
+          const dur = data.recording_duration_secs
+          if (dur && typeof dur === 'number' && dur >= 30 && dur <= 300) {
+            setRecordingDuration(dur)
+            setRecSecsLeft(dur)
+            recordingDurationRef.current = dur
+          }
+        }
+      } catch {
+        // silently fall back to default
+      }
+    }
+    loadDuration()
+  }, [])
 
   const clearIntervals = () => {
     if (prepIntervalRef.current) clearInterval(prepIntervalRef.current)
@@ -39,8 +69,6 @@ export function useSessionFlow(): UseSessionFlowReturn {
   }
 
   const startPrep = useCallback((t: Topic) => {
-    // Store topic in BOTH state and ref
-    // This guarantees the same topic persists through all phases
     setTopic(t)
     topicRef.current = t
     setPrepSecsLeft(PREP_DURATION_SECS)
@@ -65,7 +93,8 @@ export function useSessionFlow(): UseSessionFlowReturn {
   }, [])
 
   const startRecording = useCallback(() => {
-    setRecSecsLeft(RECORDING_DURATION_SECS)
+    const dur = recordingDurationRef.current
+    setRecSecsLeft(dur)
     recIntervalRef.current = setInterval(() => {
       setRecSecsLeft(prev => {
         if (prev <= 1) {
@@ -82,7 +111,6 @@ export function useSessionFlow(): UseSessionFlowReturn {
     setState('uploading')
     setError(null)
 
-    // Use topicRef to guarantee we use the ORIGINAL prep topic
     const currentTopic = topicRef.current
 
     try {
@@ -99,7 +127,7 @@ export function useSessionFlow(): UseSessionFlowReturn {
         headers: {
           'Authorization': token ? `Bearer ${token}` : '',
         },
-        body:   formData,
+        body: formData,
       })
 
       if (!res.ok) {
@@ -127,7 +155,7 @@ export function useSessionFlow(): UseSessionFlowReturn {
     setSessionId(null)
     setError(null)
     setPrepSecsLeft(PREP_DURATION_SECS)
-    setRecSecsLeft(RECORDING_DURATION_SECS)
+    setRecSecsLeft(recordingDurationRef.current)
   }, [])
 
   return {
@@ -135,6 +163,7 @@ export function useSessionFlow(): UseSessionFlowReturn {
     startPrep, startRecording, finishRecording, skipPrep, reset,
     prepSecsLeft, recSecsLeft,
     prepProgress: prepSecsLeft / PREP_DURATION_SECS,
-    recProgress:  recSecsLeft  / RECORDING_DURATION_SECS,
+    recProgress:  recSecsLeft  / recordingDurationRef.current,
+    recordingDuration,
   }
 }

@@ -12,6 +12,7 @@ import LoginPage    from './pages/Login.page'
 import DashboardPage from './pages/Dashboard.page'
 import ProfilePage  from './pages/Profile.page'
 import SettingsPage from './pages/Settings.page'
+import OnboardingPage from './pages/Onboarding.page'
 
 /** Redirects unauthenticated users to /login */
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -31,7 +32,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       {/* App Layout Wraps All Routes */}
       <AppLayout>
       <Routes>
@@ -50,6 +51,16 @@ export default function App() {
 
         {/* ── Auth ── */}
         <Route path="/login" element={<LoginPage />} />
+
+        {/* ── Onboarding ── */}
+        <Route
+          path="/onboarding"
+          element={
+            <ProtectedRoute>
+              <OnboardingPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* ── Protected core routes ── */}
         <Route
