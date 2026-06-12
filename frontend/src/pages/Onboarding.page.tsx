@@ -58,6 +58,7 @@ export default function OnboardingPage() {
   const [level, setLevel]           = useState('')
   const [displayName, setDisplayName] = useState('')
   const [saving, setSaving]         = useState(false)
+  const [saveError, setSaveError]   = useState('')
 
   const canProceed =
     step === 0 ||
@@ -68,13 +69,14 @@ export default function OnboardingPage() {
   /* ── Save & navigate ── */
   const handleFinish = async () => {
     setSaving(true)
+    setSaveError('')
     try {
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
 
       const selectedLevel = LEVELS.find(l => l.id === level)
 
-      await fetch(`${API_URL}/dashboard/onboarding`, {
+      const res = await fetch(`${API_URL}/dashboard/onboarding`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -82,16 +84,21 @@ export default function OnboardingPage() {
         },
         body: JSON.stringify({
           speaking_goal: goal,
-          display_name: displayName || null,
+          display_name: displayName.trim() || null,
           difficulty_tier: level,
           recording_duration_secs: selectedLevel?.duration || 60,
         }),
       })
 
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.detail ?? `Server error ${res.status}`)
+      }
+
       navigate(ROUTES.SESSION, { replace: true })
     } catch (err) {
-      console.error('Onboarding save failed:', err)
-      navigate(ROUTES.SESSION, { replace: true })
+      const msg = err instanceof Error ? err.message : 'Could not save your preferences. Please try again.'
+      setSaveError(msg)
     } finally {
       setSaving(false)
     }
@@ -297,14 +304,19 @@ export default function OnboardingPage() {
               Continue <ChevronRight size={18} />
             </button>
           ) : (
-            <button
-              onClick={handleFinish}
-              disabled={saving}
-              className="flex items-center gap-2 px-10 py-4 rounded-[16px] font-bold text-[16px] bg-[var(--accent)] text-[var(--bg-base)] hover:scale-[1.02] active:scale-[0.97] shadow-[0_0_30px_var(--accent-glow)] transition-all"
-            >
-              {saving ? 'Setting up…' : 'Start First Session'}
-              <Mic size={20} />
-            </button>
+            <div className="flex flex-col items-end gap-2">
+              {saveError && (
+                <p className="text-red-400 text-[13px] font-medium">{saveError}</p>
+              )}
+              <button
+                onClick={handleFinish}
+                disabled={saving}
+                className="flex items-center gap-2 px-10 py-4 rounded-[16px] font-bold text-[16px] bg-[var(--accent)] text-[var(--bg-base)] hover:scale-[1.02] active:scale-[0.97] shadow-[0_0_30px_var(--accent-glow)] transition-all"
+              >
+                {saving ? 'Setting up…' : 'Start First Session'}
+                <Mic size={20} />
+              </button>
+            </div>
           )}
         </div>
       </div>

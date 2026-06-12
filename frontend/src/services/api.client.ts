@@ -9,12 +9,25 @@ const apiClient = axios.create({
 
 // Attach Supabase JWT to every request
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('supabase_token')
+  // Supabase stores tokens as JSON under 'sb-{ref}-auth-token'
+  // Fall back to our manual cache key if needed
+  let token: string | null = null
+  try {
+    const sbKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'))
+    if (sbKey) {
+      const parsed = JSON.parse(localStorage.getItem(sbKey) ?? '{}')
+      token = parsed?.access_token ?? null
+    }
+  } catch { /* ignore */ }
+  if (!token) {
+    token = localStorage.getItem('supabase_token')
+  }
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
   return config
 })
+
 
 // Normalize error shape so callers don't need to inspect axios internals
 apiClient.interceptors.response.use(

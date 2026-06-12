@@ -68,6 +68,11 @@ export function useSessionFlow(): UseSessionFlowReturn {
     if (recIntervalRef.current)  clearInterval(recIntervalRef.current)
   }
 
+  // Clean up intervals when component using this hook unmounts
+  useEffect(() => {
+    return () => clearIntervals()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   const startPrep = useCallback((t: Topic) => {
     setTopic(t)
     topicRef.current = t

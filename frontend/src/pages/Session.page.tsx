@@ -20,18 +20,21 @@ export default function SessionPage() {
       recorder.startRecording()
       flow.startRecording()
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flow.state])
 
   useEffect(() => {
     if (flow.recSecsLeft === 0 && recorder.isRecording) {
       recorder.stopRecording()
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flow.recSecsLeft])
 
   useEffect(() => {
     if (recorder.audioBlob && flow.state === 'recording') {
       flow.finishRecording(recorder.audioBlob)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recorder.audioBlob])
 
   useEffect(() => {
@@ -40,14 +43,20 @@ export default function SessionPage() {
     }
   }, [flow.state, flow.sessionId])
 
-  const circumference = 2 * Math.PI * 76;
-  const strokeDashoffset = circumference - (flow.prepSecsLeft / 30) * circumference;
+  // Back: go home (dashboard empty for new users)
+  const handleBack = () => navigate(ROUTES.HOME)
 
-  const isIdle = flow.state === 'idle';
-  const isPrep = flow.state === 'prep';
-  const isRecording = flow.state === 'recording';
-  const isUploading = flow.state === 'uploading' || flow.state === 'analyzing';
-  const isError = flow.state === 'error';
+  const circumference = 2 * Math.PI * 76
+  const strokeDashoffset = circumference - (flow.prepSecsLeft / 30) * circumference
+  // Recording ring: use recProgress so 90s/120s users see correct progress
+  const recCircumference = 2 * Math.PI * 22
+  const recDashoffset = recCircumference - flow.recProgress * recCircumference
+
+  const isIdle      = flow.state === 'idle'
+  const isPrep      = flow.state === 'prep'
+  const isRecording = flow.state === 'recording'
+  const isUploading = flow.state === 'uploading' || flow.state === 'analyzing'
+  const isError     = flow.state === 'error'
 
   return (
     <main className="min-h-screen bg-primary flex flex-col items-center justify-center p-6 text-primary relative">
@@ -55,8 +64,8 @@ export default function SessionPage() {
 
         {/* Back button */}
         {(isIdle || isPrep || isError) && (
-          <button 
-            onClick={() => navigate(ROUTES.DASHBOARD)} 
+          <button
+            onClick={handleBack}
             className="self-start flex items-center gap-2 text-tertiary hover:text-primary p-2 -ml-2 mb-6 transition-colors rounded-xl hover:bg-[var(--bg-hover)]"
           >
             <ArrowLeft size={20} strokeWidth={2} />
@@ -73,6 +82,13 @@ export default function SessionPage() {
             <div className="w-full max-w-[560px] mb-8">
               <TopicCard onReady={setSelectedTopic} />
             </div>
+
+            {/* Mic permission error */}
+            {recorder.error && (
+              <div className="w-full max-w-[560px] mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-[13px] font-medium">
+                ⚠️ Microphone error: {recorder.error}
+              </div>
+            )}
 
             <button
               disabled={!selectedTopic}
@@ -159,8 +175,8 @@ export default function SessionPage() {
                     stroke={flow.recSecsLeft < 10 ? 'var(--red)' : flow.recSecsLeft < 20 ? 'var(--amber)' : 'var(--accent)'} 
                     strokeWidth="3" fill="none"
                     strokeLinecap="round"
-                    strokeDasharray={2 * Math.PI * 22}
-                    strokeDashoffset={(2 * Math.PI * 22) - (flow.recSecsLeft / 60) * (2 * Math.PI * 22)}
+                    strokeDasharray={recCircumference}
+                    strokeDashoffset={recDashoffset}
                     className="transition-all duration-1000 ease-linear"
                   />
                 </svg>
