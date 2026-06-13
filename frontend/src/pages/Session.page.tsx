@@ -59,33 +59,86 @@ export default function SessionPage() {
   const isError     = flow.state === 'error'
 
   return (
-    <main className="min-h-screen bg-primary flex flex-col items-center justify-center p-6 text-primary relative">
-      <div className="w-full max-w-[680px] flex-1 flex flex-col pt-4">
+    <main className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden"
+      style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}
+    >
+      {/* Ambient recording glow — only when recording */}
+      {isRecording && (
+        <div
+          className="fixed inset-0 pointer-events-none z-0 transition-opacity duration-700"
+          style={{
+            background: 'radial-gradient(ellipse 60% 60% at 50% 50%, rgba(163,230,53,0.05) 0%, transparent 70%)',
+          }}
+        />
+      )}
+
+      {/* Subtle static noise texture overlay */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0 opacity-[0.018]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          backgroundSize: '128px 128px',
+        }}
+      />
+
+      <div className="w-full max-w-[680px] flex-1 flex flex-col pt-4 relative z-10">
 
         {/* Back button */}
         {(isIdle || isPrep || isError) && (
           <button
             onClick={handleBack}
-            className="self-start flex items-center gap-2 text-tertiary hover:text-primary p-2 -ml-2 mb-6 transition-colors rounded-xl hover:bg-[var(--bg-hover)]"
+            className="self-start flex items-center gap-2 mb-6 px-3 py-2 -ml-2 rounded-xl transition-all duration-200"
+            style={{
+              color: 'var(--text-tertiary)',
+              background: 'transparent',
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)'
+              ;(e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-card)'
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-tertiary)'
+              ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+            }}
           >
-            <ArrowLeft size={20} strokeWidth={2} />
-            <span className="text-[14px] font-medium">Cancel</span>
+            <ArrowLeft size={18} strokeWidth={2} />
+            <span className="text-[13px] font-semibold tracking-wide">Cancel</span>
           </button>
         )}
 
         {/* ── IDLE: Topic Selection ── */}
         {isIdle && (
           <div className="flex-1 flex flex-col items-center justify-center animate-fadeSlideUp w-full">
-            <h1 className="text-[36px] lg:text-[42px] font-[700] mb-3 tracking-[-0.02em] text-primary text-center">Let's get started</h1>
-            <p className="text-secondary text-[16px] font-medium mb-10 text-center">Pick your topic and start speaking</p>
+            <h1
+              className="text-[38px] lg:text-[44px] font-[800] mb-3 tracking-[-0.025em] text-center"
+              style={{
+                fontFamily: "'Bricolage Grotesque', sans-serif",
+                color: 'var(--text-primary)',
+              }}
+            >
+              Let's get started
+            </h1>
+            <p
+              className="text-[16px] font-medium mb-10 text-center"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              Pick your topic and start speaking
+            </p>
             
-            <div className="w-full max-w-[560px] mb-8">
+            <div className="w-full max-w-[680px] mb-8">
               <TopicCard onReady={setSelectedTopic} />
             </div>
 
             {/* Mic permission error */}
             {recorder.error && (
-              <div className="w-full max-w-[560px] mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-[13px] font-medium">
+              <div
+                className="w-full max-w-[680px] mb-4 px-4 py-3 rounded-xl text-[13px] font-medium"
+                style={{
+                  background: 'rgba(239,68,68,0.08)',
+                  border: '1px solid rgba(239,68,68,0.25)',
+                  color: 'var(--red)',
+                }}
+              >
                 ⚠️ Microphone error: {recorder.error}
               </div>
             )}
@@ -93,16 +146,38 @@ export default function SessionPage() {
             <button
               disabled={!selectedTopic}
               onClick={() => selectedTopic && flow.startPrep(selectedTopic)}
-              className={`w-full max-w-[560px] py-4 rounded-[18px] text-[16px] font-bold shadow-lg transition-all transform active:scale-[0.98] ${
-                selectedTopic 
-                  ? 'bg-[var(--text-primary)] text-[var(--bg-base)] hover:scale-[1.02] hover:shadow-xl' 
-                  : 'bg-[var(--bg-card)] text-[var(--text-tertiary)] cursor-not-allowed border border-[var(--border)]'
-              }`}
+              className="w-full max-w-[680px] px-10 py-4 text-[16px] font-bold rounded-full transition-all duration-200 active:scale-[0.98]"
+              style={selectedTopic ? {
+                background: 'var(--accent)',
+                color: '#09090F',
+                boxShadow: '0 0 32px var(--accent-glow)',
+                transform: 'translateY(0)',
+              } : {
+                background: 'var(--bg-card)',
+                color: 'var(--text-tertiary)',
+                cursor: 'not-allowed',
+                border: '1px solid var(--border)',
+              }}
+              onMouseEnter={e => {
+                if (selectedTopic) {
+                  (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)'
+                  ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 48px var(--accent-glow)'
+                }
+              }}
+              onMouseLeave={e => {
+                if (selectedTopic) {
+                  (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'
+                  ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 32px var(--accent-glow)'
+                }
+              }}
             >
               Start Session
             </button>
-            <p className="mt-4 text-[13px] text-tertiary font-medium flex items-center justify-center gap-1.5">
-               <Clock size={14} /> You'll have 30 seconds to prepare
+            <p
+              className="mt-4 text-[13px] font-medium flex items-center justify-center gap-1.5"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              <Clock size={13} /> You'll have 30 seconds to prepare
             </p>
           </div>
         )}
@@ -110,39 +185,91 @@ export default function SessionPage() {
         {/* ── PREP: Countdown ── */}
         {isPrep && (
           <div className="flex-1 flex flex-col items-center justify-center animate-fadeSlideUp">
-            {/* Topic card */}
-            <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[24px] p-8 w-full max-w-[560px] text-center shadow-sm mb-14">
-               <h2 className="text-[13px] tracking-[0.1em] text-[var(--accent)] uppercase mb-4 font-bold">Your Topic</h2>
-               <p className="text-[24px] leading-snug text-primary font-medium">{flow.topic?.text}</p>
+            {/* Topic reminder card */}
+            <div
+              className="w-full max-w-[680px] rounded-[24px] p-8 text-center mb-14"
+              style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <h2
+                className="text-[11px] tracking-[0.14em] uppercase mb-4 font-bold"
+                style={{ color: 'var(--accent)' }}
+              >
+                Your Topic
+              </h2>
+              <p
+                className="text-[24px] leading-snug font-semibold"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {flow.topic?.text}
+              </p>
             </div>
 
-            {/* Timer ring */}
+            {/* Timer ring with ambient glow */}
             <div className="flex flex-col items-center">
-              <div className="relative w-[200px] h-[200px] flex items-center justify-center mb-8">
-                <svg className="w-full h-full transform -rotate-90">
-                  <circle cx="100" cy="100" r="76" stroke="var(--border-md)" strokeWidth="4" fill="none" />
+              <div className="relative w-[220px] h-[220px] flex items-center justify-center mb-10">
+                {/* Radial ambient glow behind ring — pulsing lime */}
+                <div
+                  className="absolute inset-0 rounded-full"
+                  style={{
+                    background: 'radial-gradient(circle at center, var(--accent-glow) 0%, transparent 65%)',
+                    animation: 'pulse-orb 2s ease-in-out infinite',
+                    opacity: 0.55,
+                  }}
+                />
+                <svg className="w-full h-full transform -rotate-90 relative z-10">
+                  <circle cx="110" cy="110" r="76" stroke="var(--border-md)" strokeWidth="4" fill="none" />
                   <circle 
-                    cx="100" cy="100" r="76" 
+                    cx="110" cy="110" r="76" 
                     stroke="var(--accent)" strokeWidth="6" fill="none"
                     strokeLinecap="round"
                     strokeDasharray={circumference}
                     strokeDashoffset={strokeDashoffset}
                     className="transition-all duration-1000 ease-linear"
+                    style={{ filter: 'drop-shadow(0 0 8px var(--accent))' }}
                   />
                 </svg>
-                <div className="absolute flex flex-col items-center justify-center">
-                  <span className="text-[64px] font-[700] tracking-[-0.04em] leading-none font-mono text-primary">
+                <div className="absolute flex flex-col items-center justify-center z-20">
+                  <span
+                    className="text-[72px] font-[800] tracking-[-0.05em] leading-none font-mono"
+                    style={{ color: 'var(--text-primary)', fontFamily: "'Bricolage Grotesque', monospace" }}
+                  >
                     {flow.prepSecsLeft}
                   </span>
-                  <span className="text-[12px] text-tertiary font-bold uppercase tracking-wider mt-1">SEC</span>
+                  <span
+                    className="text-[11px] font-bold uppercase tracking-widest mt-1"
+                    style={{ color: 'var(--text-tertiary)' }}
+                  >
+                    SEC
+                  </span>
                 </div>
               </div>
-              <p className="text-secondary font-medium text-[18px] mb-8">Gather your thoughts</p>
+              <p
+                className="font-semibold text-[18px] mb-10 tracking-[-0.01em]"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                Gather your thoughts
+              </p>
             </div>
             
             <button 
               onClick={() => flow.skipPrep()}
-              className="px-8 py-3 rounded-full border border-[var(--border)] bg-[var(--bg-card)] text-[14px] text-secondary font-medium hover:text-primary hover:bg-[var(--bg-hover)] transition-all"
+              className="px-8 py-3 rounded-full text-[14px] font-semibold transition-all duration-200"
+              style={{
+                border: '1px solid var(--border)',
+                background: 'var(--bg-card)',
+                color: 'var(--text-secondary)',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)'
+                ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-md)'
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+                ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)'
+              }}
             >
               Skip countdown
             </button>
@@ -151,21 +278,47 @@ export default function SessionPage() {
 
         {/* ── RECORDING ── */}
         {isRecording && (
-          <div className="flex-1 flex flex-col items-center justify-between pb-10 pt-4 animate-fadeSlideUp">
+          <div className="flex-1 flex flex-col items-center justify-between pb-10 pt-4 animate-fadeSlideUp relative z-10">
             
             {/* Topic reminder */}
-            <div className="w-full max-w-[560px] text-center bg-[var(--bg-card)] border border-[var(--border)] rounded-[20px] p-5 shadow-sm opacity-60 hover:opacity-100 transition-opacity">
-               <h2 className="text-[11px] tracking-[0.1em] text-[var(--accent)] uppercase mb-2 font-bold">Topic</h2>
-               <p className="text-[16px] font-medium px-4 text-primary">{flow.topic?.text}</p>
+            <div
+              className="w-full max-w-[520px] text-center rounded-[20px] p-5 transition-opacity duration-300 opacity-60 hover:opacity-100"
+              style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <h2
+                className="text-[10px] tracking-[0.14em] uppercase mb-2 font-bold"
+                style={{ color: 'var(--accent)' }}
+              >
+                Topic
+              </h2>
+              <p
+                className="text-[16px] font-medium px-4"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {flow.topic?.text}
+              </p>
             </div>
 
-            {/* Waveform */}
+            {/* Waveform — taller bars */}
             <div className="w-full max-w-[600px] flex-1 flex flex-col items-center justify-center">
+              <div className="w-full" style={{ height: '80px' }}>
                 <AudioWaveform analyserNode={recorder.analyserNode} isRecording={recorder.isRecording} />
+              </div>
             </div>
 
             {/* Recording controls */}
-            <div className="w-full max-w-[480px] flex items-center justify-between px-8 bg-[var(--bg-card)] border border-[var(--border)] rounded-full py-4 shadow-lg">
+            <div
+              className="w-full max-w-[520px] flex items-center justify-between px-8 rounded-full py-4"
+              style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border)',
+                boxShadow: '0 0 0 1px rgba(163,230,53,0.12), 0 8px 32px rgba(0,0,0,0.5)',
+                animation: 'recording-pulse-border 2.5s ease-in-out infinite',
+              }}
+            >
               {/* Timer ring */}
               <div className="relative w-[50px] h-[50px] flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90">
@@ -180,7 +333,10 @@ export default function SessionPage() {
                     className="transition-all duration-1000 ease-linear"
                   />
                 </svg>
-                <span className="absolute text-[14px] font-[700] font-mono tracking-tighter text-primary">
+                <span
+                  className="absolute text-[14px] font-[700] font-mono tracking-tighter"
+                  style={{ color: 'var(--text-primary)' }}
+                >
                   {flow.recSecsLeft}
                 </span>
               </div>
@@ -188,7 +344,13 @@ export default function SessionPage() {
               <RecordButton isRecording={true} onClick={() => recorder.stopRecording()} />
               
               <div className="w-[50px] flex justify-end">
-                <div className="w-2.5 h-2.5 rounded-full bg-[var(--red)] animate-pulse shadow-[0_0_8px_var(--red)]"></div>
+                <div
+                  className="w-2.5 h-2.5 rounded-full animate-pulse"
+                  style={{
+                    background: 'var(--red)',
+                    boxShadow: '0 0 10px var(--red)',
+                  }}
+                />
               </div>
             </div>
 
@@ -197,34 +359,125 @@ export default function SessionPage() {
 
         {/* ── UPLOADING / ANALYZING ── */}
         {isUploading && (
-          <div className="flex-1 flex flex-col items-center justify-center animate-fadeSlideUp text-center">
-            <div className="w-24 h-24 mb-8 relative">
-               <div className="absolute inset-0 border-4 border-[var(--border-md)] rounded-full"></div>
-               <div className="absolute inset-0 border-4 border-[var(--accent)] rounded-full border-t-transparent animate-spin"></div>
+          <div className="flex-1 flex flex-col items-center justify-center animate-fadeSlideUp text-center gap-6">
+            <div className="relative w-24 h-24">
+              <div
+                className="absolute inset-0 rounded-full"
+                style={{
+                  border: '4px solid var(--border-md)',
+                }}
+              />
+              <div
+                className="absolute inset-0 rounded-full border-t-transparent animate-spin"
+                style={{
+                  border: '4px solid var(--accent)',
+                  borderTopColor: 'transparent',
+                }}
+              />
+              <div
+                className="absolute inset-0 rounded-full"
+                style={{
+                  background: 'radial-gradient(circle at center, var(--accent-glow) 0%, transparent 70%)',
+                  opacity: 0.4,
+                  animation: 'pulse-orb 1.5s ease-in-out infinite',
+                }}
+              />
             </div>
-            <h2 className="text-[26px] font-bold text-primary mb-3">Analyzing your speech</h2>
-            <p className="text-secondary font-medium text-[16px]">This usually takes about 10-15 seconds...</p>
+            <div>
+              <h2
+                className="text-[26px] font-bold mb-3 tracking-[-0.02em]"
+                style={{
+                  fontFamily: "'Bricolage Grotesque', sans-serif",
+                  color: 'var(--text-primary)',
+                }}
+              >
+                Analyzing your speech
+              </h2>
+              <p
+                className="text-[15px] font-medium"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                This usually takes about 10–15 seconds…
+              </p>
+              <p
+                className="text-[13px] mt-2"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                Your AI coach is reviewing every word
+              </p>
+            </div>
           </div>
         )}
 
         {/* ── ERROR ── */}
         {isError && (
           <div className="flex-1 flex flex-col items-center justify-center animate-fadeSlideUp text-center">
-            <div className="w-20 h-20 bg-red-500/15 text-[var(--red)] rounded-[22px] flex items-center justify-center text-4xl mb-6">
+            <div
+              className="w-20 h-20 rounded-[22px] flex items-center justify-center text-4xl mb-6"
+              style={{
+                background: 'rgba(239,68,68,0.1)',
+                color: 'var(--red)',
+                border: '1px solid rgba(239,68,68,0.2)',
+              }}
+            >
               ⚠️
             </div>
-            <h2 className="text-[26px] font-bold text-primary mb-4">Something went wrong</h2>
-            <p className="text-secondary mb-8 max-w-md text-[16px]">{flow.error || 'Failed to upload or analyze the audio.'}</p>
-            <button
-              onClick={() => navigate(ROUTES.DASHBOARD)}
-              className="bg-[var(--bg-card)] border border-[var(--border)] text-primary px-8 py-3.5 rounded-[16px] font-bold hover:bg-[var(--bg-hover)] transition-colors"
+            <h2
+              className="text-[28px] font-bold mb-4 tracking-[-0.02em]"
+              style={{
+                fontFamily: "'Bricolage Grotesque', sans-serif",
+                color: 'var(--text-primary)',
+              }}
             >
-              Go back
-            </button>
+              Something went wrong
+            </h2>
+            <p
+              className="mb-8 max-w-sm text-[15px] leading-relaxed"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              {flow.error || 'Failed to upload or analyze the audio.'}
+            </p>
+            <div className="flex gap-3 flex-wrap justify-center">
+              <button
+                onClick={() => navigate(ROUTES.DASHBOARD)}
+                className="px-8 py-3.5 rounded-[16px] font-bold text-[14px] transition-all duration-200"
+                style={{
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-primary)',
+                }}
+                onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-md)'}
+                onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)'}
+              >
+                Go to Dashboard
+              </button>
+              <button
+                onClick={handleBack}
+                className="px-8 py-3.5 rounded-[16px] font-bold text-[14px] transition-all duration-200"
+                style={{
+                  background: 'var(--accent)',
+                  color: '#09090F',
+                }}
+              >
+                Try Again
+              </button>
+            </div>
           </div>
         )}
 
       </div>
+
+      {/* Global keyframe for recording border pulse */}
+      <style>{`
+        @keyframes recording-pulse-border {
+          0%, 100% { box-shadow: 0 0 0 1px rgba(163,230,53,0.12), 0 8px 32px rgba(0,0,0,0.5); }
+          50%       { box-shadow: 0 0 0 2px rgba(163,230,53,0.28), 0 8px 40px rgba(0,0,0,0.6); }
+        }
+        @keyframes pulse-orb {
+          0%, 100% { opacity: 0.35; transform: scale(1); }
+          50%       { opacity: 0.65; transform: scale(1.06); }
+        }
+      `}</style>
     </main>
   )
 }

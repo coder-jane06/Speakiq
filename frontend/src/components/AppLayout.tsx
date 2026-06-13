@@ -1,129 +1,229 @@
 import type { ReactNode } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { ROUTES } from '../constants'
-import { Home, LayoutDashboard, Mic, User, Settings, Sparkles } from 'lucide-react'
+import {
+  Home, LayoutDashboard, Mic, User, Settings,
+  Sparkles, LogOut, Sun, Moon,
+} from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
 
-/**
- * App layout: sticky top nav (desktop) + bottom tab bar (mobile).
- */
-export function AppLayout({ children }: { children: ReactNode }) {
-  const location = useLocation()
-  const { theme } = useTheme()
-  const { user } = useAuth()
+/* ── nav structure ── */
+const PRIMARY_NAV = [
+  { to: '/',          icon: Home,            label: 'Home'      },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/profile',   icon: User,            label: 'Profile'   },
+  { to: '/settings',  icon: Settings,        label: 'Settings'  },
+]
 
-  // Hide nav entirely during an active recording session
-  const hideNav       = location.pathname.startsWith('/session') && !location.pathname.includes('/results')
-  const hideCompletely = location.pathname === '/login' || location.pathname === '/onboarding'
+/* ══════════════════════════════════════════════════════════════ */
+export function AppLayout({ children }: { children: ReactNode }) {
+  const location  = useLocation()
+  const { theme, toggleTheme } = useTheme()
+  const { user, signOut }   = useAuth()
+  const navigate  = useNavigate()
+
+  /* Hide nav entirely on login / onboarding */
+  const hideCompletely =
+    location.pathname === '/login' || location.pathname === '/onboarding'
+
+  /* Hide sidebar on session pages (keep immersive feel) but keep mobile tab */
+  const hideSidebar =
+    location.pathname.startsWith('/session') &&
+    !location.pathname.includes('/results')
 
   if (hideCompletely) return <>{children}</>
 
-  return (
-    <div className={`flex flex-col min-h-screen bg-primary transition-colors duration-300 ${theme}`}>
+  const isDark = theme !== 'light'
 
-      {/* ── Desktop Top Nav ── */}
-      {!hideNav && (
-        <header className="sticky top-0 z-50 w-full border-b border-[var(--border)] bg-[var(--bg-base)]/80 backdrop-blur-xl animate-fadeSlideUp h-[72px] flex items-center justify-between px-6 md:px-10">
+  const toggleMode = () => toggleTheme()
+
+  const handleSignOut = async () => {
+    await signOut()
+    navigate(ROUTES.HOME)
+  }
+
+  return (
+    <div className="app-shell">
+
+      {/* ── LEFT SIDEBAR (desktop) ──────────────────────────── */}
+      {!hideSidebar && (
+        <aside className="sidebar">
 
           {/* Logo */}
-          <NavLink to="/" className="flex items-center gap-3 font-[700] text-xl text-primary tracking-tight hover:opacity-80 transition-opacity">
-            <div className="w-10 h-10 rounded-xl bg-[var(--accent)] text-white dark:text-black flex items-center justify-center shadow-[0_0_20px_var(--accent-glow)]">
-              <Sparkles size={20} strokeWidth={2.5} />
-            </div>
-            SpeakIQ
-          </NavLink>
-
-          {/* Center Nav Links — desktop only */}
-          {user && (
-            <nav className="hidden md:flex items-center gap-2">
-              <NavItem to="/" icon={<Home size={18} strokeWidth={2.5} />} label="Home" />
-              <NavItem to="/dashboard" icon={<LayoutDashboard size={18} strokeWidth={2.5} />} label="Dashboard" />
-
-              <div className="w-[1px] h-6 bg-[var(--border-md)] mx-2" />
-
-              <NavItem to="/profile" icon={<User size={18} strokeWidth={2.5} />} label="Profile" />
-              <NavItem to="/settings" icon={<Settings size={18} strokeWidth={2.5} />} label="Settings" />
-            </nav>
-          )}
-
-          {/* CTA Button */}
-          <NavLink
-            to={user ? ROUTES.SESSION : ROUTES.LOGIN}
-            className="flex items-center gap-2 bg-[var(--text-primary)] text-[var(--bg-base)] px-5 py-2.5 rounded-full font-bold text-[14px] hover:scale-105 active:scale-95 transition-transform shadow-lg"
+          <div
+            className="sidebar-logo flex items-center gap-3 px-5 py-5 border-b"
+            style={{ borderColor: 'var(--border)' }}
           >
-            <Mic size={18} strokeWidth={2.5} />
-            <span className="hidden sm:inline">{user ? 'Start Session' : 'Sign In'}</span>
-          </NavLink>
+            <div
+              className="w-9 h-9 rounded-[10px] flex items-center justify-center flex-shrink-0 shadow-[0_0_16px_var(--accent-glow)]"
+              style={{ background: 'var(--accent)', color: 'var(--bg-base)' }}
+            >
+              <Sparkles size={18} strokeWidth={2.5} />
+            </div>
+            <span
+              className="sidebar-logo-text font-heading font-bold text-[17px] tracking-tight transition-all"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              SpeakIQ
+            </span>
+          </div>
 
-        </header>
+          {/* Primary nav */}
+          <nav className="flex flex-col gap-1 px-3 pt-4 flex-1">
+            {PRIMARY_NAV.map(({ to, icon: Icon, label }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={to === '/'}
+                className={({ isActive }) =>
+                  `sidebar-nav-item ${isActive ? 'active' : ''}`
+                }
+              >
+                <span className="sidebar-icon">
+                  <Icon size={18} strokeWidth={2} />
+                </span>
+                <span className="sidebar-label">{label}</span>
+              </NavLink>
+            ))}
+
+            {/* Practice CTA */}
+            <NavLink
+              to={ROUTES.SESSION}
+              className="flex items-center gap-3 mt-3 px-4 py-3 rounded-[12px] font-semibold text-[14px] transition-all"
+              style={{
+                background:  'var(--accent)',
+                color:       'var(--bg-base)',
+                boxShadow:   '0 0 20px var(--accent-glow)',
+              }}
+            >
+              <span className="sidebar-icon">
+                <Mic size={18} strokeWidth={2.5} />
+              </span>
+              <span className="sidebar-label">Practice</span>
+            </NavLink>
+          </nav>
+
+          {/* Bottom section */}
+          <div
+            className="sidebar-bottom flex flex-col gap-3 px-3 pb-5 border-t pt-4"
+            style={{ borderColor: 'var(--border)' }}
+          >
+            {/* Theme toggle */}
+            <button
+              onClick={toggleMode}
+              className="theme-toggle w-full"
+              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              <span className="sidebar-label text-[13px] font-medium" style={{ color: 'var(--text-secondary)' }}>
+                {isDark ? 'Dark mode' : 'Light mode'}
+              </span>
+              <span style={{ color: 'var(--accent)', flexShrink: 0 }}>
+                {isDark ? <Sun size={15} strokeWidth={2} /> : <Moon size={15} strokeWidth={2} />}
+              </span>
+            </button>
+
+            {/* User row */}
+            {user && (
+              <div
+                className="flex items-center gap-3 px-2 py-2 rounded-[12px] cursor-pointer hover:bg-[var(--bg-hover)] transition-colors group"
+                onClick={handleSignOut}
+                title="Sign out"
+              >
+                {/* Avatar */}
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-bold flex-shrink-0"
+                  style={{
+                    background: 'var(--accent-dim)',
+                    color:      'var(--accent)',
+                    border:     '1px solid var(--border-accent)',
+                  }}
+                >
+                  {user.email?.charAt(0).toUpperCase() ?? '?'}
+                </div>
+                <div className="sidebar-user-info flex-1 min-w-0 transition-all">
+                  <p
+                    className="text-[12px] font-medium truncate"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    {user.email}
+                  </p>
+                  <p
+                    className="text-[11px] flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ color: 'var(--red)' }}
+                  >
+                    <LogOut size={10} /> Sign out
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </aside>
       )}
 
-      {/* ── Main Content ── */}
-      <div className="flex-1 w-full mx-auto relative pb-20 md:pb-0">
+      {/* ── MAIN CONTENT ─────────────────────────────────────── */}
+      <div className={hideSidebar ? 'flex-1' : 'page-content'}>
         {children}
       </div>
 
-      {/* ── Mobile Bottom Tab Bar ── */}
-      {!hideNav && user && (
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[var(--bg-card)]/95 backdrop-blur-xl border-t border-[var(--border)] px-2 pb-[env(safe-area-inset-bottom,0px)]">
-          <div className="flex items-center justify-around h-16">
+      {/* ── MOBILE BOTTOM TAB BAR ────────────────────────────── */}
+      {user && (
+        <nav
+          className="md:hidden fixed bottom-0 left-0 right-0 z-50 backdrop-blur-xl border-t flex items-center justify-around px-2"
+          style={{
+            background:   'var(--bg-sidebar)',
+            borderColor:  'var(--border)',
+            height:       '60px',
+            paddingBottom:'env(safe-area-inset-bottom, 0px)',
+          }}
+        >
+          <MobileTab to="/"          icon={<Home size={20} strokeWidth={2} />}            label="Home"     />
+          <MobileTab to="/dashboard" icon={<LayoutDashboard size={20} strokeWidth={2} />} label="Progress" />
 
-            <MobileTabItem to="/"          icon={<Home         size={20} strokeWidth={2} />} label="Home"     />
-            <MobileTabItem to="/dashboard" icon={<LayoutDashboard size={20} strokeWidth={2} />} label="Progress" />
+          {/* FAB */}
+          <NavLink
+            to={ROUTES.SESSION}
+            className="flex flex-col items-center justify-center -mt-4"
+          >
+            <div
+              className="w-13 h-13 rounded-2xl flex items-center justify-center active:scale-90 transition-transform"
+              style={{
+                width:     '52px',
+                height:    '52px',
+                background: 'var(--accent)',
+                color:      'var(--bg-base)',
+                boxShadow: '0 0 20px var(--accent-glow)',
+              }}
+            >
+              <Mic size={22} strokeWidth={2.5} />
+            </div>
+          </NavLink>
 
-            {/* Centre record FAB */}
-            <NavLink to={ROUTES.SESSION} className="flex flex-col items-center justify-center -mt-4">
-              <div className="w-14 h-14 rounded-2xl bg-[var(--accent)] text-[var(--bg-base)] flex items-center justify-center shadow-[0_0_24px_var(--accent-glow)] active:scale-90 transition-transform">
-                <Mic size={24} strokeWidth={2.5} />
-              </div>
-            </NavLink>
-
-            <MobileTabItem to="/profile"  icon={<User    size={20} strokeWidth={2} />} label="Profile"  />
-            <MobileTabItem to="/settings" icon={<Settings size={20} strokeWidth={2} />} label="Settings" />
-
-          </div>
+          <MobileTab to="/profile"  icon={<User     size={20} strokeWidth={2} />} label="Profile"  />
+          <MobileTab to="/settings" icon={<Settings size={20} strokeWidth={2} />} label="More"     />
         </nav>
       )}
-
     </div>
   )
 }
 
-/* ── Desktop NavItem ── */
-function NavItem({ to, icon, label }: { to: string; icon: ReactNode; label: string }) {
+/* ── Helpers ──────────────────────────────────────────────────── */
+function MobileTab({ to, icon, label }: { to: string; icon: ReactNode; label: string }) {
   return (
     <NavLink
       to={to}
       end={to === '/'}
       className={({ isActive }) =>
-        `flex items-center gap-2 px-4 py-2.5 rounded-[14px] transition-all duration-200 font-medium text-[14px] border ${
-          isActive
-            ? 'text-[var(--accent)] bg-[var(--accent-dim)] border-[var(--border-accent)]'
-            : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] border-transparent'
+        `flex flex-col items-center justify-center gap-0.5 min-w-[52px] py-1 transition-colors ${
+          isActive ? '' : ''
         }`
       }
+      style={({ isActive }) => ({
+        color: isActive ? 'var(--accent)' : 'var(--text-tertiary)',
+      })}
     >
       {icon}
-      <span>{label}</span>
-    </NavLink>
-  )
-}
-
-/* ── Mobile TabItem ── */
-function MobileTabItem({ to, icon, label }: { to: string; icon: ReactNode; label: string }) {
-  return (
-    <NavLink
-      to={to}
-      end={to === '/'}
-      className={({ isActive }) =>
-        `flex flex-col items-center justify-center gap-0.5 min-w-[56px] py-1.5 transition-colors ${
-          isActive ? 'text-[var(--accent)]' : 'text-[var(--text-tertiary)]'
-        }`
-      }
-    >
-      {icon}
-      <span className="text-[10px] font-semibold">{label}</span>
+      <span style={{ fontSize: '10px', fontWeight: 600 }}>{label}</span>
     </NavLink>
   )
 }
