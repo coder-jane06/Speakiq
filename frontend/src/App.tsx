@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ROUTES } from './constants'
 import { AppLayout } from './components/AppLayout'
 import { useAuth } from './context/AuthContext'
@@ -32,7 +32,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <BrowserRouter basename={import.meta.env.BASE_URL}>
+    <HashRouter>
       {/* App Layout Wraps All Routes */}
       <AppLayout>
       <Routes>
@@ -110,6 +110,6 @@ export default function App() {
         <Route path="*"    element={<Navigate to="/404" replace />} />
       </Routes>
       </AppLayout>
-    </BrowserRouter>
+    </HashRouter>
   )
 }
