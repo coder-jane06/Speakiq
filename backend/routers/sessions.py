@@ -38,7 +38,7 @@ def get_user_id(authorization: Optional[str]) -> Optional[str]:
 
 
 @router.get("/topic")
-async def get_topic(authorization: Optional[str] = Header(None)):
+async def get_topic(authorization: Optional[str] = Header(None), exclude: Optional[str] = None):
     from config import get_db
 
     db = get_db()
@@ -96,6 +96,12 @@ async def get_topic(authorization: Optional[str] = Header(None)):
 
         if result.data:
             candidates = [t for t in result.data if t.get("text")]
+            
+            if exclude:
+                filtered_candidates = [t for t in candidates if str(t.get("id")) != exclude]
+                if filtered_candidates:
+                    candidates = filtered_candidates
+            
             # Prefer unseen topics; fall back to full list if all seen
             unseen = [t for t in candidates if t["text"] not in recent_topic_texts]
             if unseen:

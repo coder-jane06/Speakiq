@@ -13,13 +13,19 @@ export function TopicCard({ onReady }: TopicCardProps) {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
-  const fetchTopic = async () => {
+  const fetchTopic = async (currentTopicId?: string) => {
     setLoading(true)
     try {
       // Pass auth token so the backend can personalise the topic by speaking goal
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
-      const res = await fetch(`${API_URL}/sessions/topic`, {
+      
+      let urlStr = `${API_URL}/sessions/topic`
+      if (currentTopicId) {
+        urlStr += `?exclude=${encodeURIComponent(currentTopicId)}`
+      }
+      
+      const res = await fetch(urlStr, {
         headers: { Authorization: token ? `Bearer ${token}` : '' },
       })
       if (res.ok) {
@@ -73,7 +79,7 @@ export function TopicCard({ onReady }: TopicCardProps) {
         )}
 
         <button 
-          onClick={() => { setRefreshing(true); fetchTopic(); }}
+          onClick={() => { setRefreshing(true); fetchTopic(topic?.id); }}
           disabled={refreshing}
           className="flex items-center gap-2 mx-auto px-5 py-2.5 rounded-full bg-[var(--bg-hover)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-primary hover:border-[var(--border-md)] transition-colors text-[14px] font-medium active:scale-95"
         >
