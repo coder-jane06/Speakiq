@@ -1,6 +1,7 @@
 import json
 import logging
 from datetime import datetime, timedelta
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +71,6 @@ async def update_user_profile(
         # Extract top fillers
         filler_detail = getattr(nlp_result, 'filler_detail', {})
         if isinstance(filler_detail, str):
-            import json
             filler_detail = json.loads(filler_detail)
             
         # Sort by frequency and get top 3
