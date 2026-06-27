@@ -17,14 +17,7 @@ interface ProfileStats {
   best_session?: any;
 }
 
-const SAMPLE_SESSIONS = [
-  { id: 's1', session_number: 9, topic: 'Describe your ideal day from start to finish.', date: '2026-06-27', scores: { filler: 65, delivery: 60, structure: 60, vocab: 60, confidence: 60 } },
-  { id: 's2', session_number: 8, topic: 'Summarise the most interesting thing you learned this week in a 60-second brief.', date: '2026-06-27', scores: { filler: 85, delivery: 80, structure: 80, vocab: 80, confidence: 80 } },
-  { id: 's3', session_number: 7, topic: 'Deliver the opening 90 seconds of a TED talk on any topic you are passionate about.', date: '2026-06-27', scores: { filler: 70, delivery: 70, structure: 70, vocab: 70, confidence: 70 } },
-  { id: 's4', session_number: 6, topic: 'What is your favourite season and why?', date: '2026-06-23', scores: { filler: 75, delivery: 70, structure: 72, vocab: 72, confidence: 72 } },
-  { id: 's5', session_number: 5, topic: 'Talk about a skill you wish you had', date: '2026-06-22', scores: { filler: 70, delivery: 70, structure: 75, vocab: 70, confidence: 70 } },
-  { id: 's6', session_number: 4, topic: 'Describe a challenge you faced and how you overcame it, using the STAR method.', date: '2026-06-20', scores: { filler: 98, delivery: 95, structure: 95, vocab: 96, confidence: 96 } },
-];
+
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -72,7 +65,7 @@ export default function ProfilePage() {
 
   const rawSessions = (stats?.sessions && stats.sessions.length > 0) 
     ? [...stats.sessions].reverse() 
-    : SAMPLE_SESSIONS;
+    : [];
 
   const latestSession = rawSessions[0];
   
@@ -303,7 +296,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[24px] divide-y divide-[var(--border)] overflow-hidden shadow-xs">
-            {displayedSessions.map((s: any) => {
+            {displayedSessions.length > 0 ? displayedSessions.map((s: any) => {
               const avg = s.scores
                 ? Math.round((s.scores.filler + s.scores.delivery + s.scores.structure + s.scores.vocab + s.scores.confidence) / 5)
                 : 75;
@@ -336,7 +329,12 @@ export default function ProfilePage() {
                   </div>
                 </div>
               );
-            })}
+            }) : (
+              <div className="p-8 text-center text-[var(--text-secondary)]">
+                <p className="text-[15px] font-bold">No sessions yet</p>
+                <p className="text-[13px] mt-1">Start a practice session to see your history here.</p>
+              </div>
+            )}
 
             {/* Toggle Button */}
             {rawSessions.length > 4 && (

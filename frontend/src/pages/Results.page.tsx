@@ -14,7 +14,7 @@ export default function ResultsPage() {
   const { sessionId } = useParams<{ sessionId: string }>()
   const navigate      = useNavigate()
 
-  const { loading, error, session, coaching } = useCoachingReport(sessionId || 'latest')
+  const { loading, error, session, metrics, coaching } = useCoachingReport(sessionId || 'latest')
   const { streakData } = useStreak()
   const [stats, setStats] = useState<any>(null)
   
@@ -453,6 +453,74 @@ export default function ResultsPage() {
                   </>
                 )
               })()}
+            </div>
+          </div>
+        </div>
+
+        {/* ── SECTION 3.5 — Quantitative Session Stats ── */}
+        <div className="w-full mb-8">
+          <h2 className="text-[20px] font-bold text-[var(--text-primary)] mb-4 px-1 flex items-center justify-between">
+            <span>Quantitative Analytics</span>
+            <span className="text-[12px] font-normal text-[var(--text-tertiary)]">Actual session recording data</span>
+          </h2>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              {
+                label: 'Speaking Time',
+                value: (metrics as any)?.words?.length ? `${Math.round((metrics as any).words[(metrics as any).words.length - 1].end)}s` : '0s',
+                desc: 'Total active recording time'
+              },
+              {
+                label: 'Words Spoken',
+                value: (metrics as any)?.words?.length || 0,
+                desc: 'Total transcribed words'
+              },
+              {
+                label: 'Pace (WPM)',
+                value: Math.round(metrics?.wpm || 0),
+                desc: 'Words per minute'
+              },
+              {
+                label: 'Silence',
+                value: `${Math.round(metrics?.silence_percentage || 0)}%`,
+                desc: 'Total silence duration'
+              },
+              {
+                label: 'Longest Pause',
+                value: `${(metrics?.longest_pause_sec || 0).toFixed(1)}s`,
+                desc: 'Maximum pause length'
+              },
+              {
+                label: 'Filler Words',
+                value: metrics?.filler_count || 0,
+                desc: 'Total filler words used'
+              }
+            ].map((stat, i) => (
+              <div key={i} className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs flex flex-col justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{stat.label}</span>
+                <div className="mt-1">
+                  <span className="text-[24px] font-extrabold text-[var(--text-primary)]">{stat.value}</span>
+                  <p className="text-[11px] font-medium text-[var(--text-secondary)] mt-0.5">{stat.desc}</p>
+                </div>
+              </div>
+            ))}
+            
+            {/* Filler Breakdown Card */}
+            <div className="col-span-2 p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] block mb-3">Filler Word Breakdown</span>
+              {metrics?.filler_detail && Object.keys(metrics.filler_detail).length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(metrics.filler_detail).map(([word, count]) => (
+                    <div key={word} className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-hover)] border border-[var(--border)] rounded-lg">
+                      <span className="text-[13px] font-semibold text-[var(--text-primary)] capitalize">{word}</span>
+                      <span className="text-[12px] font-bold text-[var(--accent)] px-1.5 py-0.5 bg-[var(--accent-dim)] rounded-md">{count as number}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[13px] font-medium text-emerald-500">Perfect! No filler words detected.</p>
+              )}
             </div>
           </div>
         </div>

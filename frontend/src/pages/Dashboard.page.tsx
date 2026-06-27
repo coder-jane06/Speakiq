@@ -278,22 +278,35 @@ export default function DashboardPage() {
             </div>
 
             <div className="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-[var(--border)]">
-              {[
-                { time: 'Yesterday', title: 'Completed Interview Practice', score: 82, badgeColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
-                { time: '2 days ago', title: 'Completed Presentation Drill', score: 76, badgeColor: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
-                { time: '3 days ago', title: 'Vocabulary Challenge', score: 88, badgeColor: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
-              ].map((act, idx) => (
-                <div key={idx} className="relative flex items-center justify-between p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] hover:bg-[var(--bg-card-hover)] transition-all">
-                  <div className="absolute -left-[31px] w-5 h-5 rounded-full bg-[var(--bg-card)] border-4 border-emerald-500 shadow-xs" />
+              {stats?.sessions && stats.sessions.length > 0 ? (
+                stats.sessions.slice(-3).reverse().map((act, idx) => {
+                  const score = Math.round((act.scores.filler + act.scores.delivery + act.scores.structure + act.scores.vocab + act.scores.confidence) / 5);
+                  let badgeColor = 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+                  if (score >= 90) badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                  else if (score < 70) badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+
+                  return (
+                    <div key={idx} onClick={() => navigate(`/session/${act.id}/results`)} className="relative flex items-center justify-between p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] hover:bg-[var(--bg-card-hover)] transition-all cursor-pointer">
+                      <div className="absolute -left-[31px] w-5 h-5 rounded-full bg-[var(--bg-card)] border-4 border-emerald-500 shadow-xs" />
+                      <div>
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{new Date(act.date).toLocaleDateString()}</span>
+                        <h5 className="text-[15px] font-bold text-[var(--text-primary)] mt-0.5 max-w-[200px] sm:max-w-[300px] truncate">{act.topic || 'Custom Practice'}</h5>
+                      </div>
+                      <span className={`px-3 py-1 rounded-xl border text-[13px] font-extrabold ${badgeColor}`}>
+                        Score {score}
+                      </span>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="relative flex items-center justify-between p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)]">
+                  <div className="absolute -left-[31px] w-5 h-5 rounded-full bg-[var(--bg-card)] border-4 border-[var(--border)] shadow-xs" />
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{act.time}</span>
-                    <h5 className="text-[15px] font-bold text-[var(--text-primary)] mt-0.5">{act.title}</h5>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Today</span>
+                    <h5 className="text-[15px] font-bold text-[var(--text-primary)] mt-0.5">No recent activity</h5>
                   </div>
-                  <span className={`px-3 py-1 rounded-xl border text-[13px] font-extrabold ${act.badgeColor}`}>
-                    Score {act.score}
-                  </span>
                 </div>
-              ))}
+              )}
             </div>
           </section>
 
@@ -472,13 +485,13 @@ export default function DashboardPage() {
           <div className="rounded-[32px] p-8 sm:p-10 bg-[var(--bg-card)] border border-[var(--border)] text-white shadow-xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div className="space-y-2 max-w-lg">
               <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-400 bg-emerald-500/20 px-3 py-1 rounded-full border border-emerald-500/30">
-                RESUME WHERE YOU LEFT OFF
+                {latestSession ? 'LATEST SESSION' : 'START YOUR JOURNEY'}
               </span>
-              <h3 className="text-[26px] sm:text-[30px] font-[800] tracking-tight text-[var(--text-primary)] mt-1" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>
-                TED Talk Practice
+              <h3 className="text-[26px] sm:text-[30px] font-[800] tracking-tight text-[var(--text-primary)] mt-1 max-w-[600px] truncate" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>
+                {latestSession ? (latestSession.topic || 'Custom Speaking Drill') : 'Interview Practice'}
               </h3>
               <p className="text-[14px] text-[var(--text-secondary)] font-medium">
-                2 minutes remaining
+                {latestSession ? `Completed on ${new Date(latestSession.date).toLocaleDateString()}` : 'Start your first 3-minute practice today.'}
               </p>
             </div>
 

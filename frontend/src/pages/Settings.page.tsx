@@ -12,7 +12,7 @@ import {
 
 export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'profile' | 'aicoach' | 'appearance' | 'notifications' | 'audio' | 'privacy' | 'personalization' | 'integrations' | 'help' | 'about'>('profile');
 
@@ -120,6 +120,30 @@ export default function SettingsPage() {
     } finally {
       setSavingProfile(false);
       setIsEditingName(false);
+    }
+  };
+
+  const handleDownloadData = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) return;
+      const res = await fetch(`${API_URL}/dashboard/stats`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const statsData = await res.json();
+        const blob = new Blob([JSON.stringify(statsData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'speakiq_data_export.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    } catch (e) {
+      console.error("Error downloading data", e);
     }
   };
 
@@ -587,18 +611,18 @@ export default function SettingsPage() {
                       <p className="text-[15px] font-bold text-[var(--text-primary)]">Download My Data</p>
                       <p className="text-[12px] text-[var(--text-tertiary)] font-medium">Export all audio transcripts and performance scores in JSON format</p>
                     </div>
-                    <button className="px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] font-bold text-[13px] hover:bg-[var(--bg-card-hover)] cursor-pointer flex items-center gap-1.5">
+                    <button onClick={handleDownloadData} className="px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] font-bold text-[13px] hover:bg-[var(--bg-card-hover)] cursor-pointer flex items-center gap-1.5">
                       <Download size={15} /> Download Data
                     </button>
                   </div>
 
                   <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-between">
                     <div>
-                      <p className="text-[15px] font-bold text-red-400">Delete All Audio Recordings</p>
-                      <p className="text-[12px] text-red-300/80 font-medium">Permanently purge raw voice recordings from secure cloud storage</p>
+                      <p className="text-[15px] font-bold text-red-400">Sign Out of Account</p>
+                      <p className="text-[12px] text-red-300/80 font-medium">Log out of your SpeakIQ secure workspace session</p>
                     </div>
-                    <button className="px-4 py-2 rounded-xl bg-red-500 text-black font-bold text-[13px] hover:bg-red-400 cursor-pointer flex items-center gap-1.5">
-                      <Trash2 size={15} /> Purge Audio
+                    <button onClick={() => { signOut(); window.location.href = '/#/login'; }} className="px-4 py-2 rounded-xl bg-red-500 text-black font-bold text-[13px] hover:bg-red-400 cursor-pointer flex items-center gap-1.5">
+                      <Trash2 size={15} /> Sign Out
                     </button>
                   </div>
 
