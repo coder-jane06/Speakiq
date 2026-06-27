@@ -13,6 +13,34 @@ interface DashboardStats {
   total_sessions: number;
   current_streak: number;
   longest_streak: number;
+  speaking_goal?: string;
+  difficulty_tier?: string;
+  profile_badge?: string;
+  weekly_goal?: {
+    completed: number;
+    target: number;
+    percent: number;
+    remaining: number;
+  };
+  mini_insights?: {
+    confidence: number;
+    vocab: number;
+    delivery: number;
+    structure: number;
+    has_enough_data: boolean;
+  };
+  today_focus?: {
+    title: string;
+    description: string;
+    skill: string;
+    tags: string[];
+    estimated_minutes: number;
+  };
+  suggestions?: {
+    title: string;
+    desc: string;
+    tag: string;
+  }[];
   sessions: {
     session_number: number;
     id: string;
@@ -75,13 +103,29 @@ export default function DashboardPage() {
   }
 
   const emailName = user?.email ? user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1) : '';
-  const userName = stats?.display_name || user?.user_metadata?.full_name || user?.user_metadata?.display_name || emailName || 'Shaurya';
-  const streak = stats?.current_streak || 5;
+  const userName = stats?.display_name || user?.user_metadata?.full_name || user?.user_metadata?.display_name || emailName || 'Speaker';
+  const streak = stats?.current_streak ?? 0;
   const latestSession = stats?.sessions && stats.sessions.length > 0 ? stats.sessions[stats.sessions.length - 1] : null;
+  const weeklyGoal = stats?.weekly_goal || { completed: 0, target: 7, percent: 0, remaining: 7 };
+  const todayFocus = stats?.today_focus || {
+    title: 'Speaking Practice',
+    description: 'Complete one short session to unlock personalized recommendations.',
+    skill: 'structure',
+    tags: ['Clarity', 'Pacing', 'Structure'],
+    estimated_minutes: 1,
+  };
+  const dashboardSuggestions = stats?.suggestions?.length ? stats.suggestions : [
+    { title: 'Start Session', desc: 'Complete a session to unlock tailored suggestions.', tag: 'Start' },
+  ];
 
   // --- Dynamic Dashboard Logic ---
-  let confidenceDiff = 8, vocabDiff = 3, deliveryDiff = 12, structureDiff = -2; // fallbacks if <2 sessions
-  if (stats?.sessions && stats.sessions.length >= 2) {
+  let confidenceDiff = 0, vocabDiff = 0, deliveryDiff = 0, structureDiff = 0;
+  if (stats?.mini_insights?.has_enough_data) {
+      confidenceDiff = stats.mini_insights.confidence;
+      vocabDiff = stats.mini_insights.vocab;
+      deliveryDiff = stats.mini_insights.delivery;
+      structureDiff = stats.mini_insights.structure;
+  } else if (stats?.sessions && stats.sessions.length >= 2) {
       const sorted = [...stats.sessions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       const current = sorted[sorted.length - 1].scores;
       const prev = sorted[sorted.length - 2].scores;
@@ -141,7 +185,7 @@ export default function DashboardPage() {
             <div className="space-y-4 max-w-2xl">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[13px] font-bold shadow-xs">
                 <Sparkles size={15} className="text-emerald-400 fill-emerald-400 animate-pulse" />
-                <span>Interview Mastery • Beginner Journey</span>
+                <span>{stats?.profile_badge || 'Speaking Mastery'}</span>
               </div>
               <h1 
                 className="text-[36px] sm:text-[46px] font-[800] text-[var(--text-primary)] tracking-[-0.03em] leading-[1.1]"
@@ -150,7 +194,7 @@ export default function DashboardPage() {
                 Good Morning, {userName} 👋
               </h1>
               <p className="text-[17px] sm:text-[19px] text-[var(--text-secondary)] font-medium leading-relaxed">
-                Built for Interview Mastery. Designed around your Beginner journey. Ready for today's speaking challenge?
+                Built around your selected speaking goal. Ready for today's speaking challenge?
               </p>
 
               {/* Quick status chips */}
@@ -201,15 +245,15 @@ export default function DashboardPage() {
                 🎯 TODAY'S CHALLENGE
               </span>
               <h2 className="text-[28px] font-[800] text-[var(--text-primary)] tracking-tight" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>
-                Interview Confidence
+                {todayFocus.title}
               </h2>
               <p className="text-[14px] text-[var(--text-secondary)] font-medium">
-                Master high-stakes Q&A structuring and eliminate vocal hesitation in quick tactical bursts.
+                {todayFocus.description}
               </p>
               
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 <span className="text-[12px] font-bold text-[var(--text-secondary)] bg-[var(--bg-hover)] px-3 py-1 rounded-xl border border-[var(--border)] flex items-center gap-1">
-                  <Clock size={13} className="text-[var(--text-tertiary)]" /> Estimated Time: 3 minutes
+                  <Clock size={13} className="text-[var(--text-tertiary)]" /> Estimated Time: {todayFocus.estimated_minutes} min
                 </span>
                 <span className="text-[12px] font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-xl border border-emerald-500/20">
                   Confidence
@@ -373,7 +417,7 @@ export default function DashboardPage() {
                   />
                   <path
                     className="text-emerald-500 transition-all duration-1000 stroke-round"
-                    strokeDasharray="57, 100"
+                    strokeDasharray={`${weeklyGoal.percent}, 100`}
                     strokeWidth="3.5"
                     strokeLinecap="round"
                     stroke="currentColor"
@@ -382,13 +426,13 @@ export default function DashboardPage() {
                   />
                 </svg>
                 <div className="absolute flex flex-col items-center">
-                  <span className="text-[20px] font-extrabold text-[var(--text-primary)]">57%</span>
-                  <span className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">4 / 7 Sessions</span>
+                  <span className="text-[20px] font-extrabold text-[var(--text-primary)]">{weeklyGoal.percent}%</span>
+                  <span className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">{weeklyGoal.completed} / {weeklyGoal.target} Sessions</span>
                 </div>
               </div>
 
               <p className="text-[12px] font-medium text-[var(--text-secondary)] mt-2 px-2">
-                Practice two more sessions to complete this week's goal.
+                {weeklyGoal.remaining > 0 ? `Practice ${weeklyGoal.remaining} more session${weeklyGoal.remaining === 1 ? '' : 's'} to complete this week's goal.` : 'Weekly goal complete.'}
               </p>
             </section>
 
@@ -461,10 +505,7 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { title: 'Public Speaking', desc: 'Keynote & presentation fluency', tag: 'Popular' },
-              { title: 'Interview Drill', desc: 'Executive Q&A storytelling', tag: 'High Impact' },
-              { title: 'Vocabulary Builder', desc: 'Expand professional phrasing', tag: 'Recommended' },
-              { title: 'Storytelling', desc: 'Master engaging narrative flow', tag: 'Creative' },
+              ...dashboardSuggestions
             ].map((sug, i) => (
               <div 
                 key={i} 

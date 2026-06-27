@@ -23,6 +23,7 @@ import json
 import logging
 import tempfile
 import os
+import re
 from dataclasses import asdict
 from typing import Optional
 
@@ -40,7 +41,9 @@ async def run_analysis_pipeline(
     topic:       str,
     user_profile: Optional[dict] = None,
     session_number: int = 1,
-    user_id: Optional[str] = None
+    user_id: Optional[str] = None,
+    speaking_goal_override: Optional[str] = None,
+    difficulty_tier: str = "beginner",
 ) -> Optional[CoachingReport]:
     """
     Run the full analysis pipeline on a recorded session.
@@ -172,9 +175,8 @@ async def run_analysis_pipeline(
                 duration_secs=60.0
             )
 
-        pre_scores = compute_scores_from_data(transcript_result, acoustic_result, nlp_result)
         session_history = []
-        speaking_goal = "general"
+        speaking_goal = speaking_goal_override or "general"
         if user_id:
             try:
                 from config import get_db
@@ -182,11 +184,20 @@ async def run_analysis_pipeline(
 
                 memory_svc = MemoryService(get_db())
                 session_history = await memory_svc.get_session_history(user_id, limit=7)
-                if user_profile:
+                if not speaking_goal_override and user_profile:
                     speaking_goal = user_profile.get("speaking_goal", "general") or "general"
                 logger.info(f"[Pipeline] Loaded {len(session_history)} past sessions for AI memory")
             except Exception as e:
                 logger.error(f"[Pipeline] Memory fetch failed: {e}")
+
+        pre_scores = compute_scores_from_data(
+            transcript_result,
+            acoustic_result,
+            nlp_result,
+            speaking_goal=speaking_goal,
+            difficulty_tier=difficulty_tier,
+            session_history=session_history,
+        )
 
         coaching_report = await coaching_service.generate_report(
             topic=             topic,
@@ -294,130 +305,220 @@ def compute_scores_from_data(
     transcript,
     acoustic,
     nlp,
-    speaking_goal: str = "general"
+    speaking_goal: str = "general",
+    difficulty_tier: str = "beginner",
+    session_history: Optional[list] = None,
 ) -> dict:
-    scores = {}
+    def clamp(value: float, low: int = 0, high: int = 100) -> int:
+        return int(max(low, min(high, round(value))))
 
-    # --- FILLER SCORE ---
-    filler_rate = nlp.fillers_per_minute if (nlp and hasattr(nlp, 'fillers_per_minute')) else 0
-    if filler_rate == 0:
-        scores["filler"] = 100
-    elif filler_rate < 1:
-        scores["filler"] = 85
-    elif filler_rate < 2:
-        scores["filler"] = 70
-    elif filler_rate < 4:
-        scores["filler"] = 50
-    elif filler_rate < 6:
-        scores["filler"] = 30
-    else:
-        scores["filler"] = 10
+    def range_score(value: float, ideal_low: float, ideal_high: float, outer_low: float, outer_high: float) -> int:
+        if value <= 0:
+            return 45
+        if ideal_low <= value <= ideal_high:
+            return 100
+        if outer_low <= value < ideal_low:
+            return clamp(100 - ((ideal_low - value) / max(ideal_low - outer_low, 1)) * 55)
+        if ideal_high < value <= outer_high:
+            return clamp(100 - ((value - ideal_high) / max(outer_high - ideal_high, 1)) * 55)
+        return 30
 
-    # Debaters are penalized heavily for hedge words
-    if speaking_goal == "debater" and nlp and hasattr(nlp, 'hedge_word_count') and nlp.hedge_word_count > 3:
-        scores["filler"] = max(10, scores["filler"] - 20)
+    def density_score(count: float, per_minute: float, beginner_lenient: bool = True) -> int:
+        if per_minute <= 0:
+            return 98
+        bands = [(0.8, 92), (1.5, 82), (2.5, 68), (4.0, 50), (6.0, 32)]
+        for limit, score in bands:
+            if per_minute <= limit:
+                return min(100, score + (5 if beginner_lenient and difficulty_tier == "beginner" else 0))
+        return 18
 
-    # --- DELIVERY SCORE (from acoustic) ---
+    text = getattr(transcript, "transcript", "") or ""
+    text_l = text.lower()
+    words = re.findall(r"[a-zA-Z']+", text_l)
+    word_count = getattr(transcript, "word_count", None) or len(words)
+    sentence_parts = [s.strip() for s in re.split(r"[.!?]+", text) if s.strip()]
+    sentence_count = getattr(nlp, "sentence_count", 0) if nlp else len(sentence_parts)
+    avg_sentence_length = getattr(nlp, "avg_sentence_length", 0.0) if nlp else (
+        word_count / sentence_count if sentence_count else 0
+    )
+
+    transition_phrases = [
+        "first", "second", "third", "finally", "however", "therefore", "because",
+        "for example", "for instance", "on the other hand", "in conclusion",
+        "the key point", "my point", "as a result", "to summarize", "next",
+    ]
+    evidence_phrases = [
+        "for example", "for instance", "data", "research", "study", "survey",
+        "because", "evidence", "in my experience", "when i", "we measured",
+    ]
+    transition_count = sum(text_l.count(p) for p in transition_phrases)
+    evidence_count = sum(text_l.count(p) for p in evidence_phrases) + len(re.findall(r"\b\d+(\.\d+)?%?\b", text_l))
+
+    star_hits = sum(1 for p in ["situation", "task", "action", "result", "challenge", "impact", "learned"] if p in text_l)
+    debate_hits = sum(1 for p in ["claim", "argument", "evidence", "rebut", "opponent", "impact", "outweigh", "therefore"] if p in text_l)
+    presenter_hits = sum(1 for p in ["takeaway", "data", "slide", "first", "second", "finally", "recommend", "conclusion"] if p in text_l)
+    orator_hits = sum(1 for p in ["imagine", "story", "we must", "not only", "but also", "today", "together"] if p in text_l)
+
+    sentence_starts = [re.findall(r"[a-zA-Z']+", s.lower())[:1] for s in sentence_parts]
+    starts = [s[0] for s in sentence_starts if s]
+    repeated_starts = len(starts) - len(set(starts)) if len(starts) > 1 else 0
+    contrast_hits = len(re.findall(r"\b(but|yet|however|instead|rather)\b", text_l))
+    rhetorical_questions = text.count("?")
+    first_person_i = len(re.findall(r"\b(i|me|my|mine)\b", text_l))
+    first_person_we = len(re.findall(r"\b(we|our|us)\b", text_l))
+
+    # --- FILLER / FLUENCY ---
+    filler_rate = getattr(nlp, "fillers_per_minute", 0.0) if nlp else 0.0
+    filler_count = getattr(nlp, "filler_count", 0) if nlp else 0
+    hedge_count = getattr(nlp, "hedge_word_count", 0) if nlp else 0
+    filler_score = density_score(filler_count, filler_rate)
+    hedge_penalty = min(18, hedge_count * (4 if speaking_goal in {"debater", "interviewer"} else 2))
+    filler_score = clamp(filler_score - hedge_penalty)
+
+    # --- DELIVERY ---
     if acoustic:
-        pitch_std = acoustic.pitch_std
-        monotony = acoustic.monotony_score
-        silence_pct = acoustic.silence_percentage
-        longest_pause = acoustic.longest_pause_sec
-        wpm = acoustic.wpm
-        jitter = getattr(acoustic, 'jitter', 0.0)
-        intensity_db = getattr(acoustic, 'intensity_db', 0.0)
+        wpm = getattr(acoustic, "wpm", 0.0)
+        pitch_std = getattr(acoustic, "pitch_std", 0.0)
+        monotony = getattr(acoustic, "monotony_score", 0.0)
+        silence_pct = getattr(acoustic, "silence_percentage", 0.0)
+        longest_pause = getattr(acoustic, "longest_pause_sec", 0.0)
+        jitter = getattr(acoustic, "jitter", 0.0)
+        shimmer = getattr(acoustic, "shimmer", 0.0)
+        hnr = getattr(acoustic, "hnr", 0.0)
+        intensity_db = getattr(acoustic, "intensity_db", 0.0)
 
-        # Base scoring ranges
-        pitch_pts = min(40, max(0, int((pitch_std / 60) * 40)))
-        
-        # WPM scoring
-        if 120 <= wpm <= 160:
-            wpm_pts = 30
-        elif 100 <= wpm < 120 or 160 < wpm <= 180:
-            wpm_pts = 20
-        elif 80 <= wpm < 100 or 180 < wpm <= 200:
-            wpm_pts = 10
-        else:
-            wpm_pts = 0
+        pace_ranges = {
+            "orator": (105, 155, 80, 185),
+            "presenter": (115, 155, 90, 185),
+            "interviewer": (120, 160, 95, 185),
+            "debater": (140, 185, 110, 215),
+            "general": (120, 160, 90, 190),
+        }
+        pace_score = range_score(wpm, *pace_ranges.get(speaking_goal, pace_ranges["general"]))
 
-        # Pause scoring
-        if longest_pause <= 1.5 and silence_pct < 20:
-            pause_pts = 30
-        elif longest_pause <= 2.5 and silence_pct < 30:
-            pause_pts = 20
-        elif longest_pause <= 4.0:
-            pause_pts = 10
-        else:
-            pause_pts = 0
-
-        # Adjust delivery points based on Goal
+        pitch_score = clamp((min(pitch_std, 85) / 85) * 75 + (monotony * 25))
         if speaking_goal == "orator":
-            # Orators need high pitch variance and high intensity
-            if intensity_db > 60:
-                pitch_pts = min(50, pitch_pts + 10)
+            pitch_score = clamp(pitch_score + 8)
+        if speaking_goal == "interviewer" and pitch_std > 90:
+            pitch_score = clamp(pitch_score - 8)
+
+        if speaking_goal == "orator":
+            pause_score = 100
+            if silence_pct > 35:
+                pause_score -= min(35, (silence_pct - 35) * 2)
+            if longest_pause > 4.0:
+                pause_score -= min(30, (longest_pause - 4.0) * 8)
         elif speaking_goal == "debater":
-            # Debaters can speak faster (140-180 is fine)
-            if 140 <= wpm <= 180:
-                wpm_pts = 30
-        elif speaking_goal == "interviewer":
-            # Interviewers are penalized for jitter (nerves)
-            if jitter > 2.0:
-                pitch_pts = max(0, pitch_pts - 15)
+            pause_score = range_score(longest_pause, 0.2, 1.6, 0.0, 3.0)
+            if silence_pct > 22:
+                pause_score -= min(25, (silence_pct - 22) * 1.5)
+        else:
+            pause_score = range_score(longest_pause, 0.3, 2.2, 0.0, 4.0)
+            if silence_pct > 28:
+                pause_score -= min(25, (silence_pct - 28) * 1.2)
 
-        scores["delivery"] = min(pitch_pts + wpm_pts + pause_pts, 100)
+        voice_quality = 78
+        if jitter:
+            voice_quality -= min(18, max(0, jitter - 1.2) * 5)
+        if shimmer:
+            voice_quality -= min(12, max(0, shimmer - 12) * 0.6)
+        if hnr > 0:
+            voice_quality += min(10, hnr * 0.5)
+        if intensity_db > 55:
+            voice_quality += 6
+        elif 0 < intensity_db < 42:
+            voice_quality -= 8
+
+        delivery_score = clamp(
+            pace_score * 0.28
+            + pitch_score * 0.28
+            + pause_score * 0.26
+            + clamp(voice_quality) * 0.18
+        )
     else:
-        scores["delivery"] = 50
+        delivery_score = 50
 
-    # --- STRUCTURE SCORE (from NLP + transcript) ---
-    if nlp and transcript:
-        word_count = transcript.word_count
-        sentences = nlp.sentence_count if hasattr(nlp, 'sentence_count') else 5
-        ttr = nlp.ttr_score if hasattr(nlp, 'ttr_score') else 0.5
-
-        if word_count >= 100: wc_pts = 30
-        elif word_count >= 70: wc_pts = 20
-        elif word_count >= 40: wc_pts = 10
-        else: wc_pts = 0
-
-        if sentences >= 6: sent_pts = 30
-        elif sentences >= 4: sent_pts = 20
-        elif sentences >= 2: sent_pts = 10
-        else: sent_pts = 0
-
-        if ttr >= 0.7: ttr_pts = 40
-        elif ttr >= 0.5: ttr_pts = 30
-        elif ttr >= 0.35: ttr_pts = 20
-        else: ttr_pts = 10
-        
-        # Presenters need high structure/TTR
-        if speaking_goal == "presenter":
-            ttr_pts = min(50, ttr_pts + 10) if ttr >= 0.6 else ttr_pts
-
-        scores["structure"] = min(wc_pts + sent_pts + ttr_pts, 100)
+    # --- STRUCTURE ---
+    if word_count <= 0:
+        structure_score = 35
     else:
-        scores["structure"] = 50
+        length_target = {
+            "beginner": (45, 110),
+            "intermediate": (60, 145),
+            "advanced": (80, 190),
+        }.get(difficulty_tier, (45, 120))
+        length_score = range_score(word_count, length_target[0], length_target[1], 25, length_target[1] + 90)
+        sentence_score = range_score(avg_sentence_length, 9, 22, 4, 35)
+        transition_score = clamp(min(transition_count, 5) * 18 + min(evidence_count, 4) * 4)
 
-    # --- VOCAB SCORE ---
+        mode_bonus = 0
+        if speaking_goal == "interviewer":
+            mode_bonus = min(26, star_hits * 6)
+            if first_person_i > 0 and first_person_i >= first_person_we:
+                mode_bonus += 6
+        elif speaking_goal == "debater":
+            mode_bonus = min(28, debate_hits * 6 + evidence_count * 3)
+        elif speaking_goal == "presenter":
+            mode_bonus = min(26, presenter_hits * 5 + evidence_count * 3)
+        elif speaking_goal == "orator":
+            mode_bonus = min(26, orator_hits * 4 + repeated_starts * 5 + contrast_hits * 3 + rhetorical_questions * 3)
+        else:
+            mode_bonus = min(18, transition_count * 3 + evidence_count * 4)
+
+        structure_score = clamp(length_score * 0.28 + sentence_score * 0.24 + transition_score * 0.24 + 24 + mode_bonus)
+
+    # --- VOCABULARY ---
     if nlp:
-        ttr = nlp.ttr_score if hasattr(nlp, 'ttr_score') else 0.5
-        if ttr >= 0.7: scores["vocab"] = 95
-        elif ttr >= 0.6: scores["vocab"] = 80
-        elif ttr >= 0.5: scores["vocab"] = 65
-        elif ttr >= 0.35: scores["vocab"] = 45
-        else: scores["vocab"] = 25
+        ttr = getattr(nlp, "ttr_score", 0.0)
+        unique_words = getattr(nlp, "unique_word_count", 0)
+        total_content = getattr(nlp, "total_word_count", 0)
+        diversity_score = range_score(ttr, 0.42, 0.68, 0.25, 0.85)
+        specificity_score = clamp(min(evidence_count, 5) * 12 + min(unique_words, 55) * 0.65)
+        repetition_penalty = 0
+        if total_content > 0 and unique_words / max(total_content, 1) < 0.32:
+            repetition_penalty = 12
+        vocab_score = clamp(diversity_score * 0.62 + specificity_score * 0.38 - hedge_penalty * 0.5 - repetition_penalty)
     else:
-        scores["vocab"] = 50
+        vocab_score = 50
 
-    # --- CONFIDENCE SCORE ---
-    filler_contrib = scores["filler"] * 0.4
-    delivery_contrib = scores["delivery"] * 0.4
-    structure_contrib = scores["structure"] * 0.2
-    
-    # Interviewers confidence relies heavily on delivery and low jitter
-    if speaking_goal == "interviewer" and acoustic and getattr(acoustic, 'jitter', 0.0) > 2.5:
-        delivery_contrib = scores["delivery"] * 0.3
+    # --- CONFIDENCE ---
+    confidence_score = (
+        filler_score * 0.25
+        + delivery_score * 0.34
+        + structure_score * 0.22
+        + vocab_score * 0.09
+        + 10
+    )
+    if speaking_goal == "interviewer":
+        if first_person_i == 0 and word_count > 35:
+            confidence_score -= 8
+        if first_person_we > first_person_i * 2 and first_person_we > 2:
+            confidence_score -= 6
+    if speaking_goal == "debater" and hedge_count > 2:
+        confidence_score -= min(12, hedge_count * 2)
+    if acoustic and getattr(acoustic, "jitter", 0.0) > 2.5:
+        confidence_score -= 7
 
-    scores["confidence"] = int(filler_contrib + delivery_contrib + structure_contrib)
+    scores = {
+        "filler": clamp(filler_score),
+        "delivery": clamp(delivery_score),
+        "structure": clamp(structure_score),
+        "vocab": clamp(vocab_score),
+        "confidence": clamp(confidence_score),
+    }
+
+    if session_history:
+        previous_scores = session_history[-1].get("scores") if isinstance(session_history[-1], dict) else None
+        if isinstance(previous_scores, str):
+            try:
+                previous_scores = json.loads(previous_scores)
+            except json.JSONDecodeError:
+                previous_scores = None
+        if isinstance(previous_scores, dict):
+            for key, value in list(scores.items()):
+                previous = previous_scores.get(key)
+                if isinstance(previous, (int, float)) and value >= previous + 8:
+                    scores[key] = clamp(value + 2)
 
     return scores
 

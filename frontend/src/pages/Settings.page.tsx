@@ -9,6 +9,42 @@ import {
   Laptop, ExternalLink, Edit3, X, RefreshCw
 } from 'lucide-react';
 
+type SpeakingGoal = 'orator' | 'interviewer' | 'presenter' | 'debater';
+type DifficultyTier = 'beginner' | 'intermediate' | 'advanced';
+
+const GOAL_OPTIONS: { label: string; value: SpeakingGoal }[] = [
+  { label: 'Interviews', value: 'interviewer' },
+  { label: 'Public Speaking', value: 'orator' },
+  { label: 'Presentations', value: 'presenter' },
+  { label: 'Debates', value: 'debater' },
+];
+
+const DIFFICULTY_OPTIONS: { label: string; value: DifficultyTier }[] = [
+  { label: 'Beginner', value: 'beginner' },
+  { label: 'Intermediate', value: 'intermediate' },
+  { label: 'Advanced', value: 'advanced' },
+];
+
+const DEFAULT_NOTIFICATIONS = {
+  dailyReminder: true,
+  weeklyReport: true,
+  achievements: true,
+  sessionCompletion: true,
+  streakAlerts: true,
+  email: false,
+  push: true,
+};
+
+const DEFAULT_AUDIO_SETTINGS = {
+  mic: 'Default Microphone (Built-in Audio)',
+  noiseCancellation: true,
+  sensitivity: 75,
+  autoGain: true,
+  quality: 'HD 256kbps Studio',
+  voiceEnhancement: true,
+  livePreview: false,
+};
+
 export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme();
   const { user, signOut } = useAuth();
@@ -24,41 +60,18 @@ export default function SettingsPage() {
   // Interactive Settings State
   const [coachingStyle, setCoachingStyle] = useState('Balanced');
   const [feedbackDetail, setFeedbackDetail] = useState('Detailed');
-  const [speakingGoal, setSpeakingGoal] = useState('Interviews');
-  const [difficulty, setDifficulty] = useState('Intermediate');
+  const [speakingGoal, setSpeakingGoal] = useState<SpeakingGoal>('interviewer');
+  const [difficulty, setDifficulty] = useState<DifficultyTier>('intermediate');
 
-  const [accentColor, setAccentColor] = useState(() => localStorage.getItem('accentColor') || 'green');
-  const [uiDensity, setUiDensity] = useState(() => localStorage.getItem('uiDensity') || 'Comfortable');
-  const [roundedCorners, setRoundedCorners] = useState(() => Number(localStorage.getItem('roundedCorners')) || 24);
-
-  const [notifications, setNotifications] = useState(() => {
-    const saved = localStorage.getItem('notifications');
-    return saved ? JSON.parse(saved) : {
-      dailyReminder: true, weeklyReport: true, achievements: true,
-      sessionCompletion: true, streakAlerts: true, email: false, push: true
-    };
-  });
-
-  const [audioSettings, setAudioSettings] = useState(() => {
-    const saved = localStorage.getItem('audioSettings');
-    return saved ? JSON.parse(saved) : {
-      mic: 'Default Microphone (Built-in Audio)', noiseCancellation: true,
-      sensitivity: 75, autoGain: true, quality: 'HD 256kbps Studio',
-      voiceEnhancement: true, livePreview: false
-    };
-  });
+  const [accentColor, setAccentColor] = useState('green');
+  const [uiDensity, setUiDensity] = useState('Comfortable');
+  const [roundedCorners, setRoundedCorners] = useState(24);
+  const [notifications, setNotifications] = useState(DEFAULT_NOTIFICATIONS);
+  const [audioSettings, setAudioSettings] = useState(DEFAULT_AUDIO_SETTINGS);
+  const [preferredPaceLabel, setPreferredPaceLabel] = useState('');
 
   const [micTesting, setMicTesting] = useState(false);
   const [micLevel, setMicLevel] = useState(0);
-
-  // Sync to localStorage
-  useEffect(() => {
-    localStorage.setItem('accentColor', accentColor);
-    localStorage.setItem('uiDensity', uiDensity);
-    localStorage.setItem('roundedCorners', String(roundedCorners));
-    localStorage.setItem('notifications', JSON.stringify(notifications));
-    localStorage.setItem('audioSettings', JSON.stringify(audioSettings));
-  }, [accentColor, uiDensity, roundedCorners, notifications, audioSettings]);
 
   // Fetch backend profile status
   useEffect(() => {
@@ -76,16 +89,35 @@ export default function SettingsPage() {
               setDisplayName(data.display_name);
             }
             if (data.speaking_goal) {
-              setSpeakingGoal(data.speaking_goal);
+              const nextGoal = data.speaking_goal === 'general' ? 'interviewer' : data.speaking_goal;
+              if (GOAL_OPTIONS.some(goal => goal.value === nextGoal)) {
+                setSpeakingGoal(nextGoal as SpeakingGoal);
+              }
             }
             if (data.difficulty_tier) {
-              setDifficulty(data.difficulty_tier);
+              if (DIFFICULTY_OPTIONS.some(diff => diff.value === data.difficulty_tier)) {
+                setDifficulty(data.difficulty_tier as DifficultyTier);
+              }
             }
             if (data.coaching_style) {
               setCoachingStyle(data.coaching_style);
             }
             if (data.feedback_detail) {
               setFeedbackDetail(data.feedback_detail);
+            }
+            if (data.appearance_preferences) {
+              setAccentColor(data.appearance_preferences.accentColor || 'green');
+              setUiDensity(data.appearance_preferences.uiDensity || 'Comfortable');
+              setRoundedCorners(Number(data.appearance_preferences.roundedCorners) || 24);
+            }
+            if (data.notification_preferences) {
+              setNotifications({ ...DEFAULT_NOTIFICATIONS, ...data.notification_preferences });
+            }
+            if (data.audio_preferences) {
+              setAudioSettings({ ...DEFAULT_AUDIO_SETTINGS, ...data.audio_preferences });
+            }
+            if (data.preferred_pace_label) {
+              setPreferredPaceLabel(data.preferred_pace_label);
             }
           }
         }
@@ -96,29 +128,29 @@ export default function SettingsPage() {
     fetchProfileData();
   }, []);
 
+  const savePreferencesBackend = async (payload: Record<string, unknown>) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) return;
+    const res = await fetch(`${API_URL}/dashboard/preferences`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      throw new Error('Failed to save preferences');
+    }
+  };
+
   const saveProfileBackend = async (newName: string) => {
     setSavingProfile(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (token) {
-        await fetch(`${API_URL}/dashboard/onboarding`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            display_name: newName,
-            speaking_goal: speakingGoal,
-            difficulty_tier: difficulty.toLowerCase(),
-            recording_duration_secs: 60,
-            coaching_style: coachingStyle,
-            feedback_detail: feedbackDetail
-          })
-        });
-        setDisplayName(newName);
-      }
+      const cleanedName = newName.trim();
+      await savePreferencesBackend({ display_name: cleanedName });
+      setDisplayName(cleanedName);
     } catch (e) {
       console.error("Error updating profile:", e);
     } finally {
@@ -132,7 +164,7 @@ export default function SettingsPage() {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (!token) return;
-      const res = await fetch(`${API_URL}/dashboard/stats`, {
+      const res = await fetch(`${API_URL}/dashboard/export`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -152,11 +184,33 @@ export default function SettingsPage() {
   };
 
   const toggleNotif = (key: keyof typeof notifications) => {
-    setNotifications((prev: any) => ({ ...prev, [key]: !prev[key] }));
+    setNotifications((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      savePreferencesBackend({ notification_preferences: next }).catch((e) => console.error("Error saving notifications:", e));
+      return next;
+    });
   };
 
   const toggleAudio = (key: keyof typeof audioSettings) => {
-    setAudioSettings((prev: any) => ({ ...prev, [key]: !prev[key] }));
+    setAudioSettings((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      savePreferencesBackend({ audio_preferences: next }).catch((e) => console.error("Error saving audio settings:", e));
+      return next;
+    });
+  };
+
+  const saveCoachPreference = (payload: Record<string, unknown>) => {
+    savePreferencesBackend(payload).catch((e) => console.error("Error saving coach preferences:", e));
+  };
+
+  const saveAppearancePreference = (next: { accentColor?: string; uiDensity?: string; roundedCorners?: number }) => {
+    const merged = {
+      accentColor,
+      uiDensity,
+      roundedCorners,
+      ...next,
+    };
+    savePreferencesBackend({ appearance_preferences: merged }).catch((e) => console.error("Error saving appearance:", e));
   };
 
   const handleMicTest = () => {
@@ -174,13 +228,15 @@ export default function SettingsPage() {
   };
 
   // Derive dynamic user details
-  const userEmail = user?.email || 'shaurya@example.com';
+  const userEmail = user?.email || 'No verified email';
   const emailName = user?.email ? user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1) : '';
-  const resolvedName = displayName || user?.user_metadata?.full_name || user?.user_metadata?.display_name || emailName || 'Shaurya';
+  const resolvedName = displayName || user?.user_metadata?.full_name || user?.user_metadata?.display_name || emailName || 'Speaker';
   const userInitials = resolvedName.charAt(0).toUpperCase() || 'S';
+  const speakingGoalLabel = GOAL_OPTIONS.find(g => g.value === speakingGoal)?.label || 'Speaking';
+  const difficultyLabel = DIFFICULTY_OPTIONS.find(d => d.value === difficulty)?.label || 'Beginner';
   const joinDate = user?.created_at 
     ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-    : 'June 2026';
+    : 'Unknown';
 
   const navItems = [
     { id: 'profile', label: 'Profile & Account', icon: User },
@@ -345,7 +401,7 @@ export default function SettingsPage() {
                       {['Encouraging', 'Balanced', 'Strict'].map(style => (
                         <button
                           key={style}
-                          onClick={() => { setCoachingStyle(style); saveProfileBackend(resolvedName); }}
+                          onClick={() => { setCoachingStyle(style); saveCoachPreference({ coaching_style: style }); }}
                           className={`py-2.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer ${coachingStyle === style ? 'bg-[var(--accent)] text-black shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
                         >
                           {style}
@@ -361,7 +417,7 @@ export default function SettingsPage() {
                       {['Basic', 'Detailed', 'Expert'].map(lvl => (
                         <button
                           key={lvl}
-                          onClick={() => { setFeedbackDetail(lvl); saveProfileBackend(resolvedName); }}
+                          onClick={() => { setFeedbackDetail(lvl); saveCoachPreference({ feedback_detail: lvl }); }}
                           className={`py-2.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer ${feedbackDetail === lvl ? 'bg-[var(--accent)] text-black shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
                         >
                           {lvl}
@@ -374,13 +430,13 @@ export default function SettingsPage() {
                   <div>
                     <label className="block text-[13px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Primary Speaking Goal</label>
                     <div className="flex flex-wrap gap-2">
-                      {['Interviews', 'Public Speaking', 'Presentations', 'Debates'].map(goal => (
+                      {GOAL_OPTIONS.map(goal => (
                         <button
-                          key={goal}
-                          onClick={() => { setSpeakingGoal(goal); saveProfileBackend(resolvedName); }}
-                          className={`px-4 py-2 rounded-xl font-bold text-[13px] border transition-all cursor-pointer ${speakingGoal === goal ? 'bg-[var(--accent)] text-black border-transparent' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border)] hover:bg-[var(--bg-card-hover)]'}`}
+                          key={goal.value}
+                          onClick={() => { setSpeakingGoal(goal.value); saveCoachPreference({ speaking_goal: goal.value }); }}
+                          className={`px-4 py-2 rounded-xl font-bold text-[13px] border transition-all cursor-pointer ${speakingGoal === goal.value ? 'bg-[var(--accent)] text-black border-transparent' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border)] hover:bg-[var(--bg-card-hover)]'}`}
                         >
-                          {goal}
+                          {goal.label}
                         </button>
                       ))}
                     </div>
@@ -390,13 +446,13 @@ export default function SettingsPage() {
                   <div>
                     <label className="block text-[13px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Preferred Difficulty</label>
                     <div className="flex flex-wrap gap-2">
-                      {['Beginner', 'Intermediate', 'Advanced'].map(diff => (
+                      {DIFFICULTY_OPTIONS.map(diff => (
                         <button
-                          key={diff}
-                          onClick={() => { setDifficulty(diff); saveProfileBackend(resolvedName); }}
-                          className={`px-4 py-2 rounded-xl font-bold text-[13px] border transition-all cursor-pointer ${difficulty === diff ? 'bg-[var(--accent)] text-black border-transparent' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border)] hover:bg-[var(--bg-card-hover)]'}`}
+                          key={diff.value}
+                          onClick={() => { setDifficulty(diff.value); saveCoachPreference({ difficulty_tier: diff.value }); }}
+                          className={`px-4 py-2 rounded-xl font-bold text-[13px] border transition-all cursor-pointer ${difficulty === diff.value ? 'bg-[var(--accent)] text-black border-transparent' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border)] hover:bg-[var(--bg-card-hover)]'}`}
                         >
-                          {diff}
+                          {diff.label}
                         </button>
                       ))}
                     </div>
@@ -446,7 +502,7 @@ export default function SettingsPage() {
                       ].map(acc => (
                         <button
                           key={acc.id}
-                          onClick={() => setAccentColor(acc.id)}
+                          onClick={() => { setAccentColor(acc.id); saveAppearancePreference({ accentColor: acc.id }); }}
                           className={`w-8 h-8 rounded-full ${acc.color} flex items-center justify-center transition-transform cursor-pointer ${accentColor === acc.id ? 'ring-4 ring-emerald-500/40 scale-110' : 'opacity-70 hover:opacity-100'}`}
                         >
                           {accentColor === acc.id && <Check size={14} className="text-black" />}
@@ -465,7 +521,7 @@ export default function SettingsPage() {
                       {['Comfortable', 'Compact'].map(d => (
                         <button
                           key={d}
-                          onClick={() => setUiDensity(d)}
+                          onClick={() => { setUiDensity(d); saveAppearancePreference({ uiDensity: d }); }}
                           className={`px-3 py-1.5 rounded-lg font-bold text-[12px] cursor-pointer ${uiDensity === d ? 'bg-[var(--accent)] text-black' : 'text-[var(--text-secondary)]'}`}
                         >
                           {d}
@@ -485,7 +541,11 @@ export default function SettingsPage() {
                       min="16"
                       max="32"
                       value={roundedCorners}
-                      onChange={e => setRoundedCorners(Number(e.target.value))}
+                      onChange={e => {
+                        const nextRadius = Number(e.target.value);
+                        setRoundedCorners(nextRadius);
+                        saveAppearancePreference({ roundedCorners: nextRadius });
+                      }}
                       className="w-full accent-emerald-500 cursor-pointer"
                     />
                   </div>
@@ -656,24 +716,39 @@ export default function SettingsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)]">
                     <span className="text-[11px] font-bold uppercase text-[var(--text-tertiary)]">Preferred Speaking Pace</span>
-                    <p className="text-[16px] font-extrabold text-[var(--text-primary)] mt-1">Normal (130 – 150 WPM)</p>
+                    <p className="text-[16px] font-extrabold text-[var(--text-primary)] mt-1">{preferredPaceLabel || 'Calculated after profile sync'}</p>
                   </div>
                   <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)]">
                     <span className="text-[11px] font-bold uppercase text-[var(--text-tertiary)]">Preferred Feedback Style</span>
-                    <p className="text-[16px] font-extrabold text-[var(--text-primary)] mt-1">Action-Oriented & Direct</p>
+                    <p className="text-[16px] font-extrabold text-[var(--text-primary)] mt-1">{feedbackDetail} / {coachingStyle}</p>
                   </div>
                   <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)]">
                     <span className="text-[11px] font-bold uppercase text-[var(--text-tertiary)]">Favorite Categories</span>
-                    <p className="text-[16px] font-extrabold text-emerald-400 mt-1">{speakingGoal} • Practice Drills</p>
+                    <p className="text-[16px] font-extrabold text-emerald-400 mt-1">{speakingGoalLabel} • Practice Drills</p>
                   </div>
                   <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)]">
                     <span className="text-[11px] font-bold uppercase text-[var(--text-tertiary)]">Adaptive Progress Level</span>
-                    <p className="text-[16px] font-extrabold text-blue-400 mt-1">{difficulty} Tier Mastery</p>
+                    <p className="text-[16px] font-extrabold text-blue-400 mt-1">{difficultyLabel} Tier Mastery</p>
                   </div>
                 </div>
 
                 <div className="pt-4 border-t border-[var(--border)] flex justify-end">
-                  <button className="px-5 py-2.5 rounded-xl bg-[var(--bg-hover)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] font-bold text-[13px] transition-all cursor-pointer flex items-center gap-2 border border-[var(--border)]">
+                  <button
+                    onClick={async () => {
+                      try {
+                        const { data: { session } } = await supabase.auth.getSession();
+                        const token = session?.access_token;
+                        if (!token) return;
+                        await fetch(`${API_URL}/dashboard/reset-personalization`, {
+                          method: 'POST',
+                          headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                      } catch (e) {
+                        console.error("Error resetting personalization:", e);
+                      }
+                    }}
+                    className="px-5 py-2.5 rounded-xl bg-[var(--bg-hover)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] font-bold text-[13px] transition-all cursor-pointer flex items-center gap-2 border border-[var(--border)]"
+                  >
                     <RefreshCw size={14} /> Reset Personalization Memory
                   </button>
                 </div>

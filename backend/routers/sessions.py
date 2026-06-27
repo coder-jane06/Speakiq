@@ -3,6 +3,7 @@ import logging, random, uuid, asyncio
 from typing import Optional
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, BackgroundTasks, Header
 import jwt
+from routers.dashboard import normalize_difficulty, normalize_goal
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -48,7 +49,7 @@ async def get_topic(
 
     db = get_db()
     user_id = get_user_id(authorization)
-    speaking_goal = goal if goal else "general"
+    speaking_goal = normalize_goal(goal) if goal else "general"
     weakest_skill = "general"
     diff_tier = difficulty if difficulty else "medium"
     recent_topic_texts = []
@@ -65,10 +66,10 @@ async def get_topic(
             if profile.data:
                 p = profile.data[0]
                 if not goal:
-                    speaking_goal = p.get("speaking_goal", "general") or "general"
+                    speaking_goal = normalize_goal(p.get("speaking_goal")) or "general"
                 
                 if not difficulty:
-                    tier = p.get("difficulty_tier", "beginner") or "beginner"
+                    tier = normalize_difficulty(p.get("difficulty_tier")) or "beginner"
                     diff_tier = {"beginner": "easy", "advanced": "hard"}.get(tier, "medium")
 
                 skill_scores = {
@@ -156,6 +157,8 @@ async def upload_session(
     audio: UploadFile = File(...),
     topic_id: str = Form(...),
     topic_text: str = Form(...),
+    speaking_goal: Optional[str] = Form(None),
+    difficulty_tier: Optional[str] = Form(None),
     authorization: Optional[str] = Header(None)
 ):
     content_type = audio.content_type or ""
@@ -172,6 +175,8 @@ async def upload_session(
     audio_url = None
 
     user_id = get_user_id(authorization)
+    normalized_goal = normalize_goal(speaking_goal)
+    normalized_difficulty = normalize_difficulty(difficulty_tier)
 
     try:
         from config import get_db
@@ -191,6 +196,27 @@ async def upload_session(
             "status": "analyzing",
             "user_id": user_id,
         }).execute()
+
+        if user_id and (speaking_goal or difficulty_tier):
+            try:
+                pref_payload = {
+                    "speaking_goal": normalized_goal,
+                    "difficulty_tier": normalized_difficulty,
+                    "onboarding_complete": True,
+                }
+                existing_profile = (
+                    db.table("user_profiles")
+                    .select("id")
+                    .eq("user_id", user_id)
+                    .limit(1)
+                    .execute()
+                )
+                if existing_profile.data:
+                    db.table("user_profiles").update(pref_payload).eq("user_id", user_id).execute()
+                else:
+                    db.table("user_profiles").insert({"user_id": user_id, **pref_payload}).execute()
+            except Exception as profile_e:
+                logger.warning(f"[sessions] Preference update skipped: {profile_e}")
         logger.info(f"[sessions] Created session {session_id}")
     except Exception as e:
         logger.error(f"[sessions] Upload failed {session_id}: {e}")
@@ -205,13 +231,22 @@ async def upload_session(
         session_id=session_id,
         audio_bytes=audio_bytes,
         topic_text=topic_text,
-        user_id=user_id
+        user_id=user_id,
+        speaking_goal=normalized_goal,
+        difficulty_tier=normalized_difficulty,
     )
 
     return {"session_id": session_id, "status": "analyzing", "audio_url": audio_url}
 
 
-async def trigger_analysis(session_id: str, audio_bytes: bytes, topic_text: str, user_id: Optional[str] = None):
+async def trigger_analysis(
+    session_id: str,
+    audio_bytes: bytes,
+    topic_text: str,
+    user_id: Optional[str] = None,
+    speaking_goal: str = "general",
+    difficulty_tier: str = "beginner",
+):
     """Background task — runs after the HTTP response is sent."""
     try:
         from config import get_db
@@ -232,7 +267,9 @@ async def trigger_analysis(session_id: str, audio_bytes: bytes, topic_text: str,
             topic=topic_text,
             user_profile=user_profile,
             session_number=user_profile.get("total_sessions", 0) + 1 if user_profile else 1,
-            user_id=user_id
+            user_id=user_id,
+            speaking_goal_override=speaking_goal,
+            difficulty_tier=difficulty_tier,
         )
     except Exception as e:
         import traceback
