@@ -79,6 +79,50 @@ export default function DashboardPage() {
   const streak = stats?.current_streak || 5;
   const latestSession = stats?.sessions && stats.sessions.length > 0 ? stats.sessions[stats.sessions.length - 1] : null;
 
+  // --- Dynamic Dashboard Logic ---
+  let confidenceDiff = 8, vocabDiff = 3, deliveryDiff = 12, structureDiff = -2; // fallbacks if <2 sessions
+  if (stats?.sessions && stats.sessions.length >= 2) {
+      const sorted = [...stats.sessions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      const current = sorted[sorted.length - 1].scores;
+      const prev = sorted[sorted.length - 2].scores;
+      confidenceDiff = current.confidence - prev.confidence;
+      vocabDiff = current.vocab - prev.vocab;
+      deliveryDiff = current.delivery - prev.delivery;
+      structureDiff = current.structure - prev.structure;
+  }
+
+  const formatDiff = (diff: number) => {
+      if (diff > 0) return `↑ ${diff}%`;
+      if (diff < 0) return `↓ ${Math.abs(diff)}%`;
+      return `- 0%`;
+  };
+  const getDiffColor = (diff: number) => {
+      if (diff > 0) return 'text-emerald-400';
+      if (diff < 0) return 'text-amber-400';
+      return 'text-gray-400';
+  };
+
+  const dynamicAchievements = [];
+  if (streak >= 5) {
+      dynamicAchievements.push({ title: '🏆 5 Day Streak', desc: 'Consistent daily practice', color: 'from-amber-500/10 to-orange-500/10 border-amber-500/20 text-amber-400' });
+  } else if (streak >= 3) {
+      dynamicAchievements.push({ title: '🔥 3 Day Streak', desc: 'Building momentum!', color: 'from-amber-500/10 to-orange-500/10 border-amber-500/20 text-amber-400' });
+  }
+  
+  if (stats?.sessions?.some(s => s.scores.confidence >= 85)) {
+      dynamicAchievements.push({ title: '🎯 Confidence Master', desc: 'Reached 85+ score', color: 'from-blue-500/10 to-indigo-500/10 border-blue-500/20 text-blue-400' });
+  }
+  if (stats?.sessions?.some(s => s.scores.filler >= 90)) {
+      dynamicAchievements.push({ title: '✨ Perfect Clarity', desc: 'Virtually zero filler words', color: 'from-purple-500/10 to-pink-500/10 border-purple-500/20 text-purple-400' });
+  }
+  if (stats?.sessions?.some(s => s.scores.vocab >= 80)) {
+      dynamicAchievements.push({ title: '📚 Vocabulary Builder', desc: 'Used strong transition words', color: 'from-emerald-500/10 to-green-500/10 border-emerald-500/20 text-emerald-400' });
+  }
+  
+  if (dynamicAchievements.length === 0) {
+      dynamicAchievements.push({ title: '🌱 Getting Started', desc: 'Complete sessions to unlock badges', color: 'from-gray-500/10 to-slate-500/10 border-gray-500/20 text-gray-400' });
+  }
+
   return (
     <main className="min-h-screen pb-28 relative overflow-x-hidden" style={{ background: 'var(--bg-base)' }}>
       {/* Soft green ambient background glow */}
@@ -357,29 +401,29 @@ export default function DashboardPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col justify-between">
                   <span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase">Confidence</span>
-                  <span className="text-[16px] font-extrabold text-emerald-400 flex items-center gap-1 mt-1">
-                    ↑ 8%
+                  <span className={`text-[16px] font-extrabold flex items-center gap-1 mt-1 ${getDiffColor(confidenceDiff)}`}>
+                    {formatDiff(confidenceDiff)}
                   </span>
                 </div>
 
                 <div className="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex flex-col justify-between">
                   <span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase">Vocabulary</span>
-                  <span className="text-[16px] font-extrabold text-blue-400 flex items-center gap-1 mt-1">
-                    ↑ 3%
+                  <span className={`text-[16px] font-extrabold flex items-center gap-1 mt-1 ${getDiffColor(vocabDiff)}`}>
+                    {formatDiff(vocabDiff)}
                   </span>
                 </div>
 
                 <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex flex-col justify-between">
                   <span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase">Delivery</span>
-                  <span className="text-[16px] font-extrabold text-purple-400 flex items-center gap-1 mt-1">
-                    ↑ 12%
+                  <span className={`text-[16px] font-extrabold flex items-center gap-1 mt-1 ${getDiffColor(deliveryDiff)}`}>
+                    {formatDiff(deliveryDiff)}
                   </span>
                 </div>
 
                 <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col justify-between">
                   <span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase">Structure</span>
-                  <span className="text-[16px] font-extrabold text-amber-400 flex items-center gap-1 mt-1">
-                    ↓ 2%
+                  <span className={`text-[16px] font-extrabold flex items-center gap-1 mt-1 ${getDiffColor(structureDiff)}`}>
+                    {formatDiff(structureDiff)}
                   </span>
                 </div>
               </div>
@@ -396,12 +440,7 @@ export default function DashboardPage() {
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { title: '🏆 5 Day Streak', desc: 'Consistent daily practice', color: 'from-amber-500/10 to-orange-500/10 border-amber-500/20 text-amber-400' },
-              { title: '🎯 Confidence Master', desc: 'Reached 85+ score', color: 'from-blue-500/10 to-indigo-500/10 border-blue-500/20 text-blue-400' },
-              { title: '🔥 First Perfect Score', desc: 'Zero filler hesitations', color: 'from-red-500/10 to-orange-500/10 border-red-500/20 text-red-400' },
-              { title: '📚 Vocabulary Builder', desc: 'Used 10+ transition words', color: 'from-emerald-500/10 to-green-500/10 border-emerald-500/20 text-emerald-400' },
-            ].map((ach, i) => (
+            {dynamicAchievements.map((ach, i) => (
               <div key={i} className={`p-5 rounded-[24px] bg-[var(--bg-card)] bg-gradient-to-br ${ach.color} border shadow-md flex items-center gap-4 hover:scale-[1.02] transition-transform`}>
                 <div>
                   <h4 className="text-[15px] font-bold">{ach.title}</h4>

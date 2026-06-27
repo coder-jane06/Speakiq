@@ -240,6 +240,24 @@ export default function ResultsPage() {
   } else {
     hookMessage = "Session complete. Get 1% better tomorrow.";
   }
+  let chartData: any[] = [];
+  if (stats?.sessions && stats.sessions.length > 0) {
+    const sorted = [...stats.sessions].sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    chartData = sorted.map((s: any, index: number) => {
+       const sc = s.scores || {};
+       const sKeys = Object.keys(sc);
+       const avg = Math.round(sKeys.reduce((acc, k) => acc + sc[k], 0) / (sKeys.length || 1));
+       return { session: `S${index + 1}`, score: activeTrendMetric === 'overall' ? avg : (sc[activeTrendMetric] || 0) };
+    });
+  } else {
+    chartData = [{ session: 'Current', score: activeTrendMetric === 'overall' ? avgScore : (scores[activeTrendMetric] || 0) }];
+  }
+
+  const displayDuration = (metrics as any)?.duration_secs 
+    ? Math.round((metrics as any).duration_secs) 
+    : (metrics as any)?.words?.length 
+      ? Math.round((metrics as any).words[(metrics as any).words.length - 1].end) 
+      : 0;
 
   return (
     <main
@@ -468,7 +486,7 @@ export default function ResultsPage() {
             {[
               {
                 label: 'Speaking Time',
-                value: (metrics as any)?.words?.length ? `${Math.round((metrics as any).words[(metrics as any).words.length - 1].end)}s` : '0s',
+                value: `${displayDuration}s`,
                 desc: 'Total active recording time'
               },
               {
@@ -611,12 +629,7 @@ export default function ResultsPage() {
 
           <div className="h-[200px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={[
-                { session: 'S1', score: 62 },
-                { session: 'S2', score: 68 },
-                { session: 'S3', score: 74 },
-                { session: 'S4', score: avgScore },
-              ]}>
+              <LineChart data={chartData}>
                 <XAxis dataKey="session" stroke="var(--text-tertiary)" fontSize={11} tickLine={false} />
                 <YAxis domain={[50, 100]} stroke="var(--text-tertiary)" fontSize={11} axisLine={false} />
                 <RechartsTooltip contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--text-primary)' }} />
@@ -634,31 +647,31 @@ export default function ResultsPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 text-center">
             <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
               <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Speaking Time</p>
-              <p className="text-[16px] font-extrabold text-[var(--text-primary)]">60s</p>
+              <p className="text-[16px] font-extrabold text-[var(--text-primary)]">{displayDuration}s</p>
             </div>
             <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
               <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Words Spoken</p>
-              <p className="text-[16px] font-extrabold text-[var(--text-primary)]">138</p>
+              <p className="text-[16px] font-extrabold text-[var(--text-primary)]">{(metrics as any)?.words?.length || 0}</p>
             </div>
             <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
               <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Pace (WPM)</p>
-              <p className="text-[16px] font-extrabold text-emerald-400">138</p>
+              <p className="text-[16px] font-extrabold text-emerald-400">{Math.round(metrics?.wpm || 0)}</p>
             </div>
             <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
               <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Longest Pause</p>
-              <p className="text-[16px] font-extrabold text-[var(--text-primary)]">1.8s</p>
+              <p className="text-[16px] font-extrabold text-[var(--text-primary)]">{(metrics?.longest_pause_sec || 0).toFixed(1)}s</p>
             </div>
             <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
               <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Confidence</p>
-              <p className="text-[16px] font-extrabold text-blue-400">92%</p>
+              <p className="text-[16px] font-extrabold text-blue-400">{scores.confidence || 0}%</p>
             </div>
             <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
               <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Filler Words</p>
-              <p className="text-[16px] font-extrabold text-amber-400">2</p>
+              <p className="text-[16px] font-extrabold text-amber-400">{metrics?.filler_count || 0}</p>
             </div>
             <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
               <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">AI Confidence</p>
-              <p className="text-[16px] font-extrabold text-emerald-400">99%</p>
+              <p className="text-[16px] font-extrabold text-emerald-400">{avgScore}%</p>
             </div>
           </div>
         </div>
