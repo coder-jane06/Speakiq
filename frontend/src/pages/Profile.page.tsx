@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ROUTES, API_URL } from '../constants';
+import { API_URL } from '../constants';
 import { supabase } from '../services/supabase';
 import { 
   Flame, Trophy, Mic, Clock, Calendar, TrendingUp, 
@@ -82,8 +82,6 @@ export default function ProfilePage() {
         return acc + avg;
       }, 0) / rawSessions.length)
     : 78;
-
-  const getDimScore = (key: string) => latestSession?.scores?.[key] ?? 75;
 
   const displayedSessions = showAllSessions ? rawSessions : rawSessions.slice(0, 4);
 
@@ -356,7 +354,7 @@ export default function ProfilePage() {
         </section>
 
 
-        {/* ── SECTION 6 — PERSONAL MILESTONES (Clean Spacious Cards) ── */}
+        {/* ── SECTION 6 — PERSONAL MILESTONES ── */}
         <section className="space-y-4">
           <h2 className="text-[18px] font-bold text-[var(--text-primary)] tracking-tight">Personal Milestones</h2>
 

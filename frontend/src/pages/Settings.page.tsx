@@ -5,9 +5,9 @@ import { supabase } from '../services/supabase';
 import { API_URL } from '../constants';
 import { 
   User, Sparkles, Monitor, Bell, Mic, Shield, Brain, Grid, HelpCircle, Info, 
-  Check, Volume2, Key, Download, Trash2, Lock, ChevronRight, Moon, Sun, 
-  Sliders, Globe, Calendar, HardDrive, FileText, MessageSquare, Video, 
-  RefreshCw, Laptop, Smartphone, ExternalLink, ShieldCheck, Zap, AlertTriangle, Edit3, X
+  Check, Download, Trash2, ChevronRight, Moon, Sun, 
+  Calendar, HardDrive, FileText, MessageSquare, Video, 
+  RefreshCw, Laptop, ExternalLink, Edit3, X
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -30,7 +30,6 @@ export default function SettingsPage() {
 
   const [accentColor, setAccentColor] = useState('green');
   const [uiDensity, setUiDensity] = useState('Comfortable');
-  const [animationsEnabled, setAnimationsEnabled] = useState(true);
   const [roundedCorners, setRoundedCorners] = useState(24);
 
   const [notifications, setNotifications] = useState({
@@ -55,11 +54,6 @@ export default function SettingsPage() {
 
   const [micTesting, setMicTesting] = useState(false);
   const [micLevel, setMicLevel] = useState(0);
-
-  const [privacySettings, setPrivacySettings] = useState({
-    analytics: true,
-    twoFactor: true,
-  });
 
   const [integrations, setIntegrations] = useState({
     gcal: true,

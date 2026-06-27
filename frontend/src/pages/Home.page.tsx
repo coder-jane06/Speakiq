@@ -1,14 +1,11 @@
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES, API_URL } from '../constants';
+import { ROUTES } from '../constants';
 import { useAuth } from '../context/AuthContext';
 import { Mic, Play, Sparkles, ArrowRight, Star, Users, CheckCircle2, Activity, Brain, Target, ShieldCheck, Zap } from 'lucide-react';
-import { supabase } from '../services/supabase';
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [checkingOnboarding, setCheckingOnboarding] = useState(false);
 
   const scrollToHowItWorks = () => {
     const el = document.getElementById('how-it-works');
@@ -16,14 +13,6 @@ export default function HomePage() {
       el.scrollIntoView({ behavior: 'smooth' });
     }
   };
-
-  if (checkingOnboarding && user) {
-    return (
-      <div className="min-h-[85vh] flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-[3px] border-[var(--border-md)] border-t-[var(--accent)] animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <main className="min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)] relative overflow-x-hidden selection:bg-[var(--accent)] selection:text-[var(--bg-base)]">

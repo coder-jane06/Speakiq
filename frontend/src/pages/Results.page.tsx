@@ -5,7 +5,7 @@ import { ScoreRing }         from '../components/results/ScoreRing'
 import { ROUTES, API_URL }   from '../constants'
 import { supabase } from '../services/supabase'
 import { useStreak } from '../hooks/useStreak'
-import { ArrowLeft, CheckCircle2, ChevronRight, Sparkles, TrendingUp, BarChart3, Cpu, Zap, Flame, Activity, Award, CheckCircle, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, ChevronRight, Sparkles, TrendingUp, BarChart3, Cpu, Zap, Activity, Award, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react'
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, XAxis, YAxis } from 'recharts'
 
 
@@ -21,7 +21,6 @@ export default function ResultsPage() {
   // For loading text progression
   const [loadingStage, setLoadingStage] = useState(0)
   const [elapsed, setElapsed] = useState(0)
-  // For celebration animation
   const [showCelebration, setShowCelebration] = useState(false)
   const [expandedMetric, setExpandedMetric] = useState<string | null>(null)
   const [activeTrendMetric, setActiveTrendMetric] = useState<'overall' | 'confidence' | 'vocab' | 'delivery'>('overall')
@@ -218,13 +217,6 @@ export default function ResultsPage() {
   // Calculate overall average
   const avgScore = Math.round(scoreKeys.reduce((acc, k) => acc + scores[k], 0) / scoreKeys.length) || 0;
 
-  const getScoreColor = (score: number) => {
-    if (score < 50) return { glow: 'var(--red)' };
-    if (score <= 75) return { glow: 'var(--amber)' };
-    return { glow: 'var(--accent)' };
-  }
-  const heroColor = getScoreColor(avgScore);
-
   let previousScores: Record<string, number> | null = null;
   if (stats?.sessions && stats.sessions.length > 1) {
     const sorted = [...stats.sessions].sort((a: any, b: any) => a.session_number - b.session_number);
@@ -251,7 +243,7 @@ export default function ResultsPage() {
 
   return (
     <main
-      className="min-h-screen flex flex-col items-center justify-start pt-6 pb-28 px-6 overflow-x-hidden relative"
+      className={`min-h-screen flex flex-col items-center justify-start pt-6 pb-28 px-6 overflow-x-hidden relative ${showCelebration ? 'opacity-100' : 'opacity-99'}`}
       style={{ background: 'var(--bg-base)' }}
     >
       {/* Soft ambient background glow */}
@@ -675,7 +667,7 @@ export default function ResultsPage() {
   )
 }
 
-function InteractiveDrillCard({ sessionId, drill }: { sessionId: string, drill: string }) {
+export function InteractiveDrillCard({ sessionId, drill }: { sessionId: string, drill: string }) {
   const [done, setDone] = useState(false);
   const [saving, setSaving] = useState(false);
 

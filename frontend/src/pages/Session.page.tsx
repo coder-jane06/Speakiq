@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSessionFlow }  from '../hooks/useSessionFlow'
 import { useAudioRecorder } from '../hooks/useAudioRecorder'
-import { AudioWaveform, RecordButton } from '../components/AudioRecorder'
+import { AudioWaveform } from '../components/AudioRecorder'
 import { ROUTES } from '../constants'
 import { TopicCard } from '../components/TopicCard'
 import type { Topic } from '../types'
-import { ArrowLeft, ChevronRight, Sparkles, Mic, Trophy, Target, Zap, TrendingUp, Sliders, Pause, Play, MicOff, RotateCcw, Activity, Volume2, CheckCircle, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, ChevronRight, Sparkles, Mic, Trophy, Target, Zap, TrendingUp, Sliders, Pause, Play, MicOff, Activity, Volume2, CheckCircle, AlertTriangle } from 'lucide-react'
 
 /* ── Goal cards ── */
 const GOALS = [
@@ -191,12 +191,6 @@ export default function SessionPage() {
     }
     navigate(ROUTES.HOME)
   }
-
-  const circumference = 2 * Math.PI * 76
-  const strokeDashoffset = circumference - (flow.prepSecsLeft / 30) * circumference
-  // Recording ring: use recProgress so 90s/120s users see correct progress
-  const recCircumference = 2 * Math.PI * 22
-  const recDashoffset = recCircumference - flow.recProgress * recCircumference
 
   const isSetupGoal     = setupStep === 'setup-goal'
   const isSetupLevel    = setupStep === 'setup-level'

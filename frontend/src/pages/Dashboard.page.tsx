@@ -4,9 +4,9 @@ import { API_URL } from '../constants';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
-  Mic, Trophy, ArrowRight, Flame, Target, Sparkles, Clock, 
-  ChevronRight, Play, RefreshCw, BarChart2, BookOpen, Layers, 
-  TrendingUp, TrendingDown, Award, CheckCircle2, Zap
+  Mic, Trophy, Flame, Target, Sparkles, Clock, 
+  ChevronRight, Play, RefreshCw, BarChart2, 
+  TrendingUp, Zap
 } from 'lucide-react';
 
 interface DashboardStats {
