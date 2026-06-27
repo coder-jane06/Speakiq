@@ -8,28 +8,22 @@ export default defineConfig({
   plugins: [react(), basicSsl()],
   server: {
     proxy: {
-      '/system': {
-        target: 'http://127.0.0.1:8002',
-        changeOrigin: true,
-      },
-      '/app-health': {
-        target: 'http://127.0.0.1:8002',
-        changeOrigin: true,
-        rewrite: () => '/system/status',
-      },
-      '/speak-topic': {
-        target: 'http://127.0.0.1:8002',
-        changeOrigin: true,
-        rewrite: () => '/sessions/topic',
-      },
+      // During local dev, proxy all API calls to the local FastAPI backend
       '/sessions': {
         target: 'http://127.0.0.1:8002',
         changeOrigin: true,
       },
-      '/api/dashboard': {
+      '/dashboard': {
         target: 'http://127.0.0.1:8002',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/dashboard/, '/dashboard'),
+      },
+      '/system': {
+        target: 'http://127.0.0.1:8002',
+        changeOrigin: true,
+      },
+      '/health': {
+        target: 'http://127.0.0.1:8002',
+        changeOrigin: true,
       },
     },
   },

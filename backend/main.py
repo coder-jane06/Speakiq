@@ -6,13 +6,16 @@ Run locally with:
 """
 
 import logging
+import os
 import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from routers import sessions
 from routers.dashboard import router as dashboard_router
@@ -132,6 +135,42 @@ async def system_status():
     }
 
 
-@app.get("/", tags=["system"])
+@app.get("/api", tags=["system"])
 async def root():
     return {"message": "SpeakIQ API - see /docs for endpoints"}
+
+
+# ── Serve built frontend (React SPA) ─────────────────────────────────────────
+# The frontend is built with `npm run build` inside frontend/
+# Vite outputs to frontend/dist — we serve that here so everything
+# runs on ONE server with no CORS issues.
+
+_FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
+
+if _FRONTEND_DIST.exists():
+    # Mount assets (JS/CSS/images) at their exact paths
+    app.mount(
+        "/Speakiq/assets",
+        StaticFiles(directory=str(_FRONTEND_DIST / "assets")),
+        name="assets",
+    )
+
+    @app.get("/Speakiq/{full_path:path}", tags=["frontend"])
+    async def serve_spa(full_path: str):
+        """Return index.html for all SPA routes so React Router can handle them."""
+        index = _FRONTEND_DIST / "index.html"
+        if index.exists():
+            return FileResponse(str(index))
+        return JSONResponse(status_code=404, content={"detail": "Frontend not built yet. Run: npm run build inside frontend/"})
+
+    @app.get("/", tags=["frontend"])
+    async def serve_root():
+        """Redirect / to the SPA root."""
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(url="/Speakiq/")
+
+    logger.info(f"Frontend: serving from {_FRONTEND_DIST}")
+else:
+    @app.get("/", tags=["system"])
+    async def root_no_frontend():
+        return {"message": "SpeakIQ API — frontend not built. Run: cd frontend && npm run build"}

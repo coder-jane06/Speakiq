@@ -309,19 +309,44 @@ class CoachingService:
     }
 
     def __init__(self):
+        # HF Spaces injects secrets as environment variables directly.
+        # Load .env only as a local fallback for development.
         try:
             from dotenv import load_dotenv
-            from groq import Groq
             load_dotenv(dotenv_path=os.path.join(
                 os.path.dirname(os.path.abspath(__file__)), '..', '.env'
             ))
-            api_key = os.getenv("GROQ_API_KEY")
-            self.client = Groq(api_key=api_key)
-            self.model  = "llama-3.3-70b-versatile"
-            logger.info("[CoachingService] Groq client initialized (llama-3.3-70b)")
-        except Exception as e:
-            logger.error(f"[CoachingService] Failed to init Groq: {e}")
-            self.client = None
+        except Exception:
+            pass
+
+        self.client = None
+        self.model  = "llama-3.3-70b-versatile"
+
+        # Try Groq first (primary)
+        groq_key = os.getenv("GROQ_API_KEY", "").strip()
+        if groq_key:
+            try:
+                from groq import Groq
+                self.client = Groq(api_key=groq_key)
+                self.provider = "groq"
+                logger.info("[CoachingService] Groq client initialized (llama-3.3-70b)")
+                return
+            except Exception as e:
+                logger.error(f"[CoachingService] Groq init failed: {e}")
+
+        # Fallback: OpenAI GPT-4o-mini (if available)
+        openai_key = os.getenv("OPENAI_API_KEY", "").strip()
+        if openai_key:
+            try:
+                import openai
+                self.openai_client = openai.OpenAI(api_key=openai_key)
+                self.provider = "openai"
+                logger.info("[CoachingService] OpenAI fallback client initialized (gpt-4o-mini)")
+                return
+            except Exception as e:
+                logger.error(f"[CoachingService] OpenAI init failed: {e}")
+
+        logger.warning("[CoachingService] No AI client available — will use fallback reports")
 
     async def generate_report(
         self,
@@ -338,8 +363,9 @@ class CoachingService:
         """Generate coaching report. Always returns a report — never raises."""
 
         focus_area = pick_focus_area(user_profile)
+        provider = getattr(self, 'provider', None)
 
-        if self.client is None:
+        if self.client is None and not hasattr(self, 'openai_client'):
             logger.warning("[CoachingService] No client — returning fallback")
             return self._fallback_report(focus_area, session_number)
 
@@ -359,13 +385,22 @@ class CoachingService:
         logger.info(f"[CoachingService] Generating report (focus: {focus_area}, goal: {speaking_goal})")
 
         try:
-            completion = self.client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=1600,
-                temperature=0.3,
-                response_format={"type": "json_object"}
-            )
+            if provider == "openai" and hasattr(self, 'openai_client'):
+                completion = self.openai_client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=1600,
+                    temperature=0.3,
+                    response_format={"type": "json_object"}
+                )
+            else:
+                completion = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=1600,
+                    temperature=0.3,
+                    response_format={"type": "json_object"}
+                )
 
             response_text = completion.choices[0].message.content.strip()
 

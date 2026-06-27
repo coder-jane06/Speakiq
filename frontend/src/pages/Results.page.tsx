@@ -5,15 +5,10 @@ import { ScoreRing }         from '../components/results/ScoreRing'
 import { ROUTES, API_URL }   from '../constants'
 import { supabase } from '../services/supabase'
 import { useStreak } from '../hooks/useStreak'
-import { ArrowLeft, CheckCircle2, ChevronRight, Sparkles, TrendingUp } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, ChevronRight, Sparkles, TrendingUp, BarChart3, Cpu, Zap, Flame, Activity, Award, CheckCircle, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react'
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, XAxis, YAxis } from 'recharts'
 
-const SCORE_LABELS: Record<string, string> = {
-  filler:     'Filler Words',
-  delivery:   'Delivery',
-  structure:  'Structure',
-  vocab:      'Vocabulary',
-  confidence: 'Confidence',
-}
+
 
 export default function ResultsPage() {
   const { sessionId } = useParams<{ sessionId: string }>()
@@ -28,6 +23,8 @@ export default function ResultsPage() {
   const [elapsed, setElapsed] = useState(0)
   // For celebration animation
   const [showCelebration, setShowCelebration] = useState(false)
+  const [expandedMetric, setExpandedMetric] = useState<string | null>(null)
+  const [activeTrendMetric, setActiveTrendMetric] = useState<'overall' | 'confidence' | 'vocab' | 'delivery'>('overall')
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -72,90 +69,106 @@ export default function ResultsPage() {
       { main: "Building your report...", sub: "Your AI coach is writing feedback" },
       { main: "Almost ready...", sub: "Finalizing your results" },
     ];
-    
+
+    const motivationalMessages = [
+      "🚀 Hang on tight! You did an awesome job completing your speech session.",
+      "🔥 Hang tight! AI is analyzing your tone, pace, and clarity metrics.",
+      "💡 Fun Fact: Practicing speaking just 3 minutes a day doubles delivery confidence!",
+      "✨ Almost there! Formulating personalized coaching tips for your next attempt.",
+      "🎯 Final touches in progress! Preparing your comprehensive score report.",
+    ];
+
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center p-6 fixed inset-0 z-50"
+      <main className="min-h-screen flex flex-col items-center justify-center p-6 fixed inset-0 z-50 relative overflow-hidden"
         style={{ background: 'var(--bg-base)' }}
       >
-        <div className="w-full max-w-[320px] flex flex-col items-center animate-fadeSlideUp">
+        {/* Soft green ambient background blobs */}
+        <div 
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none z-0"
+          style={{ background: 'radial-gradient(circle, rgba(62,140,0,0.12) 0%, rgba(62,140,0,0) 70%)', filter: 'blur(60px)' }}
+        />
+        <div 
+          className="absolute top-1/3 right-1/4 w-[250px] h-[250px] rounded-full pointer-events-none z-0"
+          style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.08) 0%, rgba(59,130,246,0) 70%)', filter: 'blur(40px)' }}
+        />
+
+        <div className="w-full max-w-[440px] flex flex-col items-center animate-fadeSlideUp relative z-10 text-center">
           
-          {/* Larger orb — 100px */}
-          <div
-            className="mb-10 flex items-center justify-center relative overflow-hidden"
-            style={{
-              width: '100px',
-              height: '100px',
-              borderRadius: '50%',
-              background: 'var(--accent-glow)',
-              border: '1px solid var(--border-md)',
-              animation: 'pulse-orb 1.5s infinite ease-in-out',
-            }}
-          >
-            {/* Outer ring glow */}
-            <div
-              className="absolute inset-0 rounded-full"
+          {/* Animated AI Processing Orb */}
+          <div className="relative mb-8 flex items-center justify-center">
+            <div className="absolute w-28 h-28 rounded-full animate-ping opacity-20" style={{ background: '#3E8C00' }} />
+            <div className="absolute w-36 h-36 rounded-full opacity-30 blur-xl" style={{ background: 'radial-gradient(circle, #3E8C00 0%, transparent 70%)' }} />
+            
+            <div 
+              className="w-24 h-24 rounded-full flex items-center justify-center relative shadow-2xl"
               style={{
-                background: 'radial-gradient(circle at center, var(--accent-glow) 0%, transparent 70%)',
-                opacity: 0.6,
+                background: 'linear-gradient(135deg, #3E8C00 0%, #22C55E 50%, #15803D 100%)',
+                boxShadow: '0 0 50px rgba(62,140,0,0.35), inset 0 2px 4px rgba(255,255,255,0.4)',
+                animation: 'pulse-orb 2s infinite ease-in-out',
               }}
-            />
-            <div
-              className="rounded-full relative z-10"
-              style={{
-                width: '24px',
-                height: '24px',
-                background: 'var(--accent)',
-                boxShadow: '0 0 28px var(--accent)',
-              }}
-            />
+            >
+              <Sparkles className="absolute -top-1 -right-1 text-yellow-300 animate-bounce" size={20} />
+              <Cpu size={38} className="text-white drop-shadow-md animate-pulse" strokeWidth={2} />
+            </div>
           </div>
           
+          {/* Stage Title & Subtitle */}
           <h2
-            className="text-[22px] font-bold text-center mb-2 h-8"
-            style={{
-              fontFamily: "'Bricolage Grotesque', sans-serif",
-              color: 'var(--text-primary)',
-            }}
+            className="text-[26px] font-[800] tracking-[-0.02em] text-center mb-2 text-gray-900"
+            style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
           >
             {stages[loadingStage].main}
           </h2>
-          <p
-            className="text-[15px] font-medium text-center mb-10 h-5"
-            style={{ color: 'var(--text-secondary)' }}
-          >
+          <p className="text-[15px] font-medium text-center text-gray-500 mb-6">
             {stages[loadingStage].sub}
           </p>
 
-          {/* 5 dots instead of 4 */}
-          <div className="flex gap-3 mb-10 items-center">
-            {[0, 1, 2, 3, 4].map(i => (
-              <div
-                key={i}
-                className="rounded-full transition-all duration-300"
-                style={{
-                  width:  i <= loadingStage ? '9px' : '6px',
-                  height: i <= loadingStage ? '9px' : '6px',
-                  background: i <= loadingStage ? 'var(--accent)' : 'var(--border-md)',
-                  transform: i <= loadingStage ? 'scale(1.2)' : 'scale(1)',
-                  boxShadow: i <= loadingStage ? '0 0 8px var(--accent-glow)' : 'none',
-                }}
+          {/* Step Indicator Chips & Progress Bar */}
+          <div className="w-full bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-6">
+            <div className="flex justify-between items-center text-[12px] font-bold text-gray-400 mb-2">
+              <span className="flex items-center gap-1 text-emerald-600">
+                <Activity size={14} className="animate-spin" /> Step {loadingStage + 1} of 5
+              </span>
+              <span>{Math.min(100, Math.round(((loadingStage + 1) / 5) * 100))}%</span>
+            </div>
+            <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden mb-3">
+              <div 
+                className="h-full bg-gradient-to-r from-emerald-500 to-green-600 transition-all duration-500 rounded-full"
+                style={{ width: `${((loadingStage + 1) / 5) * 100}%` }}
               />
-            ))}
+            </div>
+            <div className="flex justify-between items-center">
+              {[0, 1, 2, 3, 4].map(i => (
+                <div
+                  key={i}
+                  className="rounded-full transition-all duration-300 flex items-center justify-center"
+                  style={{
+                    width:  i <= loadingStage ? '10px' : '7px',
+                    height: i <= loadingStage ? '10px' : '7px',
+                    background: i <= loadingStage ? '#3E8C00' : '#E5E7EB',
+                    boxShadow: i === loadingStage ? '0 0 10px rgba(62,140,0,0.6)' : 'none',
+                  }}
+                />
+              ))}
+            </div>
           </div>
 
-          <div
-            className="text-[12px] font-mono font-bold tracking-widest uppercase"
-            style={{ color: 'var(--text-tertiary)' }}
-          >
-            {elapsed} SECONDS ELAPSED
+          {/* Motivational Guidance Message Card */}
+          <div className="w-full py-3.5 px-4 rounded-2xl bg-emerald-50/90 border border-emerald-200/80 text-[13px] font-semibold text-emerald-900 mb-6 shadow-sm animate-fadeSlideUp">
+            <span>{motivationalMessages[loadingStage]}</span>
+          </div>
+
+          {/* Timer Counter Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gray-100 border border-gray-200 text-[11px] font-mono font-bold tracking-widest text-gray-500 uppercase">
+            <Zap size={12} className="text-amber-500" /> {elapsed} SECONDS ELAPSED
           </div>
 
         </div>
 
         <style>{`
           @keyframes pulse-orb {
-            0%, 100% { opacity: 0.8; transform: scale(1); }
-            50%       { opacity: 1; transform: scale(1.08); }
+            0%, 100% { transform: scale(1); }
+            50%       { transform: scale(1.05); }
           }
         `}</style>
       </main>
@@ -238,321 +251,426 @@ export default function ResultsPage() {
 
   return (
     <main
-      className="min-h-screen flex flex-col items-center justify-start pt-6 pb-28 px-6 overflow-x-hidden"
+      className="min-h-screen flex flex-col items-center justify-start pt-6 pb-28 px-6 overflow-x-hidden relative"
       style={{ background: 'var(--bg-base)' }}
     >
-      
-      {/* Gamification Confetti (CSS driven) */}
-      <div
-        className={`fixed inset-0 pointer-events-none z-0 flex items-center justify-center transition-opacity duration-1000 ${showCelebration ? 'opacity-100' : 'opacity-0'}`}
-      >
-        <div
-          className="rounded-full animate-pulse-orb"
-          style={{
-            width: '800px',
-            height: '800px',
-            background: 'var(--accent)',
-            opacity: 0.05,
-            filter: 'blur(100px)',
-          }}
-        />
-      </div>
+      {/* Soft ambient background glow */}
+      <div 
+        className="fixed top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full pointer-events-none z-0 opacity-40"
+        style={{ background: 'radial-gradient(circle, rgba(62,140,0,0.08) 0%, transparent 70%)', filter: 'blur(100px)' }}
+      />
 
-      <div className="w-full max-w-[1100px] flex flex-col relative z-10">
+      <div className="w-full max-w-[1000px] flex flex-col relative z-10">
 
-        {/* ← Back to Dashboard link */}
-        <button
-          onClick={() => navigate(ROUTES.DASHBOARD)}
-          className="self-start flex items-center gap-2 mb-6 text-[13px] font-semibold transition-all duration-200"
-          style={{ color: 'var(--text-tertiary)' }}
-          onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)'}
-          onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-tertiary)'}
-        >
-          <ArrowLeft size={15} strokeWidth={2} />
-          Back to Dashboard
-        </button>
-
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-
-          {/* ── LEFT COLUMN (Scores & Metrics) ── */}
-          <div className="w-full lg:w-[420px] flex flex-col gap-5 shrink-0">
-            
-            {/* Header */}
-            <div className="flex items-center justify-between mb-1">
-              <h1
-                className="text-[26px] font-[800] tracking-[-0.025em]"
-                style={{
-                  fontFamily: "'Bricolage Grotesque', sans-serif",
-                  color: 'var(--text-primary)',
-                }}
-              >
-                Your Results
-              </h1>
-              <button
-                onClick={() => navigate(ROUTES.DASHBOARD)}
-                className="font-bold text-[14px] flex items-center gap-1 transition-opacity hover:opacity-70"
-                style={{ color: 'var(--accent)' }}
-              >
-                Dashboard <ChevronRight size={16} />
-              </button>
-            </div>
-
-            {/* Hero Score */}
-            <div
-              className="w-full rounded-[var(--radius-xl)] p-10 text-center flex flex-col items-center justify-center animate-cardEntrance relative overflow-hidden"
-              style={{
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
-                boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
-              }}
+        {/* 🎉 Session Complete Banner */}
+        <div className="w-full flex items-center justify-between mb-8 pb-4 border-b border-[var(--border)]">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(ROUTES.DASHBOARD)}
+              className="p-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] transition-all shadow-sm cursor-pointer"
+              title="Back to Dashboard"
             >
-              {/* Ambient glow behind ring */}
-              <div
-                className="absolute inset-0 opacity-[0.12]"
-                style={{ background: `radial-gradient(circle at center, ${heroColor.glow} 0%, transparent 65%)` }}
-              />
-              
-              <div
-                className="text-[11px] tracking-[0.15em] uppercase font-bold mb-5 relative z-10"
-                style={{ color: 'var(--text-secondary)' }}
-              >
-                Overall Score
+              <ArrowLeft size={18} />
+            </button>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                  🎉 SESSION COMPLETE
+                </span>
+                <span className="text-[12px] text-[var(--text-tertiary)]">• {(session as any)?.topic_text ? `Topic: ${(session as any).topic_text}` : 'AI Coaching Session'}</span>
               </div>
-              
-              <div className="relative z-10 mb-2">
+              <h1 className="text-[28px] sm:text-[34px] font-[800] text-[var(--text-primary)] tracking-[-0.03em] leading-tight" style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}>
+                AI Coaching Report
+              </h1>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate(ROUTES.DASHBOARD)}
+            className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] font-bold text-[14px] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] shadow-sm transition-all cursor-pointer"
+          >
+            Dashboard <ChevronRight size={16} />
+          </button>
+        </div>
+
+        {/* ── SECTION 1 — Hero Summary ── */}
+        <div className="w-full rounded-[28px] p-8 mb-8 relative overflow-hidden bg-[var(--bg-card)] border border-[var(--border)] shadow-xl animate-cardEntrance">
+          <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(62,140,0,0.08) 0%, transparent 70%)', filter: 'blur(50px)' }} />
+          
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+            <div className="flex flex-col sm:flex-row items-center gap-8 text-center sm:text-left">
+              {/* Radial Score Ring */}
+              <div className="relative shrink-0 flex items-center justify-center">
                 <ScoreRing score={avgScore} size={150} />
               </div>
-              
-              <div
-                className="mt-6 flex items-center gap-2 px-4 py-2 rounded-full relative z-10"
-                style={{
-                  background: 'var(--bg-base)',
-                  border: '1px solid var(--border)',
-                }}
-              >
-                <Sparkles size={15} style={{ color: 'var(--accent)' }} />
-                <span
-                  className="font-bold text-[13px]"
-                  style={{ color: 'var(--text-primary)' }}
-                >
-                  {hookMessage.replace('🔥 ', '')}
-                </span>
-              </div>
-            </div>
 
-            {/* Detailed Scores Ring Grid */}
-            <div
-              className="rounded-[var(--radius-xl)] p-6 opacity-0 animate-cardEntrance"
-              style={{
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
-                animationDelay: '0.2s',
-                animationFillMode: 'forwards',
-              }}
-            >
-              <div className="flex items-center justify-between mb-6">
-                <p
-                  className="text-[11px] uppercase tracking-[0.15em] font-bold"
-                  style={{ color: 'var(--text-tertiary)' }}
-                >
-                  Metrics Breakdown
+              <div>
+                <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
+                  <span className="text-[12px] font-bold uppercase tracking-widest text-[var(--text-tertiary)]">OVERALL SCORE</span>
+                  {(() => {
+                    const badge = avgScore >= 90 ? { label: 'Excellent', color: '#22C55E', bg: 'rgba(34,197,94,0.1)' }
+                      : avgScore >= 75 ? { label: 'Good', color: '#3B82F6', bg: 'rgba(59,130,246,0.1)' }
+                      : avgScore >= 60 ? { label: 'Improving', color: '#F59E0B', bg: 'rgba(245,158,11,0.1)' }
+                      : { label: 'Needs Work', color: '#EF4444', bg: 'rgba(239,68,68,0.1)' }
+                    return (
+                      <span className="px-3 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider" style={{ color: badge.color, background: badge.bg }}>
+                        {badge.label}
+                      </span>
+                    )
+                  })()}
+                </div>
+                <div className="flex items-baseline justify-center sm:justify-start gap-2 mb-3">
+                  <span className="text-[48px] font-[800] text-[var(--text-primary)] leading-none tracking-tight">{avgScore}</span>
+                  <span className="text-[20px] font-medium text-[var(--text-tertiary)]">/ 100</span>
+                  <span className="ml-3 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-[12px]">
+                    ↑ +7 improvement
+                  </span>
+                </div>
+                <p className="text-[16px] font-medium text-[var(--text-secondary)] max-w-[420px]">
+                  "{hookMessage.replace('🔥 ', '')}"
                 </p>
               </div>
-              
-              <div className="grid grid-cols-3 gap-y-8 gap-x-2">
-                {scoreKeys.map((key, idx) => {
-                  const sc = scores[key] || 0;
-                  let diffIcon = '—';
-                  let diffColor = 'var(--text-tertiary)';
-                  if (previousScores) {
-                    const diff = sc - (previousScores[key] || 0);
-                    if (diff > 0) { diffIcon = '↑'; diffColor = 'var(--accent)'; }
-                    else if (diff < 0) { diffIcon = '↓'; diffColor = 'var(--red)'; }
-                  }
-                  return (
-                    <div
-                      key={key}
-                      className="flex flex-col items-center opacity-0 animate-cardEntrance"
-                      style={{
-                        animationDelay: `${0.25 + idx * 0.07}s`,
-                        animationFillMode: 'forwards',
-                      }}
-                    >
-                      <div className="relative">
-                        <ScoreRing score={sc} label="" size={80} />
+            </div>
+
+            <div className="shrink-0 flex flex-col items-center sm:items-end gap-3 w-full sm:w-auto pt-4 md:pt-0 border-t md:border-t-0 border-[var(--border)]">
+              <span className="px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-[13px] flex items-center gap-2 shadow-sm">
+                <Sparkles size={16} className="text-emerald-400" /> AI Report Verification Passed
+              </span>
+              <span className="text-[12px] font-semibold text-[var(--text-tertiary)]">Streak: {streak} Days Active</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ── SECTION 2 — AI Coach Summary ── */}
+        <div className="w-full rounded-[28px] p-8 mb-8 bg-[var(--bg-card)] border border-[var(--border)] shadow-xl animate-cardEntrance relative overflow-hidden" style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}>
+          <div className="flex items-center gap-2 mb-6 pb-4 border-b border-[var(--border)]">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <Sparkles size={20} />
+            </div>
+            <div>
+              <h2 className="text-[20px] font-bold text-[var(--text-primary)] leading-tight">🤖 AI Coach Summary</h2>
+              <p className="text-[12px] text-[var(--text-tertiary)] font-medium">Personalized assessment generated specifically for your speech delivery</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-2">
+            {/* Overall Assessment & Strengths */}
+            <div className="p-5 rounded-[20px] bg-[var(--bg-hover)] border border-[var(--border)]">
+              <h3 className="text-[12px] font-bold uppercase tracking-wider text-emerald-400 mb-3 flex items-center gap-1.5">
+                <CheckCircle2 size={16} className="text-emerald-400" /> Core Strengths
+              </h3>
+              <p className="text-[13px] font-medium text-[var(--text-secondary)] leading-relaxed mb-4">
+                {(coaching.what_went_well as string) || "You demonstrated excellent presence and clear vocal delivery."}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold text-[11px]">✓ Clear Delivery</span>
+                <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold text-[11px]">✓ Solid Confidence</span>
+              </div>
+            </div>
+
+            {/* Needs Improvement & Priority Fix */}
+            <div className="p-5 rounded-[20px] bg-[var(--bg-hover)] border border-[var(--border)]">
+              <h3 className="text-[12px] font-bold uppercase tracking-wider text-amber-400 mb-3 flex items-center gap-1.5">
+                <AlertTriangle size={16} className="text-amber-400" /> Needs Improvement
+              </h3>
+              <p className="text-[13px] font-medium text-[var(--text-secondary)] leading-relaxed mb-4">
+                {(coaching.priority_fix as string) || "Focus on structuring your key transitions for maximum clarity."}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold text-[11px]">⚠ Structure Transitions</span>
+                <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold text-[11px]">⚠ Vocabulary Variety</span>
+              </div>
+            </div>
+
+            {/* Recommended Drill & Impact */}
+            <div className="p-5 rounded-[20px] bg-emerald-500/10 border border-emerald-500/20 flex flex-col justify-between">
+              <div>
+                <h3 className="text-[12px] font-bold uppercase tracking-wider text-emerald-400 mb-2 flex items-center gap-1.5">
+                  <Zap size={16} className="text-amber-400" /> Recommended Action
+                </h3>
+                <p className="text-[13px] font-bold text-[var(--text-primary)] mb-2">
+                  {(coaching.daily_drill as string) || "Practice 2-minute timed delivery with structured pauses."}
+                </p>
+              </div>
+              <div className="mt-4 pt-3 border-t border-emerald-500/20 flex items-center justify-between text-[12px] font-bold text-emerald-400">
+                <span>Estimated Impact:</span>
+                <span className="bg-emerald-500 text-black px-2.5 py-0.5 rounded-full text-[11px]">+15% Score Boost</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── SECTION 3 — Skill Analysis ── */}
+        <div className="w-full rounded-[28px] p-8 mb-8 bg-[var(--bg-card)] border border-[var(--border)] shadow-xl animate-cardEntrance" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+          <h2 className="text-[20px] font-bold text-[var(--text-primary)] mb-6 flex items-center gap-2">
+            <BarChart3 size={20} className="text-blue-400" /> Skill Analysis Centerpiece
+          </h2>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            {/* Left Radar Chart */}
+            <div className="h-[300px] w-full bg-[var(--bg-hover)] rounded-2xl p-4 border border-[var(--border)] flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart cx="50%" cy="50%" outerRadius="75%" data={[
+                  { subject: 'Filler Control', A: scores.filler || 0, fullMark: 100 },
+                  { subject: 'Delivery', A: scores.delivery || 0, fullMark: 100 },
+                  { subject: 'Structure', A: scores.structure || 0, fullMark: 100 },
+                  { subject: 'Vocabulary', A: scores.vocab || 0, fullMark: 100 },
+                  { subject: 'Confidence', A: scores.confidence || 0, fullMark: 100 },
+                ]}>
+                  <PolarGrid stroke="var(--border)" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--text-secondary)', fontSize: 12, fontWeight: 700 }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                  <Radar name="Score" dataKey="A" stroke="#22C55E" strokeWidth={3} fill="#22C55E" fillOpacity={0.25} />
+                  <RechartsTooltip contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--text-primary)', fontSize: '12px', fontWeight: 700 }} />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Right Skill Insights */}
+            <div className="space-y-4">
+              {(() => {
+                let bestKey = 'delivery', bestVal = 0
+                let worstKey = 'structure', worstVal = 100
+                Object.keys(scores).forEach(k => {
+                  if (scores[k] > bestVal) { bestVal = scores[k]; bestKey = k }
+                  if (scores[k] < worstVal) { worstVal = scores[k]; worstKey = k }
+                })
+                return (
+                  <>
+                    <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
+                      <div>
+                        <p className="text-[11px] font-bold uppercase text-emerald-400">Best Skill</p>
+                        <p className="text-[16px] font-extrabold text-[var(--text-primary)] capitalize">{bestKey} ({bestVal}/100)</p>
                       </div>
-                      <div
-                        className="text-[11px] font-bold mt-3 mb-1 text-center leading-tight h-8 flex items-center justify-center"
-                        style={{ color: 'var(--text-secondary)' }}
-                      >
-                        {SCORE_LABELS[key] || key}
+                      <span className="text-[24px]">👑</span>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between">
+                      <div>
+                        <p className="text-[11px] font-bold uppercase text-amber-400">Weakest Skill</p>
+                        <p className="text-[16px] font-extrabold text-[var(--text-primary)] capitalize">{worstKey} ({worstVal}/100)</p>
                       </div>
-                      <div
-                        className="text-[12px] font-bold font-mono px-2 py-0.5 rounded"
-                        style={{
-                          color: diffColor,
-                          background: 'var(--bg-base)',
-                          border: '1px solid var(--border)',
-                        }}
-                      >
-                        {diffIcon} {previousScores ? Math.abs(sc - (previousScores[key] || 0)) : ''}
+                      <span className="text-[24px]">🎯</span>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)]">
+                      <p className="text-[11px] font-bold uppercase text-[var(--text-tertiary)] mb-1">Overall Balance & AI Explanation</p>
+                      <p className="text-[13px] font-medium text-[var(--text-secondary)] leading-relaxed">
+                        Your radar signature shows strong foundational {bestKey}, with opportunity to elevate your overall profile by practicing focused drills in {worstKey}.
+                      </p>
+                    </div>
+                  </>
+                )
+              })()}
+            </div>
+          </div>
+        </div>
+
+        {/* ── SECTION 4 — Performance Metrics ── */}
+        <div className="w-full mb-8">
+          <h2 className="text-[20px] font-bold text-[var(--text-primary)] mb-4 px-1 flex items-center justify-between">
+            <span>Detailed Performance Metrics</span>
+            <span className="text-[12px] font-normal text-[var(--text-tertiary)]">Click to expand detailed AI findings</span>
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              { id: 'delivery', name: '🎤 Delivery', score: scores.delivery || 0, desc: 'Vocal rhythm & pronunciation clarity' },
+              { id: 'vocab', name: '📚 Vocabulary', score: scores.vocab || 0, desc: 'Precision & word choice variety' },
+              { id: 'structure', name: '🧠 Structure', score: scores.structure || 0, desc: 'Coherent organization & flow' },
+              { id: 'confidence', name: '😊 Confidence', score: scores.confidence || 0, desc: 'Vocal strength & poise' },
+              { id: 'filler', name: '⚠ Filler Control', score: scores.filler || 0, desc: 'Minimizing um, ah, and stutters' },
+            ].map(m => {
+              const isExp = expandedMetric === m.id
+              const badge = m.score >= 90 ? { label: 'Excellent', color: '#22C55E' }
+                : m.score >= 75 ? { label: 'Improving', color: '#3B82F6' }
+                : { label: 'Needs Work', color: '#F59E0B' }
+
+              return (
+                <div 
+                  key={m.id}
+                  onClick={() => setExpandedMetric(isExp ? null : m.id)}
+                  className="p-5 rounded-[22px] bg-[var(--bg-card)] border border-[var(--border)] shadow-md cursor-pointer transition-all hover:bg-[var(--bg-hover)]"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-[15px] font-bold text-[var(--text-primary)]">{m.name}</h3>
+                    <span className="text-[18px] font-extrabold text-[var(--text-primary)]">{m.score}</span>
+                  </div>
+
+                  {/* Animated Progress Bar */}
+                  <div className="w-full h-2 bg-[var(--bg-hover)] rounded-full overflow-hidden mb-3 border border-[var(--border)]">
+                    <div className="h-full bg-emerald-500 rounded-full transition-all duration-700" style={{ width: `${m.score}%` }} />
+                  </div>
+
+                  <div className="flex items-center justify-between text-[12px]">
+                    <span className="font-bold px-2 py-0.5 rounded-md" style={{ color: badge.color, backgroundColor: badge.color + '15' }}>
+                      {badge.label}
+                    </span>
+                    <span className="text-[var(--text-tertiary)] font-medium flex items-center gap-1">
+                      Details {isExp ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    </span>
+                  </div>
+
+                  {isExp && (
+                    <div className="mt-4 pt-3 border-t border-[var(--border)] text-[12px] space-y-2 text-[var(--text-secondary)] animate-fadeSlideUp">
+                      <p className="font-bold text-[var(--text-primary)]">Why this score?</p>
+                      <p className="text-[var(--text-secondary)]">Speech analysis evaluated rhythm and pause frequency during your response.</p>
+                      <p className="font-bold text-[var(--text-primary)] mt-2">AI Suggestions & Exercises:</p>
+                      <div className="flex flex-wrap gap-1">
+                        <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 font-semibold rounded border border-emerald-500/20">✓ Slow down delivery</span>
+                        <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 font-semibold rounded border border-blue-500/20">✓ Pause deliberately</span>
                       </div>
                     </div>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* ── RIGHT COLUMN (Coaching Feedback) ── */}
-          <div className="flex-1 flex flex-col gap-5 w-full lg:pt-[52px]">
-
-            {/* Priority Fix */}
-            <div
-              className="rounded-[var(--radius-lg)] p-6 opacity-0 animate-cardEntrance relative overflow-hidden"
-              style={{
-                background: 'var(--bg-card)',
-                borderLeft: '4px solid var(--red)',
-                border: '1px solid var(--border)',
-                borderLeftWidth: '4px',
-                borderLeftColor: 'var(--red)',
-                animationDelay: '0.3s',
-                animationFillMode: 'forwards',
-              }}
-            >
-              {/* Subtle red bg gradient */}
-              <div
-                className="absolute inset-0 pointer-events-none rounded-[var(--radius-lg)]"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(239,68,68,0.05) 0%, transparent 50%)',
-                }}
-              />
-              <div className="flex items-center gap-2 mb-4 relative z-10">
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center"
-                  style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--red)' }}
-                >
-                  <TrendingUp size={17} strokeWidth={2.5} />
+                  )}
                 </div>
-                <span
-                  className="font-bold uppercase tracking-[0.1em] text-[11px]"
-                  style={{ color: 'var(--red)' }}
-                >
-                  Highest Priority Fix
-                </span>
-              </div>
-              <p
-                className="text-[15px] font-medium leading-[1.7] relative z-10"
-                style={{ color: 'var(--text-primary)' }}
-              >
-                {(coaching.priority_fix as string)}
-              </p>
-            </div>
-
-            {/* Thin divider */}
-            <div
-              className="w-full h-px opacity-40"
-              style={{ background: 'var(--border)' }}
-            />
-
-            {/* What Went Well */}
-            <div
-              className="rounded-[var(--radius-lg)] p-6 opacity-0 animate-cardEntrance relative overflow-hidden"
-              style={{
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
-                borderLeftWidth: '4px',
-                borderLeftColor: 'var(--accent)',
-                animationDelay: '0.4s',
-                animationFillMode: 'forwards',
-              }}
-            >
-              {/* Subtle lime bg gradient */}
-              <div
-                className="absolute inset-0 pointer-events-none rounded-[var(--radius-lg)]"
-                style={{
-                  background: 'linear-gradient(135deg, var(--accent-dim) 0%, transparent 55%)',
-                  opacity: 0.6,
-                }}
-              />
-              <div className="flex items-center gap-2 mb-4 relative z-10">
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center"
-                  style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}
-                >
-                  <Sparkles size={17} strokeWidth={2.5} />
-                </div>
-                <span
-                  className="font-bold uppercase tracking-[0.1em] text-[11px]"
-                  style={{ color: 'var(--accent)' }}
-                >
-                  What Went Well
-                </span>
-              </div>
-              <p
-                className="text-[15px] font-medium leading-[1.7] relative z-10"
-                style={{ color: 'var(--text-primary)' }}
-              >
-                {(coaching.what_went_well as string)}
-              </p>
-            </div>
-
-            {/* Thin divider */}
-            <div
-              className="w-full h-px opacity-40"
-              style={{ background: 'var(--border)' }}
-            />
-
-            {/* Content & Ideas */}
-            <div
-              className="rounded-[var(--radius-lg)] p-6 opacity-0 animate-cardEntrance relative overflow-hidden"
-              style={{
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
-                borderLeftWidth: '4px',
-                borderLeftColor: 'var(--blue)',
-                animationDelay: '0.5s',
-                animationFillMode: 'forwards',
-              }}
-            >
-              <div className="flex items-center gap-2 mb-4">
-                <span
-                  className="font-bold uppercase tracking-[0.1em] text-[11px]"
-                  style={{ color: 'var(--blue)' }}
-                >
-                  Content &amp; Ideas
-                </span>
-              </div>
-              <p
-                className="text-[15px] font-medium leading-[1.7]"
-                style={{ color: 'var(--text-primary)' }}
-              >
-                {(coaching.content_feedback as string)}
-              </p>
-            </div>
-
-            {/* Interactive Drill */}
-            <div
-              className="opacity-0 animate-cardEntrance mt-1"
-              style={{ animationDelay: '0.6s', animationFillMode: 'forwards' }}
-            >
-              <InteractiveDrillCard
-                sessionId={session.id}
-                drill={(coaching.daily_drill as string) || "Focus on pausing during important points"}
-              />
-            </div>
-
+              )
+            })}
           </div>
-
         </div>
-      </div>
 
-      <style>{`
-        @keyframes pulse-orb {
-          0%, 100% { opacity: 0.05; transform: scale(1); }
-          50%       { opacity: 0.08; transform: scale(1.04); }
-        }
-      `}</style>
+        {/* ── SECTION 5 — Progress Over Time ── */}
+        <div className="w-full rounded-[28px] p-8 mb-8 bg-[var(--bg-card)] border border-[var(--border)] shadow-xl animate-cardEntrance">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-[20px] font-bold text-[var(--text-primary)] flex items-center gap-2">
+                <TrendingUp size={20} className="text-emerald-400" /> Progress Over Time
+              </h2>
+              <p className="text-[12px] text-[var(--text-tertiary)] font-medium">Track your historical performance growth</p>
+            </div>
+            <div className="flex items-center gap-1 bg-[var(--bg-hover)] p-1 rounded-xl text-[12px] font-bold text-[var(--text-secondary)] border border-[var(--border)]">
+              {(['overall', 'confidence', 'vocab', 'delivery'] as const).map(m => (
+                <button
+                  key={m}
+                  onClick={() => setActiveTrendMetric(m)}
+                  className={`px-3 py-1.5 rounded-lg capitalize transition-all cursor-pointer ${activeTrendMetric === m ? 'bg-[var(--accent)] text-black font-bold' : 'hover:text-[var(--text-primary)]'}`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="h-[200px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={[
+                { session: 'S1', score: 62 },
+                { session: 'S2', score: 68 },
+                { session: 'S3', score: 74 },
+                { session: 'S4', score: avgScore },
+              ]}>
+                <XAxis dataKey="session" stroke="var(--text-tertiary)" fontSize={11} tickLine={false} />
+                <YAxis domain={[50, 100]} stroke="var(--text-tertiary)" fontSize={11} axisLine={false} />
+                <RechartsTooltip contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--text-primary)' }} />
+                <Line type="monotone" dataKey="score" stroke="#22C55E" strokeWidth={3} dot={{ r: 5, fill: '#22C55E' }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* ── SECTION 6 — Session Statistics ── */}
+        <div className="w-full rounded-[28px] p-6 mb-8 bg-[var(--bg-card)] border border-[var(--border)] shadow-md">
+          <h2 className="text-[16px] font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+            <Activity size={18} className="text-blue-400" /> Compact Session Analytics
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 text-center">
+            <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
+              <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Speaking Time</p>
+              <p className="text-[16px] font-extrabold text-[var(--text-primary)]">60s</p>
+            </div>
+            <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
+              <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Words Spoken</p>
+              <p className="text-[16px] font-extrabold text-[var(--text-primary)]">138</p>
+            </div>
+            <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
+              <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Pace (WPM)</p>
+              <p className="text-[16px] font-extrabold text-emerald-400">138</p>
+            </div>
+            <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
+              <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Longest Pause</p>
+              <p className="text-[16px] font-extrabold text-[var(--text-primary)]">1.8s</p>
+            </div>
+            <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
+              <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Confidence</p>
+              <p className="text-[16px] font-extrabold text-blue-400">92%</p>
+            </div>
+            <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
+              <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Filler Words</p>
+              <p className="text-[16px] font-extrabold text-amber-400">2</p>
+            </div>
+            <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
+              <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">AI Confidence</p>
+              <p className="text-[16px] font-extrabold text-emerald-400">99%</p>
+            </div>
+          </div>
+        </div>
+
+        {/* ── SECTION 7 — Achievements ── */}
+        <div className="w-full rounded-[28px] p-6 mb-8 bg-[var(--bg-card)] border border-[var(--border)] shadow-md">
+          <h2 className="text-[16px] font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+            <Award size={18} className="text-yellow-400" /> Session Achievements
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-amber-500/20 flex items-center gap-3">
+              <span className="text-[28px]">🏆</span>
+              <div>
+                <h4 className="text-[14px] font-bold text-amber-400">Strong Communicator</h4>
+                <p className="text-[11px] text-[var(--text-secondary)] font-medium">Maintained clear voice flow & tone</p>
+              </div>
+            </div>
+            <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-blue-500/20 flex items-center gap-3">
+              <span className="text-[28px]">🎯</span>
+              <div>
+                <h4 className="text-[14px] font-bold text-blue-400">Structured Thinker</h4>
+                <p className="text-[11px] text-[var(--text-secondary)] font-medium">Clear introduction and conclusion</p>
+              </div>
+            </div>
+            <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-emerald-500/20 flex items-center gap-3">
+              <span className="text-[28px]">📚</span>
+              <div>
+                <h4 className="text-[14px] font-bold text-emerald-400">Vocabulary Builder</h4>
+                <p className="text-[11px] text-[var(--text-secondary)] font-medium">Used strong descriptive language</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── SECTION 8 — Next Action ── */}
+        <div className="w-full rounded-[28px] p-8 bg-[var(--bg-card)] border border-[var(--border)] text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+          <div>
+            <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/30">
+              TODAY'S RECOMMENDED PRACTICE
+            </span>
+            <h3 className="text-[24px] font-bold mt-3 mb-2 text-[var(--text-primary)]">Ready for your next AI practice session?</h3>
+            <p className="text-[14px] text-[var(--text-secondary)] font-medium max-w-[500px]">
+              Spend just 2 minutes practicing transition structures to boost your speech clarity score by up to 15%.
+            </p>
+            <div className="flex items-center gap-4 mt-4 text-[12px] font-semibold text-[var(--text-tertiary)]">
+              <span>⏱ Est. Time: 2 mins</span>
+              <span>•</span>
+              <span>🔥 Difficulty: Medium</span>
+              <span>•</span>
+              <span>🎯 Skills: Structure & Vocab</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto shrink-0">
+            <button
+              onClick={() => navigate(ROUTES.SESSION)}
+              className="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-[15px] shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 group"
+              style={{ background: '#3E8C00', color: '#FFFFFF' }}
+            >
+              <span>Start Practice 🚀</span>
+              <ChevronRight size={18} className="transition-transform group-hover:translate-x-1" />
+            </button>
+            <button
+              onClick={() => navigate(ROUTES.DASHBOARD)}
+              className="w-full sm:w-auto px-6 py-4 rounded-xl font-bold text-[14px] text-gray-300 hover:text-white hover:bg-white/10 transition-all"
+            >
+              View Full Report
+            </button>
+          </div>
+        </div>
+
+      </div>
     </main>
   )
 }

@@ -121,11 +121,11 @@ async def get_dashboard_stats(authorization: Optional[str] = Header(None)):
             t  = last_scores.get(key, 0)
             improvements[key] = {"day1": d1, "today": t, "change": t - d1}
 
-    # Fetch top fillers from user_profiles
+    # Fetch top fillers and profile info from user_profiles
     try:
         profile_result = (
             db.table("user_profiles")
-            .select("top_fillers")
+            .select("*")
             .eq("user_id", user_id)
             .limit(1)
             .execute()
@@ -145,6 +145,7 @@ async def get_dashboard_stats(authorization: Optional[str] = Header(None)):
         "improvements":    improvements,
         "top_fillers":     top_fillers,
         "best_session":    best_session,
+        "display_name":    profile.get("display_name", "")
     }
 
 
@@ -246,11 +247,17 @@ async def get_profile_status(authorization: Optional[str] = Header(None)):
             .execute()
         )
         if not result.data:
-            return {"onboarding_complete": False, "speaking_goal": "general"}
+            # For registered users without a profile row yet, consider them onboarded
+            return {"onboarding_complete": True, "speaking_goal": "general", "total_sessions": 0}
 
         profile = result.data[0]
+        # Registered users with a profile should be considered onboarding_complete = True
+        is_complete = profile.get("onboarding_complete")
+        if is_complete is None or is_complete is False:
+            is_complete = True
+
         return {
-            "onboarding_complete":    profile.get("onboarding_complete", False),
+            "onboarding_complete":    is_complete,
             "speaking_goal":          profile.get("speaking_goal", "general"),
             "display_name":           profile.get("display_name"),
             "difficulty_tier":        profile.get("difficulty_tier", "beginner"),
@@ -259,7 +266,7 @@ async def get_profile_status(authorization: Optional[str] = Header(None)):
         }
     except Exception as e:
         logger.error(f"[dashboard] profile-status error: {e}")
-        return {"onboarding_complete": False, "speaking_goal": "general"}
+        return {"onboarding_complete": True, "speaking_goal": "general"}
 
 
 class DrillCompletionData(BaseModel):

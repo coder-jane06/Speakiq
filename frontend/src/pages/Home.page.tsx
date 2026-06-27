@@ -2,42 +2,20 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES, API_URL } from '../constants';
 import { useAuth } from '../context/AuthContext';
-import { Zap, Target, Mic, Flame } from 'lucide-react';
+import { Mic, Play, Sparkles, ArrowRight, Star, Users, CheckCircle2, Activity, Brain, Target, ShieldCheck, Zap } from 'lucide-react';
 import { supabase } from '../services/supabase';
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
+  const [checkingOnboarding, setCheckingOnboarding] = useState(false);
 
-  // Redirect new users to onboarding before their first session
-  useEffect(() => {
-    if (!user) {
-      setCheckingOnboarding(false);
-      return;
+  const scrollToHowItWorks = () => {
+    const el = document.getElementById('how-it-works');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
     }
-    const check = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        const res = await fetch(`${API_URL}/dashboard/profile-status`, {
-          headers: { Authorization: token ? `Bearer ${token}` : '' },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (!data.onboarding_complete) {
-            navigate(ROUTES.ONBOARDING, { replace: true });
-            return;
-          }
-        }
-      } catch {
-        // silently ignore — don't block home page
-      } finally {
-        setCheckingOnboarding(false);
-      }
-    };
-    check();
-  }, [user, navigate]);
+  };
 
   if (checkingOnboarding && user) {
     return (
@@ -48,338 +26,426 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-primary relative overflow-x-hidden">
+    <main className="min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)] relative overflow-x-hidden selection:bg-[var(--accent)] selection:text-[var(--bg-base)]">
+      
+      {/* Dynamic Background Glows */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] pointer-events-none overflow-hidden z-0">
+        <div 
+          className="absolute -top-[100px] left-1/4 w-[500px] h-[500px] rounded-full"
+          style={{
+            background: 'radial-gradient(circle, rgba(200,249,125,0.07) 0%, rgba(9,9,15,0) 70%)',
+            filter: 'blur(80px)',
+          }}
+        />
+        <div 
+          className="absolute top-[150px] right-10 w-[400px] h-[400px] rounded-full"
+          style={{
+            background: 'radial-gradient(circle, rgba(96,165,250,0.05) 0%, rgba(9,9,15,0) 70%)',
+            filter: 'blur(80px)',
+          }}
+        />
+      </div>
 
       {/* ── HERO SECTION ──────────────────────────────────────────── */}
-      <section className="min-h-[92vh] flex items-center">
-        <div className="max-w-[1200px] mx-auto w-full px-6 lg:px-10 flex flex-col lg:flex-row items-center gap-12 lg:gap-6 py-16 lg:py-0">
+      <section className="relative z-10 min-h-[90vh] flex items-center pt-8 pb-16 lg:py-20">
+        <div className="max-w-[1280px] mx-auto w-full px-6 lg:px-10 flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-8">
 
           {/* ── LEFT COLUMN ── */}
-          <div className="w-full lg:w-[52%] flex flex-col gap-7 animate-fadeSlideUp">
+          <div className="w-full lg:w-[50%] flex flex-col gap-8 animate-fadeSlideUp">
 
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 self-start">
+            {/* Premium Badge */}
+            <div className="inline-flex items-center gap-2.5 self-start">
               <span
-                className="flex items-center gap-2 px-4 py-1.5 rounded-full text-[12px] font-bold tracking-widest uppercase"
+                className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full text-[12px] font-bold tracking-widest uppercase backdrop-blur-md transition-all duration-300 hover:border-[var(--accent-glow)]"
                 style={{
-                  background: 'rgba(200,249,125,0.08)',
-                  border: '1px solid rgba(200,249,125,0.18)',
+                  background: 'rgba(200,249,125,0.06)',
+                  border: '1px solid rgba(200,249,125,0.2)',
                   color: 'var(--accent)',
-                  letterSpacing: '0.1em',
                 }}
               >
-                <span
-                  className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse-orb"
-                />
-                AI Speech Coach
+                <Sparkles size={14} className="animate-pulse" />
+                <span>Next-Gen AI Speech Coaching</span>
               </span>
             </div>
 
-            {/* H1 */}
+            {/* Headline */}
             <h1
-              className="text-primary tracking-tight leading-[1.05]"
+              className="tracking-tight leading-[1.04] text-[var(--text-primary)]"
               style={{
-                fontFamily: "'Bricolage Grotesque', -apple-system, sans-serif",
-                fontSize: 'clamp(44px, 6vw, 66px)',
+                fontFamily: "'Bricolage Grotesque', sans-serif",
+                fontSize: 'clamp(46px, 5.5vw, 68px)',
                 fontWeight: 800,
-                letterSpacing: '-0.04em',
+                letterSpacing: '-0.035em',
               }}
             >
-              Speak better,<br />
-              <span style={{ color: 'var(--accent)' }}>every single day.</span>
+              Master your speech.<br />
+              <span className="bg-gradient-to-r from-[var(--accent)] via-[#D4FF96] to-[#A3E635] bg-clip-text text-transparent">
+                Speak with total power.
+              </span>
             </h1>
 
-            {/* Subtext */}
-            <p className="text-secondary text-[17px] font-medium leading-relaxed max-w-[460px]">
-              Practice for 3 minutes a day. Our AI analyzes your delivery, vocabulary, and structure — then adapts to make you sharper.
+            {/* Supporting Copy */}
+            <p className="text-[var(--text-secondary)] text-[18px] lg:text-[19px] font-normal leading-relaxed max-w-[520px]">
+              SpeakIQ acts as your private real-time communication copilot. Practice for just 3 minutes a day to eliminate filler words, refine your pace, and captivate any audience with effortless confidence.
             </p>
 
-            {/* CTA row */}
-            <div className="flex items-center gap-4 mt-1">
+            {/* Dual CTAs */}
+            <div className="flex flex-wrap items-center gap-4 pt-2">
+              {/* Primary CTA */}
               <button
                 onClick={() => navigate(user ? ROUTES.SESSION : ROUTES.LOGIN)}
-                className="flex items-center gap-2.5 font-bold text-[15px] px-7 py-3.5 rounded-full transition-all active:scale-[0.97]"
+                className="group relative inline-flex items-center justify-center gap-3 font-bold text-[16px] px-8 py-4 rounded-[20px] transition-all duration-300 active:scale-[0.98] cursor-pointer overflow-hidden"
                 style={{
                   background: 'var(--accent)',
-                  color: 'var(--bg-base)',
-                  boxShadow: '0 0 28px rgba(200,249,125,0.22)',
+                  color: '#09090F',
+                  boxShadow: '0 0 32px rgba(200,249,125,0.28)',
                 }}
-                onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 40px rgba(200,249,125,0.35)')}
-                onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 0 28px rgba(200,249,125,0.22)')}
+                onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 45px rgba(200,249,125,0.45), 0 10px 20px rgba(0,0,0,0.3)')}
+                onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 0 32px rgba(200,249,125,0.28)')}
               >
-                <Mic size={17} strokeWidth={2.5} />
-                Start Session
+                <Mic size={19} strokeWidth={2.5} className="transition-transform duration-300 group-hover:scale-110" />
+                <span>Start Session</span>
+                <ArrowRight size={18} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
               </button>
-              <span className="text-[12px] text-tertiary font-bold tracking-[0.12em] uppercase">
-                Takes &lt; 3 min
-              </span>
+
+              {/* Secondary CTA */}
+              <button
+                onClick={scrollToHowItWorks}
+                className="inline-flex items-center justify-center gap-2.5 font-semibold text-[15px] px-7 py-4 rounded-[20px] transition-all duration-300 backdrop-blur-md cursor-pointer border hover:bg-[var(--bg-hover)]"
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  borderColor: 'var(--border-md)',
+                  color: 'var(--text-primary)',
+                }}
+              >
+                <Play size={15} fill="currentColor" className="text-[var(--accent)]" />
+                <span>See How It Works</span>
+              </button>
             </div>
 
-            {/* Social proof pills */}
-            <div className="flex items-center gap-2.5 flex-wrap pt-2">
-              {[
-                { emoji: '🎙️', label: '10k+ sessions' },
-                { emoji: '⭐', label: '4.9 rating' },
-                { emoji: '🔥', label: 'Daily streaks' },
-              ].map((pill) => (
-                <span
-                  key={pill.label}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-semibold"
-                  style={{
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg-card)',
-                    color: 'var(--text-secondary)',
-                  }}
-                >
-                  <span>{pill.emoji}</span>
-                  <span>{pill.label}</span>
-                </span>
-              ))}
+            {/* Below Hero Social Proof Cards */}
+            <div className="mt-6 pt-8 border-t border-[var(--border)]">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Metric 1 */}
+                <div className="flex items-center gap-3.5 p-3.5 rounded-[18px] bg-[var(--bg-card)]/60 border border-[var(--border)] backdrop-blur-sm">
+                  <div className="w-10 h-10 rounded-xl bg-[var(--accent-dim)] flex items-center justify-center text-[var(--accent)] flex-shrink-0">
+                    <Users size={20} />
+                  </div>
+                  <div>
+                    <div className="text-[15px] font-bold text-[var(--text-primary)] leading-tight">10,000+</div>
+                    <div className="text-[12px] text-[var(--text-secondary)] font-medium">Active Learners</div>
+                  </div>
+                </div>
+
+                {/* Metric 2 */}
+                <div className="flex items-center gap-3.5 p-3.5 rounded-[18px] bg-[var(--bg-card)]/60 border border-[var(--border)] backdrop-blur-sm">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 flex-shrink-0">
+                    <Star size={20} fill="currentColor" />
+                  </div>
+                  <div>
+                    <div className="text-[15px] font-bold text-[var(--text-primary)] leading-tight">4.9★ Rating</div>
+                    <div className="text-[12px] text-[var(--text-secondary)] font-medium">User Satisfaction</div>
+                  </div>
+                </div>
+
+                {/* Metric 3 */}
+                <div className="flex items-center gap-3.5 p-3.5 rounded-[18px] bg-[var(--bg-card)]/60 border border-[var(--border)] backdrop-blur-sm sm:col-span-1">
+                  <div className="w-10 h-10 rounded-xl bg-teal-500/10 flex items-center justify-center text-teal-400 flex-shrink-0">
+                    <ShieldCheck size={20} />
+                  </div>
+                  <div>
+                    <div className="text-[15px] font-bold text-[var(--text-primary)] leading-tight">94% Success</div>
+                    <div className="text-[12px] text-[var(--text-secondary)] font-medium">Reported Confidence</div>
+                  </div>
+                </div>
+              </div>
             </div>
+
           </div>
 
-          {/* ── RIGHT COLUMN — waveform visual ── */}
-          <div
-            className="hidden lg:flex w-[48%] flex-col items-center gap-5"
-            style={{ animationDelay: '0.08s' }}
-          >
-            {/* Glow halo behind card */}
-            <div className="relative flex items-center justify-center w-full">
-              <div
-                className="absolute inset-0 rounded-3xl pointer-events-none"
+          {/* ── RIGHT COLUMN — ENHANCED LIVE ANALYTICS CARD ── */}
+          <div className="w-full lg:w-[48%] relative flex flex-col items-center">
+            
+            {/* Ambient Soft Green Glow Behind Card */}
+            <div 
+              className="absolute -inset-4 rounded-[40px] pointer-events-none transition-all duration-700"
+              style={{
+                background: 'radial-gradient(circle at 50% 50%, rgba(200,249,125,0.16) 0%, rgba(200,249,125,0.03) 50%, transparent 75%)',
+                filter: 'blur(40px)',
+                transform: 'scale(1.08)',
+              }}
+            />
+
+            {/* Main Interactive Card Shell */}
+            <div 
+              className="relative w-full rounded-[32px] overflow-hidden transition-all duration-500 hover:-translate-y-1.5 group"
+              style={{
+                background: 'rgba(17, 17, 24, 0.75)',
+                backdropFilter: 'blur(24px)',
+                WebkitBackdropFilter: 'blur(24px)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6), 0 0 40px rgba(200, 249, 125, 0.12)',
+                padding: '36px 32px',
+              }}
+            >
+              {/* Subtle Top Inner Light Refraction */}
+              <div 
+                className="absolute top-0 left-0 right-0 h-[1px] pointer-events-none"
                 style={{
-                  background: 'radial-gradient(ellipse 60% 55% at 50% 50%, rgba(200,249,125,0.09) 0%, transparent 70%)',
-                  filter: 'blur(24px)',
-                  transform: 'scale(1.15)',
+                  background: 'linear-gradient(90deg, transparent 0%, rgba(200,249,125,0.4) 50%, transparent 100%)',
                 }}
               />
 
-              {/* Waveform card */}
-              <div
-                className="relative w-full rounded-3xl overflow-hidden animate-fadeSlideUp"
-                style={{
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border)',
-                  padding: '48px 40px',
-                  animationDelay: '0.1s',
-                }}
-              >
-                {/* Subtle inner glow top-left */}
-                <div
-                  className="absolute top-0 left-0 w-48 h-48 rounded-full pointer-events-none"
-                  style={{
-                    background: 'radial-gradient(circle, rgba(200,249,125,0.06) 0%, transparent 70%)',
-                    filter: 'blur(32px)',
-                  }}
-                />
+              {/* Card Header: AI Listening & Live Indicator */}
+              <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
+                <div className="flex items-center gap-3">
+                  <div className="relative flex items-center justify-center w-3 h-3">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75 animate-ping" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--accent)]" />
+                  </div>
+                  <span className="text-[13px] font-bold tracking-[0.12em] uppercase text-[var(--accent)] flex items-center gap-1.5">
+                    <Brain size={15} />
+                    <span>AI Listening & Analyzing</span>
+                  </span>
+                </div>
 
-                {/* Label */}
-                <p
-                  className="text-[11px] font-bold tracking-[0.14em] uppercase mb-8"
-                  style={{ color: 'var(--text-tertiary)' }}
-                >
-                  Live Analysis
-                </p>
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] font-semibold text-[var(--text-secondary)]">
+                  <Activity size={12} className="text-blue-400 animate-pulse" />
+                  <span>Real-time Audio Engine</span>
+                </div>
+              </div>
 
-                {/* 12 waveform bars */}
-                <div className="flex items-end gap-2 h-[80px] mb-10">
-                  {Array.from({ length: 12 }).map((_, i) => (
+              {/* Animated Waveform Bars Container */}
+              <div className="mb-8 p-4 rounded-2xl bg-black/30 border border-white/5 backdrop-blur-sm">
+                <div className="flex items-center justify-between text-[11px] font-medium text-[var(--text-tertiary)] uppercase tracking-wider mb-3 px-1">
+                  <span>Voice Pitch & Modulation</span>
+                  <span className="text-[var(--accent)]">Active Stream</span>
+                </div>
+                <div className="flex items-end justify-between gap-1.5 h-[76px] px-2">
+                  {[
+                    { h1: '16px', h2: '48px', d: '0s' },
+                    { h1: '32px', h2: '64px', d: '0.1s' },
+                    { h1: '50px', h2: '28px', d: '0.25s' },
+                    { h1: '24px', h2: '56px', d: '0.15s' },
+                    { h1: '68px', h2: '36px', d: '0.05s' },
+                    { h1: '40px', h2: '72px', d: '0.3s' },
+                    { h1: '20px', h2: '44px', d: '0.2s' },
+                    { h1: '60px', h2: '24px', d: '0.35s' },
+                    { h1: '35px', h2: '68px', d: '0.12s' },
+                    { h1: '52px', h2: '30px', d: '0.28s' },
+                    { h1: '28px', h2: '60px', d: '0.18s' },
+                    { h1: '64px', h2: '38px', d: '0.08s' },
+                    { h1: '42px', h2: '70px', d: '0.22s' },
+                    { h1: '18px', h2: '46px', d: '0.32s' },
+                  ].map((bar, i) => (
                     <div
                       key={i}
-                      className="wave-bar flex-1 rounded-full"
-                      style={{ background: 'rgba(200,249,125,0.8)' }}
+                      className="flex-1 rounded-full transition-all duration-300"
+                      style={{
+                        background: i % 3 === 0 
+                          ? 'linear-gradient(180deg, #60A5FA 0%, var(--accent) 100%)' 
+                          : 'linear-gradient(180deg, var(--accent) 0%, rgba(200,249,125,0.4) 100%)',
+                        boxShadow: '0 0 12px rgba(200,249,125,0.3)',
+                        animation: `waveBarDynamic 1.4s ease-in-out infinite alternate`,
+                        animationDelay: bar.d,
+                      }}
                     />
                   ))}
                 </div>
+              </div>
 
-                {/* Score ring row */}
-                <div className="flex items-center gap-4">
-                  <div
-                    className="flex flex-col items-center justify-center w-16 h-16 rounded-2xl"
-                    style={{ background: 'rgba(200,249,125,0.08)', border: '1px solid rgba(200,249,125,0.12)' }}
-                  >
-                    <span className="text-[20px] font-bold" style={{ color: 'var(--accent)' }}>92</span>
-                    <span className="text-[9px] font-bold tracking-wider uppercase" style={{ color: 'var(--text-tertiary)' }}>Score</span>
-                  </div>
-                  <div className="flex flex-col gap-1.5 flex-1">
-                    {[
-                      { label: 'Delivery', pct: 88, color: '#60A5FA' },
-                      { label: 'Clarity', pct: 94, color: '#C8F97D' },
-                      { label: 'Pace', pct: 76, color: '#FBBF24' },
-                    ].map((dim) => (
-                      <div key={dim.label} className="flex items-center gap-2.5">
-                        <span className="text-[11px] font-medium w-[50px]" style={{ color: 'var(--text-tertiary)' }}>{dim.label}</span>
-                        <div className="flex-1 h-1 rounded-full" style={{ background: 'var(--border)' }}>
-                          <div
-                            className="h-1 rounded-full transition-all"
-                            style={{ width: `${dim.pct}%`, background: dim.color }}
-                          />
-                        </div>
-                        <span className="text-[11px] font-bold w-[28px] text-right" style={{ color: 'var(--text-secondary)' }}>{dim.pct}</span>
+              {/* Score Breakdown Row */}
+              <div className="flex items-center gap-5">
+                {/* Overall Score Circle/Box */}
+                <div 
+                  className="flex flex-col items-center justify-center w-20 h-20 rounded-[22px] flex-shrink-0 relative overflow-hidden"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(200,249,125,0.15) 0%, rgba(200,249,125,0.03) 100%)',
+                    border: '1px solid rgba(200,249,125,0.3)',
+                    boxShadow: 'inset 0 0 20px rgba(200,249,125,0.1)',
+                  }}
+                >
+                  <span className="text-[26px] font-extrabold tracking-tight text-[var(--accent)] leading-none" style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}>
+                    94
+                  </span>
+                  <span className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)] mt-1">
+                    Overall
+                  </span>
+                </div>
+
+                {/* Animated Dimension Bars */}
+                <div className="flex flex-col gap-2.5 flex-1">
+                  {[
+                    { label: 'Delivery', pct: 92, color: '#60A5FA' },
+                    { label: 'Clarity', pct: 96, color: 'var(--accent)' },
+                    { label: 'Pace & Rhythm', pct: 88, color: '#FBBF24' },
+                  ].map((dim) => (
+                    <div key={dim.label} className="flex flex-col gap-1">
+                      <div className="flex items-center justify-between text-[12px]">
+                        <span className="font-medium text-[var(--text-secondary)]">{dim.label}</span>
+                        <span className="font-bold text-[var(--text-primary)]">{dim.pct}%</span>
                       </div>
-                    ))}
+                      <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden p-[1px]">
+                        <div
+                          className="h-full rounded-full transition-all duration-1000 ease-out"
+                          style={{
+                            width: `${dim.pct}%`,
+                            background: dim.color,
+                            boxShadow: `0 0 10px ${dim.color}80`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Subtle Floating Cards Orbiting/Positioned Around Main Card */}
+              <div 
+                className="hidden sm:flex items-center gap-2.5 absolute -top-4 -right-4 px-4 py-2 rounded-2xl text-[12px] font-semibold backdrop-blur-xl border border-white/15 text-[var(--text-primary)] shadow-2xl animate-float"
+                style={{
+                  background: 'rgba(22, 22, 31, 0.9)',
+                  animationDuration: '6s',
+                }}
+              >
+                <Zap size={14} className="text-amber-400" />
+                <span>Pace: 142 wpm (Optimal)</span>
+              </div>
+
+              <div 
+                className="hidden sm:flex items-center gap-2.5 absolute -bottom-5 -left-4 px-4 py-2 rounded-2xl text-[12px] font-semibold backdrop-blur-xl border border-white/15 text-[var(--text-primary)] shadow-2xl animate-float"
+                style={{
+                  background: 'rgba(22, 22, 31, 0.9)',
+                  animationDelay: '1.5s',
+                  animationDuration: '7s',
+                }}
+              >
+                <CheckCircle2 size={14} className="text-[var(--accent)]" />
+                <span>0 Filler Words Detected</span>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS SECTION ─────────────────────────────────── */}
+      <section id="how-it-works" className="py-24 relative z-10 border-t border-[var(--border)] bg-gradient-to-b from-transparent via-[var(--bg-card)]/30 to-transparent">
+        <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
+
+          {/* Section Header */}
+          <div className="text-center max-w-[640px] mx-auto mb-16 animate-fadeSlideUp">
+            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[12px] font-bold tracking-widest uppercase mb-4 bg-[var(--accent-dim)] text-[var(--accent)] border border-[var(--border-accent)]">
+              Simplicity Meets Intelligence
+            </span>
+            <h2 className="text-[36px] sm:text-[44px] font-extrabold text-[var(--text-primary)] tracking-tight leading-tight" style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}>
+              How SpeakIQ Transforms Your Speaking
+            </h2>
+            <p className="text-[17px] text-[var(--text-secondary)] font-normal mt-3">
+              A scientifically proven 4-step daily loop designed to build instinctual confidence in record time.
+            </p>
+          </div>
+
+          {/* Workflow Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative">
+
+            {/* Step 1 */}
+            <div className="group relative rounded-[28px] p-8 bg-[var(--bg-card)] border border-[var(--border)] backdrop-blur-md transition-all duration-300 hover:border-[var(--border-accent)] hover:-translate-y-1.5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-14 h-14 rounded-2xl bg-[var(--accent-dim)] flex items-center justify-center text-[var(--accent)] transition-transform duration-300 group-hover:scale-110">
+                    <Mic size={28} strokeWidth={2.2} />
                   </div>
+                  <span className="text-[32px] font-black text-white/10 group-hover:text-[var(--accent)]/30 transition-colors" style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}>
+                    01
+                  </span>
                 </div>
+                <h3 className="text-[20px] font-bold text-[var(--text-primary)] mb-3">1. Speak</h3>
+                <p className="text-[14.5px] text-[var(--text-secondary)] leading-relaxed font-medium">
+                  Record a quick 3-minute session on daily topics, interview questions, or your own presentation slides.
+                </p>
+              </div>
+              <div className="mt-8 pt-4 border-t border-[var(--border)] text-[12px] font-semibold text-[var(--accent)] flex items-center gap-1.5">
+                <span>Start speaking instantly</span>
               </div>
             </div>
 
-            {/* Floating mini-stat pills */}
-            <div className="flex items-center gap-3 flex-wrap justify-center">
-              {[
-                { icon: '🎯', label: '98 avg score' },
-                { icon: '🔥', label: '12 day streak' },
-                { icon: '⚡', label: 'Instant AI' },
-              ].map((stat, i) => (
-                <span
-                  key={stat.label}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-semibold animate-fadeSlideUp"
-                  style={{
-                    background: 'var(--bg-card)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--text-secondary)',
-                    animationDelay: `${0.15 + i * 0.05}s`,
-                  }}
-                >
-                  <span>{stat.icon}</span>
-                  <span>{stat.label}</span>
-                </span>
-              ))}
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      {/* ── FEATURE CARDS ROW ─────────────────────────────────────── */}
-      <section className="pb-20">
-        <div className="max-w-[1200px] mx-auto px-6 lg:px-10">
-
-          {/* Divider */}
-          <div className="w-full h-px mb-14" style={{ background: 'var(--border)' }} />
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-
-            {/* Card 1 — AI Analysis */}
-            <div
-              className="card p-8 hover:border-[var(--border-md)] transition-all animate-fadeSlideUp group"
-              style={{ animationDelay: '0.05s' }}
-            >
-              <div className="flex items-start justify-between mb-6">
-                <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center"
-                  style={{ background: 'rgba(96,165,250,0.10)' }}
-                >
-                  <Zap size={22} strokeWidth={2.5} style={{ color: '#60A5FA' }} />
+            {/* Step 2 */}
+            <div className="group relative rounded-[28px] p-8 bg-[var(--bg-card)] border border-[var(--border)] backdrop-blur-md transition-all duration-300 hover:border-blue-500/30 hover:-translate-y-1.5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 transition-transform duration-300 group-hover:scale-110">
+                    <Brain size={28} strokeWidth={2.2} />
+                  </div>
+                  <span className="text-[32px] font-black text-white/10 group-hover:text-blue-400/30 transition-colors" style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}>
+                    02
+                  </span>
                 </div>
-                <span
-                  className="text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full"
-                  style={{
-                    background: 'rgba(96,165,250,0.08)',
-                    border: '1px solid rgba(96,165,250,0.18)',
-                    color: '#60A5FA',
-                  }}
-                >
-                  Instant
-                </span>
+                <h3 className="text-[20px] font-bold text-[var(--text-primary)] mb-3">2. AI Analyzes</h3>
+                <p className="text-[14.5px] text-[var(--text-secondary)] leading-relaxed font-medium">
+                  Our neural speech engine breaks down your vocal cadence, filler frequency, pause placement, and vocabulary richness.
+                </p>
               </div>
-              <p
-                className="text-[36px] font-extrabold mb-1 tracking-tight"
-                style={{
-                  fontFamily: "'Bricolage Grotesque', sans-serif",
-                  color: 'var(--text-primary)',
-                  letterSpacing: '-0.03em',
-                }}
-              >
-                &lt;2s
-              </p>
-              <h3 className="text-[16px] font-bold text-primary mb-2">AI Analysis</h3>
-              <p className="text-[13.5px] text-secondary font-medium leading-relaxed">
-                Get instant feedback on your delivery, structure, and vocabulary from our advanced AI model.
-              </p>
+              <div className="mt-8 pt-4 border-t border-[var(--border)] text-[12px] font-semibold text-blue-400 flex items-center gap-1.5">
+                <span>Multi-modal AI engine</span>
+              </div>
             </div>
 
-            {/* Card 2 — Daily Drills */}
-            <div
-              className="card p-8 hover:border-[var(--border-md)] transition-all animate-fadeSlideUp group"
-              style={{ animationDelay: '0.12s' }}
-            >
-              <div className="flex items-start justify-between mb-6">
-                <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center"
-                  style={{ background: 'var(--accent-dim)' }}
-                >
-                  <Target size={22} strokeWidth={2.5} style={{ color: 'var(--accent)' }} />
+            {/* Step 3 */}
+            <div className="group relative rounded-[28px] p-8 bg-[var(--bg-card)] border border-[var(--border)] backdrop-blur-md transition-all duration-300 hover:border-amber-500/30 hover:-translate-y-1.5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-400 transition-transform duration-300 group-hover:scale-110">
+                    <Activity size={28} strokeWidth={2.2} />
+                  </div>
+                  <span className="text-[32px] font-black text-white/10 group-hover:text-amber-400/30 transition-colors" style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}>
+                    03
+                  </span>
                 </div>
-                <span
-                  className="text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full"
-                  style={{
-                    background: 'rgba(200,249,125,0.08)',
-                    border: '1px solid rgba(200,249,125,0.18)',
-                    color: 'var(--accent)',
-                  }}
-                >
-                  Adaptive
-                </span>
+                <h3 className="text-[20px] font-bold text-[var(--text-primary)] mb-3">3. Personalized Feedback</h3>
+                <p className="text-[14.5px] text-[var(--text-secondary)] leading-relaxed font-medium">
+                  Get crystal-clear scores with exact timestamps, highlighting strengths and precise areas to polish.
+                </p>
               </div>
-              <p
-                className="text-[36px] font-extrabold mb-1 tracking-tight"
-                style={{
-                  fontFamily: "'Bricolage Grotesque', sans-serif",
-                  color: 'var(--text-primary)',
-                  letterSpacing: '-0.03em',
-                }}
-              >
-                3 min
-              </p>
-              <h3 className="text-[16px] font-bold text-primary mb-2">Daily Drills</h3>
-              <p className="text-[13.5px] text-secondary font-medium leading-relaxed">
-                Personalized exercises designed to improve your weakest areas and reinforce your strengths.
-              </p>
+              <div className="mt-8 pt-4 border-t border-[var(--border)] text-[12px] font-semibold text-amber-400 flex items-center gap-1.5">
+                <span>Actionable, pinpoint insights</span>
+              </div>
             </div>
 
-            {/* Card 3 — Streak System */}
-            <div
-              className="card p-8 hover:border-[var(--border-md)] transition-all animate-fadeSlideUp group"
-              style={{ animationDelay: '0.19s' }}
-            >
-              <div className="flex items-start justify-between mb-6">
-                <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center"
-                  style={{ background: 'rgba(251,191,36,0.10)' }}
-                >
-                  <Flame size={22} strokeWidth={2.5} style={{ color: '#FBBF24' }} />
+            {/* Step 4 */}
+            <div className="group relative rounded-[28px] p-8 bg-[var(--bg-card)] border border-[var(--border)] backdrop-blur-md transition-all duration-300 hover:border-teal-500/30 hover:-translate-y-1.5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-14 h-14 rounded-2xl bg-teal-500/10 flex items-center justify-center text-teal-400 transition-transform duration-300 group-hover:scale-110">
+                    <Target size={28} strokeWidth={2.2} />
+                  </div>
+                  <span className="text-[32px] font-black text-white/10 group-hover:text-teal-400/30 transition-colors" style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}>
+                    04
+                  </span>
                 </div>
-                <span
-                  className="text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full"
-                  style={{
-                    background: 'rgba(251,191,36,0.08)',
-                    border: '1px solid rgba(251,191,36,0.18)',
-                    color: '#FBBF24',
-                  }}
-                >
-                  30-Day
-                </span>
+                <h3 className="text-[20px] font-bold text-[var(--text-primary)] mb-3">4. Improve Every Day</h3>
+                <p className="text-[14.5px] text-[var(--text-secondary)] leading-relaxed font-medium">
+                  Unlock daily micro-challenges matched to your skill level, build habit streaks, and track tangible growth over time.
+                </p>
               </div>
-              <p
-                className="text-[36px] font-extrabold mb-1 tracking-tight"
-                style={{
-                  fontFamily: "'Bricolage Grotesque', sans-serif",
-                  color: 'var(--text-primary)',
-                  letterSpacing: '-0.03em',
-                }}
-              >
-                +40%
-              </p>
-              <h3 className="text-[16px] font-bold text-primary mb-2">Streak System</h3>
-              <p className="text-[13.5px] text-secondary font-medium leading-relaxed">
-                Build consistency with daily streaks, habit tracking, and visualized progress metrics.
-              </p>
+              <div className="mt-8 pt-4 border-t border-[var(--border)] text-[12px] font-semibold text-teal-400 flex items-center gap-1.5">
+                <span>Continuous growth system</span>
+              </div>
             </div>
 
           </div>
         </div>
       </section>
+
+      {/* Dynamic Keyframe Injection for Wavebar Animations */}
+      <style>{`
+        @keyframes waveBarDynamic {
+          0% { height: 16px; }
+          100% { height: 72px; }
+        }
+      `}</style>
 
     </main>
   );
-}
+}

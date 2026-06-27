@@ -18,6 +18,8 @@ interface UseSessionFlowReturn {
   prepProgress:    number
   recProgress:     number
   recordingDuration: number
+  pauseTimer:      () => void
+  resumeTimer:     () => void
 }
 
 export function useSessionFlow(): UseSessionFlowReturn {
@@ -48,13 +50,11 @@ export function useSessionFlow(): UseSessionFlowReturn {
           headers: { Authorization: `Bearer ${token}` },
         })
         if (res.ok) {
-          const data = await res.json()
-          const dur = data.recording_duration_secs
-          if (dur && typeof dur === 'number' && dur >= 30 && dur <= 300) {
-            setRecordingDuration(dur)
-            setRecSecsLeft(dur)
-            recordingDurationRef.current = dur
-          }
+          // Always use 60 seconds (1 min) for sessions
+          const dur = 60
+          setRecordingDuration(dur)
+          setRecSecsLeft(dur)
+          recordingDurationRef.current = dur
         }
       } catch {
         // silently fall back to default
@@ -100,15 +100,39 @@ export function useSessionFlow(): UseSessionFlowReturn {
   const startRecording = useCallback(() => {
     const dur = recordingDurationRef.current
     setRecSecsLeft(dur)
+    if (recIntervalRef.current) clearInterval(recIntervalRef.current)
     recIntervalRef.current = setInterval(() => {
       setRecSecsLeft(prev => {
         if (prev <= 1) {
           clearInterval(recIntervalRef.current!)
+          recIntervalRef.current = null
           return 0
         }
         return prev - 1
       })
     }, 1000)
+  }, [])
+
+  const pauseTimer = useCallback(() => {
+    if (recIntervalRef.current) {
+      clearInterval(recIntervalRef.current)
+      recIntervalRef.current = null
+    }
+  }, [])
+
+  const resumeTimer = useCallback(() => {
+    if (!recIntervalRef.current) {
+      recIntervalRef.current = setInterval(() => {
+        setRecSecsLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(recIntervalRef.current!)
+            recIntervalRef.current = null
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    }
   }, [])
 
   const finishRecording = useCallback(async (blob: Blob) => {
@@ -170,5 +194,7 @@ export function useSessionFlow(): UseSessionFlowReturn {
     prepProgress: prepSecsLeft / PREP_DURATION_SECS,
     recProgress:  recSecsLeft  / recordingDurationRef.current,
     recordingDuration,
+    pauseTimer,
+    resumeTimer,
   }
 }

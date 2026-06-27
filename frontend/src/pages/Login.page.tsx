@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { ROUTES } from '../constants'
 import { supabase } from '../services/supabase'
-import { Sparkles, CheckCircle2 } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 
 type Mode = 'signin' | 'signup'
 
@@ -56,26 +56,25 @@ export default function LoginPage() {
 
       {/* ── LEFT PANEL ───────────────────────────────────────────── */}
       <div
-        className="hidden lg:flex w-[42%] flex-col justify-between p-12 relative overflow-hidden"
+        className="hidden lg:flex w-[45%] flex-col justify-between p-10 relative overflow-hidden"
         style={{
           background: 'var(--bg-card)',
           borderRight: '1px solid var(--border)',
         }}
       >
-        {/* Glow blob — top-right corner */}
+        {/* Animated gradient blobs for depth */}
         <div
-          className="absolute -top-20 -right-20 w-80 h-80 rounded-full pointer-events-none"
+          className="absolute top-0 right-0 w-96 h-96 rounded-full pointer-events-none"
           style={{
-            background: 'rgba(200,249,125,0.06)',
-            filter: 'blur(100px)',
+            background: 'radial-gradient(ellipse at center, rgba(62,140,0,0.08) 0%, transparent 70%)',
+            filter: 'blur(80px)',
           }}
         />
-        {/* Glow blob — bottom-left corner */}
         <div
-          className="absolute -bottom-24 -left-16 w-64 h-64 rounded-full pointer-events-none"
+          className="absolute bottom-0 left-0 w-80 h-80 rounded-full pointer-events-none"
           style={{
-            background: 'rgba(200,249,125,0.04)',
-            filter: 'blur(80px)',
+            background: 'radial-gradient(ellipse at center, rgba(62,140,0,0.06) 0%, transparent 70%)',
+            filter: 'blur(100px)',
           }}
         />
 
@@ -104,53 +103,106 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Middle — Headline + waveform */}
-        <div className="relative z-10 flex flex-col gap-8">
-          <h2
-            className="leading-[1.08]"
-            style={{
-              fontFamily: "'Bricolage Grotesque', sans-serif",
-              fontSize: 'clamp(36px, 3.5vw, 48px)',
-              fontWeight: 800,
-              color: 'var(--text-primary)',
-              letterSpacing: '-0.04em',
-            }}
-          >
-            Your voice,<br />
-            <span style={{ color: 'var(--accent)' }}>perfected.</span>
-          </h2>
+        {/* Middle — Enlarged headline + waveform */}
+        <div className="relative z-10 flex flex-col gap-8 flex-1 flex items-center justify-center">
+          {/* Hero Headline */}
+          <div className="text-center max-w-md">
+            <h2
+              className="leading-[1.08]"
+              style={{
+                fontFamily: "'Bricolage Grotesque', sans-serif",
+                fontSize: 'clamp(52px, 5vw, 72px)',
+                fontWeight: 800,
+                color: 'var(--text-primary)',
+                letterSpacing: '-0.03em',
+              }}
+            >
+              Your voice,<br />
+              <span style={{ color: 'var(--accent)' }}>perfected.</span>
+            </h2>
+          </div>
 
-          {/* Mini waveform — 6 bars */}
-          <div className="flex items-end gap-1.5 h-[44px]">
-            {Array.from({ length: 6 }).map((_, i) => (
+          {/* Animated waveform bars */}
+          <div className="flex items-end justify-center gap-2 h-[100px]">
+            {Array.from({ length: 12 }).map((_, i) => (
               <div
                 key={i}
-                className="wave-bar w-2.5 rounded-full"
-                style={{ background: 'rgba(200,249,125,0.7)' }}
+                className="w-3 rounded-full"
+                style={{
+                  background: 'var(--accent)',
+                  animation: `waveAnimation 1.2s ease-in-out infinite`,
+                  animationDelay: `${i * 0.1}s`,
+                  minHeight: '8px',
+                }}
               />
             ))}
           </div>
+
+          <style>{`
+            @keyframes waveAnimation {
+              0%, 100% {
+                height: 20px;
+                opacity: 0.6;
+              }
+              50% {
+                height: 80px;
+                opacity: 1;
+              }
+            }
+          `}</style>
         </div>
 
-        {/* Bottom — Feature bullets */}
-        <div className="relative z-10 flex flex-col gap-3">
+        {/* Bottom — Premium Feature Cards */}
+        <div className="relative z-10 grid grid-cols-1 gap-2.5">
           {[
-            'AI-powered speech analysis',
-            'Personalized daily drills',
-            'Daily progress tracking',
-          ].map((item) => (
-            <div key={item} className="flex items-center gap-3">
-              <CheckCircle2
-                size={16}
-                strokeWidth={2.5}
-                style={{ color: 'var(--accent)', flexShrink: 0 }}
-              />
-              <span
-                className="text-[14px] font-medium"
-                style={{ color: 'var(--text-secondary)' }}
-              >
-                {item}
-              </span>
+            {
+              title: 'AI-Powered\nSpeech Analysis',
+              desc: 'Get detailed feedback on clarity, pace, tone, and confidence.',
+              icon: '🎯',
+              gradient: 'rgba(208, 255, 214, 0.6)',
+              border: 'rgba(62,140,0,0.2)',
+            },
+            {
+              title: 'Personalized\nDaily Drills',
+              desc: 'Practice with custom exercises designed just for you.',
+              icon: '🎪',
+              gradient: 'rgba(232, 216, 255, 0.6)',
+              border: 'rgba(139, 92, 246, 0.2)',
+            },
+            {
+              title: 'Daily Progress\nTracking',
+              desc: 'Track your improvement and celebrate every win.',
+              icon: '📈',
+              gradient: 'rgba(217, 232, 255, 0.6)',
+              border: 'rgba(37, 99, 235, 0.2)',
+            },
+          ].map((feature) => (
+            <div
+              key={feature.title}
+              className="rounded-[14px] p-3.5 border backdrop-blur-md transition-all duration-300 hover:shadow-lg hover:scale-[1.01]"
+              style={{
+                background: feature.gradient,
+                borderColor: feature.border,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05), inset 0 1px 1px rgba(255,255,255,0.5)',
+              }}
+            >
+              <div className="flex items-start gap-2.5">
+                <span className="text-[16px]">{feature.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <h3
+                    className="text-[12px] font-bold leading-tight whitespace-pre-line"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {feature.title}
+                  </h3>
+                  <p
+                    className="text-[10px] mt-1"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    {feature.desc}
+                  </p>
+                </div>
+              </div>
             </div>
           ))}
         </div>

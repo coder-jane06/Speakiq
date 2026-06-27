@@ -38,14 +38,19 @@ def get_user_id(authorization: Optional[str]) -> Optional[str]:
 
 
 @router.get("/topic")
-async def get_topic(authorization: Optional[str] = Header(None), exclude: Optional[str] = None):
+async def get_topic(
+    authorization: Optional[str] = Header(None),
+    exclude: Optional[str] = None,
+    goal: Optional[str] = None,
+    difficulty: Optional[str] = None
+):
     from config import get_db
 
     db = get_db()
     user_id = get_user_id(authorization)
-    speaking_goal = "general"
+    speaking_goal = goal if goal else "general"
     weakest_skill = "general"
-    difficulty = "medium"
+    diff_tier = difficulty if difficulty else "medium"
     recent_topic_texts = []
 
     if user_id:
@@ -59,9 +64,12 @@ async def get_topic(authorization: Optional[str] = Header(None), exclude: Option
             )
             if profile.data:
                 p = profile.data[0]
-                speaking_goal = p.get("speaking_goal", "general") or "general"
-                tier = p.get("difficulty_tier", "beginner") or "beginner"
-                difficulty = {"beginner": "easy", "advanced": "hard"}.get(tier, "medium")
+                if not goal:
+                    speaking_goal = p.get("speaking_goal", "general") or "general"
+                
+                if not difficulty:
+                    tier = p.get("difficulty_tier", "beginner") or "beginner"
+                    diff_tier = {"beginner": "easy", "advanced": "hard"}.get(tier, "medium")
 
                 skill_scores = {
                     "structure": p.get("structure_score", 50),
@@ -113,7 +121,7 @@ async def get_topic(authorization: Optional[str] = Header(None), exclude: Option
                 candidates = skill_matched
 
             # Prefer topics matching the user's difficulty tier
-            tier_matched = [t for t in candidates if t.get("tier") == difficulty]
+            tier_matched = [t for t in candidates if t.get("tier") == diff_tier]
             if tier_matched:
                 candidates = tier_matched
 

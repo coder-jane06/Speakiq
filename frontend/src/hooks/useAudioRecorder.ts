@@ -2,15 +2,22 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 interface UseAudioRecorderReturn {
   isRecording:   boolean
+  isPaused:      boolean
+  isMuted:       boolean
   audioBlob:     Blob | null
   analyserNode:  AnalyserNode | null
   startRecording: () => Promise<void>
   stopRecording:  () => void
+  pauseRecording: () => void
+  resumeRecording: () => void
+  toggleMute:     () => void
   error:          string | null
 }
 
 export function useAudioRecorder(): UseAudioRecorderReturn {
   const [isRecording,  setIsRecording]  = useState(false)
+  const [isPaused,     setIsPaused]     = useState(false)
+  const [isMuted,      setIsMuted]      = useState(false)
   const [audioBlob,    setAudioBlob]    = useState<Blob | null>(null)
   const [analyserNode, setAnalyserNode] = useState<AnalyserNode | null>(null)
   const [error,        setError]        = useState<string | null>(null)
@@ -65,6 +72,8 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
         setAnalyserNode(null)
       }
 
+      setIsPaused(false)
+      setIsMuted(false)
       recorder.start(250)   // 250ms timeslice for smooth waveform
       setIsRecording(true)
 
@@ -76,10 +85,34 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
   }, [])
 
   const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current?.state === 'recording') {
+    if (mediaRecorderRef.current && (mediaRecorderRef.current.state === 'recording' || mediaRecorderRef.current.state === 'paused')) {
       mediaRecorderRef.current.stop()
     }
   }, [])
+
+  const pauseRecording = useCallback(() => {
+    if (mediaRecorderRef.current?.state === 'recording') {
+      mediaRecorderRef.current.pause()
+      setIsPaused(true)
+    }
+  }, [])
+
+  const resumeRecording = useCallback(() => {
+    if (mediaRecorderRef.current?.state === 'paused') {
+      mediaRecorderRef.current.resume()
+      setIsPaused(false)
+    }
+  }, [])
+
+  const toggleMute = useCallback(() => {
+    if (streamRef.current) {
+      const nextMuted = !isMuted
+      streamRef.current.getAudioTracks().forEach(track => {
+        track.enabled = !nextMuted
+      })
+      setIsMuted(nextMuted)
+    }
+  }, [isMuted])
 
   // Safety cleanup on unmount
   useEffect(() => {
@@ -91,5 +124,17 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     }
   }, [])
 
-  return { isRecording, audioBlob, analyserNode, startRecording, stopRecording, error }
+  return {
+    isRecording,
+    isPaused,
+    isMuted,
+    audioBlob,
+    analyserNode,
+    startRecording,
+    stopRecording,
+    pauseRecording,
+    resumeRecording,
+    toggleMute,
+    error
+  }
 }
