@@ -92,6 +92,7 @@ async def get_dashboard_stats(authorization: Optional[str] = Header(None)):
             "id": s.get("id", ""),
             "date": s.get("created_at", "").split("T")[0] if s.get("created_at") else "",
             "topic": s.get("topic_text", ""),
+            "duration_secs": metrics[0].get("duration_secs", 0) if metrics else 0,
             "scores": {
                 "filler":     scores.get("filler", 0),
                 "delivery":   scores.get("delivery", 0),
@@ -191,6 +192,8 @@ class OnboardingData(BaseModel):
     display_name: Optional[str] = None
     difficulty_tier: str = "beginner"
     recording_duration_secs: int = 60
+    coaching_style: Optional[str] = None
+    feedback_detail: Optional[str] = None
 
 
 @router.post("/onboarding")
@@ -218,6 +221,10 @@ async def save_onboarding(
         "recording_duration_secs": data.recording_duration_secs,
         "onboarding_complete":    True,
     }
+    if data.coaching_style:
+        update_data["coaching_style"] = data.coaching_style
+    if data.feedback_detail:
+        update_data["feedback_detail"] = data.feedback_detail
 
     if profile_result.data:
         db.table("user_profiles").update(update_data).eq("user_id", user_id).execute()
@@ -240,18 +247,17 @@ async def get_profile_status(authorization: Optional[str] = Header(None)):
             db.table("user_profiles")
             .select(
                 "speaking_goal, display_name, difficulty_tier, "
-                "recording_duration_secs, onboarding_complete, total_sessions"
+                "recording_duration_secs, onboarding_complete, total_sessions, "
+                "coaching_style, feedback_detail"
             )
             .eq("user_id", user_id)
             .limit(1)
             .execute()
         )
         if not result.data:
-            # For registered users without a profile row yet, consider them onboarded
             return {"onboarding_complete": True, "speaking_goal": "general", "total_sessions": 0}
 
         profile = result.data[0]
-        # Registered users with a profile should be considered onboarding_complete = True
         is_complete = profile.get("onboarding_complete")
         if is_complete is None or is_complete is False:
             is_complete = True
@@ -263,6 +269,8 @@ async def get_profile_status(authorization: Optional[str] = Header(None)):
             "difficulty_tier":        profile.get("difficulty_tier", "beginner"),
             "recording_duration_secs": profile.get("recording_duration_secs", 60),
             "total_sessions":         profile.get("total_sessions", 0),
+            "coaching_style":         profile.get("coaching_style", "Balanced"),
+            "feedback_detail":        profile.get("feedback_detail", "Detailed"),
         }
     except Exception as e:
         logger.error(f"[dashboard] profile-status error: {e}")
