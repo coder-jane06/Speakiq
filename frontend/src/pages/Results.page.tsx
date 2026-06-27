@@ -669,27 +669,52 @@ export default function ResultsPage() {
             <Award size={18} className="text-yellow-400" /> Session Achievements
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-amber-500/20 flex items-center gap-3">
-              <span className="text-[28px]">🏆</span>
-              <div>
-                <h4 className="text-[14px] font-bold text-amber-400">Strong Communicator</h4>
-                <p className="text-[11px] text-[var(--text-secondary)] font-medium">Maintained clear voice flow & tone</p>
+            {(scores.delivery || 0) > 80 ? (
+              <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-amber-500/20 flex items-center gap-3">
+                <span className="text-[28px]">🏆</span>
+                <div>
+                  <h4 className="text-[14px] font-bold text-amber-400">Strong Communicator</h4>
+                  <p className="text-[11px] text-[var(--text-secondary)] font-medium">Maintained clear voice flow & tone</p>
+                </div>
               </div>
-            </div>
-            <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-blue-500/20 flex items-center gap-3">
-              <span className="text-[28px]">🎯</span>
-              <div>
-                <h4 className="text-[14px] font-bold text-blue-400">Structured Thinker</h4>
-                <p className="text-[11px] text-[var(--text-secondary)] font-medium">Clear introduction and conclusion</p>
+            ) : null}
+            {(scores.structure || 0) > 75 ? (
+              <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-blue-500/20 flex items-center gap-3">
+                <span className="text-[28px]">🎯</span>
+                <div>
+                  <h4 className="text-[14px] font-bold text-blue-400">Structured Thinker</h4>
+                  <p className="text-[11px] text-[var(--text-secondary)] font-medium">Clear introduction and conclusion</p>
+                </div>
               </div>
-            </div>
-            <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-emerald-500/20 flex items-center gap-3">
-              <span className="text-[28px]">📚</span>
-              <div>
-                <h4 className="text-[14px] font-bold text-emerald-400">Vocabulary Builder</h4>
-                <p className="text-[11px] text-[var(--text-secondary)] font-medium">Used strong descriptive language</p>
+            ) : null}
+            {(scores.vocab || 0) > 70 ? (
+              <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-emerald-500/20 flex items-center gap-3">
+                <span className="text-[28px]">📚</span>
+                <div>
+                  <h4 className="text-[14px] font-bold text-emerald-400">Vocabulary Builder</h4>
+                  <p className="text-[11px] text-[var(--text-secondary)] font-medium">Used strong descriptive language</p>
+                </div>
               </div>
-            </div>
+            ) : null}
+            {(scores.filler || 0) > 85 ? (
+              <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-purple-500/20 flex items-center gap-3">
+                <span className="text-[28px]">✨</span>
+                <div>
+                  <h4 className="text-[14px] font-bold text-purple-400">Clean Speaker</h4>
+                  <p className="text-[11px] text-[var(--text-secondary)] font-medium">Hardly used any filler words</p>
+                </div>
+              </div>
+            ) : null}
+            {/* Fallback if no achievements won */}
+            {((scores.delivery || 0) <= 80 && (scores.structure || 0) <= 75 && (scores.vocab || 0) <= 70 && (scores.filler || 0) <= 85) && (
+              <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] flex items-center gap-3 col-span-1 md:col-span-3">
+                <span className="text-[28px]">🌱</span>
+                <div>
+                  <h4 className="text-[14px] font-bold text-[var(--text-primary)]">Growing Communicator</h4>
+                  <p className="text-[11px] text-[var(--text-secondary)] font-medium">Keep practicing to unlock badges!</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

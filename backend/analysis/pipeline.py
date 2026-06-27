@@ -293,12 +293,13 @@ async def run_analysis_pipeline(
 def compute_scores_from_data(
     transcript,
     acoustic,
-    nlp
+    nlp,
+    speaking_goal: str = "general"
 ) -> dict:
     scores = {}
 
     # --- FILLER SCORE ---
-    filler_rate = nlp.fillers_per_minute if (nlp and hasattr(nlp, 'fillers_per_minute')) else (nlp.filler_rate if (nlp and hasattr(nlp, 'filler_rate')) else 0)
+    filler_rate = nlp.fillers_per_minute if (nlp and hasattr(nlp, 'fillers_per_minute')) else 0
     if filler_rate == 0:
         scores["filler"] = 100
     elif filler_rate < 1:
@@ -312,6 +313,10 @@ def compute_scores_from_data(
     else:
         scores["filler"] = 10
 
+    # Debaters are penalized heavily for hedge words
+    if speaking_goal == "debater" and nlp and hasattr(nlp, 'hedge_word_count') and nlp.hedge_word_count > 3:
+        scores["filler"] = max(10, scores["filler"] - 20)
+
     # --- DELIVERY SCORE (from acoustic) ---
     if acoustic:
         pitch_std = acoustic.pitch_std
@@ -319,20 +324,13 @@ def compute_scores_from_data(
         silence_pct = acoustic.silence_percentage
         longest_pause = acoustic.longest_pause_sec
         wpm = acoustic.wpm
+        jitter = getattr(acoustic, 'jitter', 0.0)
+        intensity_db = getattr(acoustic, 'intensity_db', 0.0)
 
-        # Pitch variation: 0-40 pts
-        if pitch_std >= 60:
-            pitch_pts = 40
-        elif pitch_std >= 40:
-            pitch_pts = 30
-        elif pitch_std >= 20:
-            pitch_pts = 20
-        elif pitch_std >= 10:
-            pitch_pts = 10
-        else:
-            pitch_pts = 0
-
-        # WPM range: 0-30 pts (120-160 is ideal)
+        # Base scoring ranges
+        pitch_pts = min(40, max(0, int((pitch_std / 60) * 40)))
+        
+        # WPM scoring
         if 120 <= wpm <= 160:
             wpm_pts = 30
         elif 100 <= wpm < 120 or 160 < wpm <= 180:
@@ -342,7 +340,7 @@ def compute_scores_from_data(
         else:
             wpm_pts = 0
 
-        # Pause control: 0-30 pts
+        # Pause scoring
         if longest_pause <= 1.5 and silence_pct < 20:
             pause_pts = 30
         elif longest_pause <= 2.5 and silence_pct < 30:
@@ -352,45 +350,48 @@ def compute_scores_from_data(
         else:
             pause_pts = 0
 
+        # Adjust delivery points based on Goal
+        if speaking_goal == "orator":
+            # Orators need high pitch variance and high intensity
+            if intensity_db > 60:
+                pitch_pts = min(50, pitch_pts + 10)
+        elif speaking_goal == "debater":
+            # Debaters can speak faster (140-180 is fine)
+            if 140 <= wpm <= 180:
+                wpm_pts = 30
+        elif speaking_goal == "interviewer":
+            # Interviewers are penalized for jitter (nerves)
+            if jitter > 2.0:
+                pitch_pts = max(0, pitch_pts - 15)
+
         scores["delivery"] = min(pitch_pts + wpm_pts + pause_pts, 100)
     else:
-        scores["delivery"] = 50  # fallback if acoustic failed
+        scores["delivery"] = 50
 
     # --- STRUCTURE SCORE (from NLP + transcript) ---
     if nlp and transcript:
         word_count = transcript.word_count
         sentences = nlp.sentence_count if hasattr(nlp, 'sentence_count') else 5
-        ttr = nlp.ttr_score if hasattr(nlp, 'ttr_score') else (nlp.type_token_ratio if hasattr(nlp, 'type_token_ratio') else 0.5)
+        ttr = nlp.ttr_score if hasattr(nlp, 'ttr_score') else 0.5
 
-        # Word count: were they speaking enough? 0-30 pts
-        if word_count >= 100:
-            wc_pts = 30
-        elif word_count >= 70:
-            wc_pts = 20
-        elif word_count >= 40:
-            wc_pts = 10
-        else:
-            wc_pts = 0
+        if word_count >= 100: wc_pts = 30
+        elif word_count >= 70: wc_pts = 20
+        elif word_count >= 40: wc_pts = 10
+        else: wc_pts = 0
 
-        # Sentence variety: 0-30 pts
-        if sentences >= 6:
-            sent_pts = 30
-        elif sentences >= 4:
-            sent_pts = 20
-        elif sentences >= 2:
-            sent_pts = 10
-        else:
-            sent_pts = 0
+        if sentences >= 6: sent_pts = 30
+        elif sentences >= 4: sent_pts = 20
+        elif sentences >= 2: sent_pts = 10
+        else: sent_pts = 0
 
-        # TTR (vocabulary diversity reflects structure): 0-40 pts
-        if ttr >= 0.7:
-            ttr_pts = 40
-        elif ttr >= 0.5:
-            ttr_pts = 30
-        elif ttr >= 0.35:
-            ttr_pts = 20
-        else:
-            ttr_pts = 10
+        if ttr >= 0.7: ttr_pts = 40
+        elif ttr >= 0.5: ttr_pts = 30
+        elif ttr >= 0.35: ttr_pts = 20
+        else: ttr_pts = 10
+        
+        # Presenters need high structure/TTR
+        if speaking_goal == "presenter":
+            ttr_pts = min(50, ttr_pts + 10) if ttr >= 0.6 else ttr_pts
 
         scores["structure"] = min(wc_pts + sent_pts + ttr_pts, 100)
     else:
@@ -398,28 +399,25 @@ def compute_scores_from_data(
 
     # --- VOCAB SCORE ---
     if nlp:
-        ttr = nlp.ttr_score if hasattr(nlp, 'ttr_score') else (nlp.type_token_ratio if hasattr(nlp, 'type_token_ratio') else 0.5)
-        if ttr >= 0.7:
-            scores["vocab"] = 95
-        elif ttr >= 0.6:
-            scores["vocab"] = 80
-        elif ttr >= 0.5:
-            scores["vocab"] = 65
-        elif ttr >= 0.35:
-            scores["vocab"] = 45
-        else:
-            scores["vocab"] = 25
+        ttr = nlp.ttr_score if hasattr(nlp, 'ttr_score') else 0.5
+        if ttr >= 0.7: scores["vocab"] = 95
+        elif ttr >= 0.6: scores["vocab"] = 80
+        elif ttr >= 0.5: scores["vocab"] = 65
+        elif ttr >= 0.35: scores["vocab"] = 45
+        else: scores["vocab"] = 25
     else:
         scores["vocab"] = 50
 
     # --- CONFIDENCE SCORE ---
-    # Derived from: low fillers + good pace + not too many pauses
     filler_contrib = scores["filler"] * 0.4
     delivery_contrib = scores["delivery"] * 0.4
     structure_contrib = scores["structure"] * 0.2
-    scores["confidence"] = int(
-        filler_contrib + delivery_contrib + structure_contrib
-    )
+    
+    # Interviewers confidence relies heavily on delivery and low jitter
+    if speaking_goal == "interviewer" and acoustic and getattr(acoustic, 'jitter', 0.0) > 2.5:
+        delivery_contrib = scores["delivery"] * 0.3
+
+    scores["confidence"] = int(filler_contrib + delivery_contrib + structure_contrib)
 
     return scores
 
@@ -504,6 +502,12 @@ async def save_results_to_db(
             "improvement_noted":     coaching.improvement_noted,
             "drill_followup":        coaching.drill_followup,
             "next_session_focus":    coaching.next_session_focus,
+            "advanced_acoustic": {
+                "jitter": getattr(acoustic, 'jitter', 0.0) if acoustic else 0.0,
+                "shimmer": getattr(acoustic, 'shimmer', 0.0) if acoustic else 0.0,
+                "hnr": getattr(acoustic, 'hnr', 0.0) if acoustic else 0.0,
+                "intensity_db": getattr(acoustic, 'intensity_db', 0.0) if acoustic else 0.0
+            }
         })
     }
 
