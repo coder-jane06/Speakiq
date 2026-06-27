@@ -374,7 +374,7 @@ export default function ProfilePage() {
                     <div className="flex items-center gap-2.5 text-[12px] text-[var(--text-tertiary)] font-medium">
                       <span>{s.date ? (s.date.includes('-') ? new Date(s.date).toLocaleDateString() : s.date) : 'Recently'}</span>
                       <span>•</span>
-                      <span>3 mins duration</span>
+                      <span>{s.duration_secs ? Math.round(s.duration_secs / 60) : 3} mins duration</span>
                     </div>
                   </div>
 

@@ -134,8 +134,8 @@ export default function SessionPage() {
   const tips = [
     '💡 Maintain strong pacing and clear pronunciation.',
     '💡 Finish your complete thought before pausing.',
-    '💡 Great confidence detected! Keep going strong.',
-    '💡 Excellent structure and vocabulary choices.',
+    '💡 Focus on your breathing and stay relaxed.',
+    '💡 Use intentional pauses to emphasize key points.',
   ]
 
   useEffect(() => {
