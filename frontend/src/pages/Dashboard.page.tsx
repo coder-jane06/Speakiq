@@ -76,7 +76,7 @@ export default function DashboardPage() {
 
   const emailName = user?.email ? user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1) : '';
   const userName = stats?.display_name || user?.user_metadata?.full_name || user?.user_metadata?.display_name || emailName || 'Shaurya';
-  const streak = stats?.current_streak || 5;
+  const streak = stats?.current_streak ?? 0;
   const latestSession = stats?.sessions && stats.sessions.length > 0 ? stats.sessions[stats.sessions.length - 1] : null;
 
   return (

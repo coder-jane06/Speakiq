@@ -53,11 +53,11 @@ export default function ProfilePage() {
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
-  const currentStreak  = stats?.current_streak || 5;
-  const totalSessions  = stats?.total_sessions || 48;
+  const currentStreak  = stats?.current_streak ?? 0;
+  const totalSessions  = stats?.total_sessions ?? 0;
   const bestAvg        = stats?.best_session?.avg_score
     ? Math.round(stats.best_session.avg_score)
-    : 96;
+    : 0;
 
   const memberSince = user?.created_at
     ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
