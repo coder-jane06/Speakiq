@@ -968,7 +968,7 @@ export default function SessionPage() {
         {isRecording && (() => {
           const maxDur = flow.recordingDuration
           const elapsed = Math.max(0, maxDur - flow.recSecsLeft)
-          const wordsSpoken = Math.round(elapsed * 2.3)
+          // const wordsSpoken = Math.round(elapsed * 2.3)
           const completionPct = Math.min(100, Math.round((elapsed / maxDur) * 100))
 
           return (

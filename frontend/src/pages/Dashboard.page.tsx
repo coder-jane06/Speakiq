@@ -29,6 +29,24 @@ interface DashboardStats {
   improvements: {
     [key: string]: { day1: number; today: number; change: number };
   };
+  weekly_goal?: {
+    completed: number;
+    target: number;
+    percent: number;
+    remaining: number;
+  };
+  today_focus?: {
+    title: string;
+    description: string;
+    estimated_minutes: number;
+    tags: string[];
+  };
+  mini_insights?: Array<{
+    icon: string;
+    text: string;
+    type: 'positive' | 'warning' | 'neutral';
+  }>;
+  suggestions?: string[];
   top_fillers: { word: string; count: number }[];
   best_session: { date: string; avg_score: number };
   display_name?: string;
