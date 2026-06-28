@@ -364,46 +364,50 @@ export default function ResultsPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-2">
             {/* Overall Assessment & Strengths */}
-            <div className="p-5 rounded-[20px] bg-[var(--bg-hover)] border border-[var(--border)]">
-              <h3 className="text-[12px] font-bold uppercase tracking-wider text-emerald-400 mb-3 flex items-center gap-1.5">
-                <CheckCircle2 size={16} className="text-emerald-400" /> Core Strengths
-              </h3>
-              <p className="text-[13px] font-medium text-[var(--text-secondary)] leading-relaxed mb-4">
-                {(coaching.what_went_well as string) || "You demonstrated excellent presence and clear vocal delivery."}
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold text-[11px]">✓ Clear Delivery</span>
-                <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold text-[11px]">✓ Solid Confidence</span>
+            <div className="p-6 rounded-[22px] bg-gradient-to-br from-emerald-500/10 via-[var(--bg-card)] to-teal-500/5 border border-emerald-500/30 shadow-md backdrop-blur-xl hover:shadow-emerald-500/10 transition-all duration-300 flex flex-col justify-between">
+              <div>
+                <h3 className="text-[13px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 mb-3 flex items-center gap-1.5">
+                  <CheckCircle2 size={17} className="text-emerald-600 dark:text-emerald-400" /> Core Strengths
+                </h3>
+                <p className="text-[14px] font-medium text-[var(--text-primary)] leading-relaxed mb-4">
+                  {(coaching.what_went_well as string) || "You demonstrated excellent presence and clear vocal delivery."}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1.5 pt-2">
+                <span className="px-3 py-1 rounded-xl bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 font-extrabold text-[12px]">✓ Clear Delivery</span>
+                <span className="px-3 py-1 rounded-xl bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 font-extrabold text-[12px]">✓ Solid Confidence</span>
               </div>
             </div>
 
             {/* Needs Improvement & Priority Fix */}
-            <div className="p-5 rounded-[20px] bg-[var(--bg-hover)] border border-[var(--border)]">
-              <h3 className="text-[12px] font-bold uppercase tracking-wider text-amber-400 mb-3 flex items-center gap-1.5">
-                <AlertTriangle size={16} className="text-amber-400" /> Needs Improvement
-              </h3>
-              <p className="text-[13px] font-medium text-[var(--text-secondary)] leading-relaxed mb-4">
-                {(coaching.priority_fix as string) || "Focus on structuring your key transitions for maximum clarity."}
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold text-[11px]">⚠ Structure Transitions</span>
-                <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold text-[11px]">⚠ Vocabulary Variety</span>
+            <div className="p-6 rounded-[22px] bg-gradient-to-br from-amber-500/10 via-[var(--bg-card)] to-orange-500/5 border border-amber-500/30 shadow-md backdrop-blur-xl hover:shadow-amber-500/10 transition-all duration-300 flex flex-col justify-between">
+              <div>
+                <h3 className="text-[13px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-300 mb-3 flex items-center gap-1.5">
+                  <AlertTriangle size={17} className="text-amber-600 dark:text-amber-400" /> Needs Improvement
+                </h3>
+                <p className="text-[14px] font-medium text-[var(--text-primary)] leading-relaxed mb-4">
+                  {(coaching.priority_fix as string) || "Focus on structuring your key transitions for maximum clarity."}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1.5 pt-2">
+                <span className="px-3 py-1 rounded-xl bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-extrabold text-[12px]">⚠ Structure Transitions</span>
+                <span className="px-3 py-1 rounded-xl bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-extrabold text-[12px]">⚠ Vocabulary Variety</span>
               </div>
             </div>
 
             {/* Recommended Drill & Impact */}
-            <div className="p-5 rounded-[20px] bg-emerald-500/10 border border-emerald-500/20 flex flex-col justify-between">
+            <div className="p-6 rounded-[22px] bg-gradient-to-br from-blue-500/10 via-[var(--bg-card)] to-indigo-500/5 border border-blue-500/30 shadow-md backdrop-blur-xl hover:shadow-blue-500/10 transition-all duration-300 flex flex-col justify-between">
               <div>
-                <h3 className="text-[12px] font-bold uppercase tracking-wider text-emerald-400 mb-2 flex items-center gap-1.5">
-                  <Zap size={16} className="text-amber-400" /> Recommended Action
+                <h3 className="text-[13px] font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-300 mb-3 flex items-center gap-1.5">
+                  <Zap size={17} className="text-blue-600 dark:text-blue-400 fill-blue-500/20" /> Recommended Action
                 </h3>
-                <p className="text-[13px] font-bold text-[var(--text-primary)] mb-2">
+                <p className="text-[15px] font-extrabold text-[var(--text-primary)] leading-relaxed mb-2">
                   {(coaching.daily_drill as string) || "Practice 2-minute timed delivery with structured pauses."}
                 </p>
               </div>
-              <div className="mt-4 pt-3 border-t border-emerald-500/20 flex items-center justify-between text-[12px] font-bold text-emerald-400">
+              <div className="mt-4 pt-4 border-t border-blue-500/20 flex items-center justify-between text-[13px] font-bold text-blue-700 dark:text-blue-300">
                 <span>Estimated Impact:</span>
-                <span className="bg-emerald-500 text-black px-2.5 py-0.5 rounded-full text-[11px]">+15% Score Boost</span>
+                <span className="px-3 py-1 rounded-full text-[12px] font-extrabold shadow-md" style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}>+15% Score Boost</span>
               </div>
             </div>
           </div>
@@ -417,7 +421,7 @@ export default function ResultsPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             {/* Left Radar Chart */}
-            <div className="h-[300px] w-full bg-[var(--bg-hover)] rounded-2xl p-4 border border-[var(--border)] flex items-center justify-center">
+            <div className="h-[300px] w-full bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border)] shadow-xs flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart cx="50%" cy="50%" outerRadius="75%" data={[
                   { subject: 'Filler Control', A: scores.filler || 0, fullMark: 100 },
@@ -446,24 +450,24 @@ export default function ResultsPage() {
                 })
                 return (
                   <>
-                    <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between">
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-[var(--bg-card)] to-teal-500/5 border border-emerald-500/30 shadow-xs flex items-center justify-between">
                       <div>
-                        <p className="text-[11px] font-bold uppercase text-emerald-400">Best Skill</p>
-                        <p className="text-[16px] font-extrabold text-[var(--text-primary)] capitalize">{bestKey} ({bestVal}/100)</p>
+                        <p className="text-[12px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">Best Skill</p>
+                        <p className="text-[17px] font-extrabold text-[var(--text-primary)] capitalize mt-0.5">{bestKey} ({bestVal}/100)</p>
                       </div>
-                      <span className="text-[24px]">👑</span>
+                      <span className="text-[26px]">👑</span>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between">
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-500/10 via-[var(--bg-card)] to-orange-500/5 border border-amber-500/30 shadow-xs flex items-center justify-between">
                       <div>
-                        <p className="text-[11px] font-bold uppercase text-amber-400">Weakest Skill</p>
-                        <p className="text-[16px] font-extrabold text-[var(--text-primary)] capitalize">{worstKey} ({worstVal}/100)</p>
+                        <p className="text-[12px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-300">Weakest Skill</p>
+                        <p className="text-[17px] font-extrabold text-[var(--text-primary)] capitalize mt-0.5">{worstKey} ({worstVal}/100)</p>
                       </div>
-                      <span className="text-[24px]">🎯</span>
+                      <span className="text-[26px]">🎯</span>
                     </div>
 
-                    <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)]">
-                      <p className="text-[11px] font-bold uppercase text-[var(--text-tertiary)] mb-1">Overall Balance & AI Explanation</p>
+                    <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs">
+                      <p className="text-[12px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">Overall Balance & AI Explanation</p>
                       <p className="text-[13px] font-medium text-[var(--text-secondary)] leading-relaxed">
                         Your radar signature shows strong foundational {bestKey}, with opportunity to elevate your overall profile by practicing focused drills in {worstKey}.
                       </p>
@@ -639,39 +643,39 @@ export default function ResultsPage() {
           </div>
         </div>
 
-        {/* ── SECTION 6 — Session Statistics ── */}
+        {/* ── SECTION 6 — Compact Analytics Bar ── */}
         <div className="w-full rounded-[28px] p-6 mb-8 bg-[var(--bg-card)] border border-[var(--border)] shadow-md">
           <h2 className="text-[16px] font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-            <Activity size={18} className="text-blue-400" /> Compact Session Analytics
+            <Activity size={18} className="text-emerald-400" /> Compact Session Analytics
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 text-center">
-            <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
-              <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Speaking Time</p>
-              <p className="text-[16px] font-extrabold text-[var(--text-primary)]">{displayDuration}s</p>
+            <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs hover:border-emerald-500/30 transition-all">
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Speaking Time</p>
+              <p className="text-[16px] font-extrabold text-[var(--text-primary)] mt-0.5">{isNaN(Number(displayDuration)) ? '0' : displayDuration}s</p>
             </div>
-            <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
-              <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Words Spoken</p>
-              <p className="text-[16px] font-extrabold text-[var(--text-primary)]">{(metrics as any)?.words?.length || 0}</p>
+            <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs hover:border-emerald-500/30 transition-all">
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Words Spoken</p>
+              <p className="text-[16px] font-extrabold text-[var(--text-primary)] mt-0.5">{(metrics as any)?.words?.length || 0}</p>
             </div>
-            <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
-              <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Pace (WPM)</p>
-              <p className="text-[16px] font-extrabold text-emerald-400">{Math.round(metrics?.wpm || 0)}</p>
+            <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs hover:border-emerald-500/30 transition-all">
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Pace (WPM)</p>
+              <p className="text-[16px] font-extrabold text-emerald-700 dark:text-emerald-400 mt-0.5">{Math.round(metrics?.wpm || 0)}</p>
             </div>
-            <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
-              <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Longest Pause</p>
-              <p className="text-[16px] font-extrabold text-[var(--text-primary)]">{(metrics?.longest_pause_sec || 0).toFixed(1)}s</p>
+            <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs hover:border-emerald-500/30 transition-all">
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Longest Pause</p>
+              <p className="text-[16px] font-extrabold text-[var(--text-primary)] mt-0.5">{(metrics?.longest_pause_sec || 0).toFixed(1)}s</p>
             </div>
-            <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
-              <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Confidence</p>
-              <p className="text-[16px] font-extrabold text-blue-400">{scores.confidence || 0}%</p>
+            <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs hover:border-blue-500/30 transition-all">
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Confidence</p>
+              <p className="text-[16px] font-extrabold text-blue-700 dark:text-blue-400 mt-0.5">{scores.confidence || 0}%</p>
             </div>
-            <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
-              <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Filler Words</p>
-              <p className="text-[16px] font-extrabold text-amber-400">{metrics?.filler_count || 0}</p>
+            <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs hover:border-amber-500/30 transition-all">
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Filler Words</p>
+              <p className="text-[16px] font-extrabold text-amber-700 dark:text-amber-400 mt-0.5">{metrics?.filler_count || 0}</p>
             </div>
-            <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
-              <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">AI Confidence</p>
-              <p className="text-[16px] font-extrabold text-emerald-400">{avgScore}%</p>
+            <div className="p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs hover:border-emerald-500/30 transition-all">
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">AI Confidence</p>
+              <p className="text-[16px] font-extrabold text-emerald-700 dark:text-emerald-400 mt-0.5">{avgScore}%</p>
             </div>
           </div>
         </div>
@@ -683,48 +687,58 @@ export default function ResultsPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {(scores.delivery || 0) > 80 ? (
-              <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-amber-500/20 flex items-center gap-3">
-                <span className="text-[28px]">🏆</span>
+              <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs flex items-center gap-3.5 hover:border-amber-500/40 transition-all group">
+                <div className="w-11 h-11 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-[22px] shrink-0 shadow-2xs">
+                  🏆
+                </div>
                 <div>
-                  <h4 className="text-[14px] font-bold text-amber-400">Strong Communicator</h4>
-                  <p className="text-[11px] text-[var(--text-secondary)] font-medium">Maintained clear voice flow & tone</p>
+                  <h4 className="text-[15px] font-extrabold text-[var(--text-primary)] tracking-tight">Strong Communicator</h4>
+                  <p className="text-[12px] font-medium text-[var(--text-secondary)] mt-0.5">Maintained clear voice flow & tone</p>
                 </div>
               </div>
             ) : null}
             {(scores.structure || 0) > 75 ? (
-              <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-blue-500/20 flex items-center gap-3">
-                <span className="text-[28px]">🎯</span>
+              <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs flex items-center gap-3.5 hover:border-blue-500/40 transition-all group">
+                <div className="w-11 h-11 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-[22px] shrink-0 shadow-2xs">
+                  🎯
+                </div>
                 <div>
-                  <h4 className="text-[14px] font-bold text-blue-400">Structured Thinker</h4>
-                  <p className="text-[11px] text-[var(--text-secondary)] font-medium">Clear introduction and conclusion</p>
+                  <h4 className="text-[15px] font-extrabold text-[var(--text-primary)] tracking-tight">Structured Thinker</h4>
+                  <p className="text-[12px] font-medium text-[var(--text-secondary)] mt-0.5">Clear introduction and conclusion</p>
                 </div>
               </div>
             ) : null}
             {(scores.vocab || 0) > 70 ? (
-              <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-emerald-500/20 flex items-center gap-3">
-                <span className="text-[28px]">📚</span>
+              <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs flex items-center gap-3.5 hover:border-emerald-500/40 transition-all group">
+                <div className="w-11 h-11 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-[22px] shrink-0 shadow-2xs">
+                  📚
+                </div>
                 <div>
-                  <h4 className="text-[14px] font-bold text-emerald-400">Vocabulary Builder</h4>
-                  <p className="text-[11px] text-[var(--text-secondary)] font-medium">Used strong descriptive language</p>
+                  <h4 className="text-[15px] font-extrabold text-[var(--text-primary)] tracking-tight">Vocabulary Builder</h4>
+                  <p className="text-[12px] font-medium text-[var(--text-secondary)] mt-0.5">Used strong descriptive language</p>
                 </div>
               </div>
             ) : null}
             {(scores.filler || 0) > 85 ? (
-              <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-purple-500/20 flex items-center gap-3">
-                <span className="text-[28px]">✨</span>
+              <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs flex items-center gap-3.5 hover:border-purple-500/40 transition-all group">
+                <div className="w-11 h-11 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-[22px] shrink-0 shadow-2xs">
+                  ✨
+                </div>
                 <div>
-                  <h4 className="text-[14px] font-bold text-purple-400">Clean Speaker</h4>
-                  <p className="text-[11px] text-[var(--text-secondary)] font-medium">Hardly used any filler words</p>
+                  <h4 className="text-[15px] font-extrabold text-[var(--text-primary)] tracking-tight">Clean Speaker</h4>
+                  <p className="text-[12px] font-medium text-[var(--text-secondary)] mt-0.5">Hardly used any filler words</p>
                 </div>
               </div>
             ) : null}
             {/* Fallback if no achievements won */}
             {((scores.delivery || 0) <= 80 && (scores.structure || 0) <= 75 && (scores.vocab || 0) <= 70 && (scores.filler || 0) <= 85) && (
-              <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] flex items-center gap-3 col-span-1 md:col-span-3">
-                <span className="text-[28px]">🌱</span>
+              <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs flex items-center gap-3.5 col-span-1 md:col-span-3">
+                <div className="w-11 h-11 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-[22px] shrink-0">
+                  🌱
+                </div>
                 <div>
-                  <h4 className="text-[14px] font-bold text-[var(--text-primary)]">Growing Communicator</h4>
-                  <p className="text-[11px] text-[var(--text-secondary)] font-medium">Keep practicing to unlock badges!</p>
+                  <h4 className="text-[15px] font-extrabold text-[var(--text-primary)] tracking-tight">Growing Communicator</h4>
+                  <p className="text-[12px] font-medium text-[var(--text-secondary)] mt-0.5">Keep practicing to unlock badges!</p>
                 </div>
               </div>
             )}
