@@ -5,7 +5,7 @@ import { API_URL } from '../constants';
 import { supabase } from '../services/supabase';
 import { 
   Flame, Trophy, Mic, Clock, Calendar, TrendingUp, 
-  Edit3, Share2, ChevronRight, ChevronDown, ChevronUp
+  Edit3, Share2, ChevronRight, ChevronDown, ChevronUp, Check, Lock
 } from 'lucide-react';
 
 interface ProfileStats {
@@ -285,22 +285,44 @@ export default function ProfilePage() {
         {/* ── SECTION 3 — ACHIEVEMENTS ── */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-[18px] font-bold text-[var(--text-primary)] tracking-tight">Achievements</h2>
-            <span className="text-[12px] text-[var(--text-tertiary)] font-medium">{unlockedCount} of {unlockedAchievements.length} Unlocked</span>
+            <h2 className="text-[18px] font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
+              <Trophy size={18} className="text-amber-500" /> Achievements
+            </h2>
+            <span className="text-[12px] text-[var(--text-secondary)] font-semibold bg-[var(--bg-hover)] px-3 py-1 rounded-full border border-[var(--border)]">
+              {unlockedCount} of {unlockedAchievements.length} Unlocked
+            </span>
           </div>
 
-          <div className="flex items-center gap-3.5 overflow-x-auto pb-2 scrollbar-none">
+          <div className="flex items-center gap-3.5 overflow-x-auto pb-3 pt-1 scrollbar-none">
             {unlockedAchievements.map((ach, i) => (
               <div 
                 key={i}
-                className={`shrink-0 px-5 py-4 rounded-[22px] border flex items-center gap-3.5 transition-all ${ach.unlocked ? 'bg-[var(--bg-card)] border-[var(--border)] hover:border-[var(--accent)] shadow-xs' : 'bg-[var(--bg-card)]/40 border-[var(--border)]/40 opacity-50'}`}
+                className={`shrink-0 px-5 py-4 rounded-[22px] border flex items-center gap-3.5 transition-all duration-200 ${
+                  ach.unlocked 
+                    ? 'bg-gradient-to-br from-amber-500/10 via-[var(--bg-card)] to-emerald-500/5 border-amber-500/30 shadow-sm hover:border-amber-500/50' 
+                    : 'bg-[var(--bg-card)] border-[var(--border)] shadow-xs hover:border-[var(--text-tertiary)]/40'
+                }`}
               >
-                <span className="text-[24px]">{ach.icon}</span>
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-[22px] shrink-0 border ${
+                  ach.unlocked 
+                    ? 'bg-amber-500/15 border-amber-500/30' 
+                    : 'bg-[var(--bg-hover)] border-[var(--border)]'
+                }`}>
+                  {ach.icon}
+                </div>
                 <div>
-                  <h4 className="text-[14px] font-bold text-[var(--text-primary)] whitespace-nowrap">{ach.title}</h4>
-                  <span className="text-[11px] font-semibold text-[var(--accent)]">
-                    {ach.unlocked ? ach.date : ach.progress}
-                  </span>
+                  <h4 className="text-[14px] font-extrabold text-[var(--text-primary)] whitespace-nowrap tracking-tight">{ach.title}</h4>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    {ach.unlocked ? (
+                      <span className="text-[11px] font-bold text-emerald-500 flex items-center gap-1">
+                        <Check size={12} strokeWidth={3} /> {ach.date}
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-semibold text-[var(--text-secondary)] flex items-center gap-1">
+                        <Lock size={11} className="text-[var(--text-tertiary)]" /> {ach.progress}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

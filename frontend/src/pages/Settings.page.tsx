@@ -4,9 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../services/supabase';
 import { API_URL } from '../constants';
 import { 
-  User, Sparkles, Monitor, Bell, Mic, Shield, Brain, Grid, HelpCircle, Info, 
+  User, Sparkles, Monitor, Bell, Mic, Shield, Brain, HelpCircle, Info, 
   Check, Download, Trash2, ChevronRight, Moon, Sun, 
-  Calendar, HardDrive, FileText, MessageSquare, Video, 
   RefreshCw, Laptop, ExternalLink, Edit3, X
 } from 'lucide-react';
 
@@ -14,7 +13,7 @@ export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'aicoach' | 'appearance' | 'notifications' | 'audio' | 'privacy' | 'personalization' | 'integrations' | 'help' | 'about'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'aicoach' | 'appearance' | 'notifications' | 'audio' | 'privacy' | 'personalization' | 'help' | 'about'>('profile');
 
   // Backend Profile State
   const [displayName, setDisplayName] = useState<string>('');
@@ -55,14 +54,7 @@ export default function SettingsPage() {
   const [micTesting, setMicTesting] = useState(false);
   const [micLevel, setMicLevel] = useState(0);
 
-  const [integrations, setIntegrations] = useState({
-    gcal: true,
-    gdrive: false,
-    notion: true,
-    slack: false,
-    zoom: true,
-    teams: false,
-  });
+
 
   // Fetch backend profile status
   useEffect(() => {
@@ -131,9 +123,7 @@ export default function SettingsPage() {
     setAudioSettings(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const toggleIntegration = (key: keyof typeof integrations) => {
-    setIntegrations(prev => ({ ...prev, [key]: !prev[key] }));
-  };
+
 
   const handleMicTest = () => {
     setMicTesting(true);
@@ -166,7 +156,6 @@ export default function SettingsPage() {
     { id: 'audio', label: 'Audio & Recording', icon: Mic },
     { id: 'privacy', label: 'Privacy & Security', icon: Shield },
     { id: 'personalization', label: 'AI Personalization', icon: Brain },
-    { id: 'integrations', label: 'Integrations', icon: Grid },
     { id: 'help', label: 'Help & Support', icon: HelpCircle },
     { id: 'about', label: 'About SpeakIQ', icon: Info },
   ] as const;
@@ -658,51 +647,7 @@ export default function SettingsPage() {
             )}
 
 
-            {/* ── SECTION 8 — Integrations ── */}
-            {activeTab === 'integrations' && (
-              <section className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[28px] p-8 shadow-xl space-y-6">
-                <div>
-                  <h2 className="text-[20px] font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
-                    <Grid size={20} className="text-blue-400" /> Workspace Integrations
-                  </h2>
-                  <p className="text-[13px] text-[var(--text-tertiary)] font-medium">Connect SpeakIQ with your productivity tools for seamless workflows.</p>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[
-                    { key: 'gcal', name: 'Google Calendar', desc: 'Sync practice sessions & daily nudges', icon: Calendar, color: 'text-blue-400' },
-                    { key: 'gdrive', name: 'Google Drive', desc: 'Auto-export audio recordings & reports', icon: HardDrive, color: 'text-green-400' },
-                    { key: 'notion', name: 'Notion', desc: 'Sync AI transcripts and key takeaways', icon: FileText, color: 'text-[var(--text-primary)]' },
-                    { key: 'slack', name: 'Slack', desc: 'Daily streak updates & team challenges', icon: MessageSquare, color: 'text-purple-400' },
-                    { key: 'zoom', name: 'Zoom', desc: 'Live meeting speech coach plugin', icon: Video, color: 'text-blue-400' },
-                    { key: 'teams', name: 'Microsoft Teams', desc: 'Enterprise speech feedback integration', icon: Laptop, color: 'text-indigo-400' },
-                  ].map(item => {
-                    const Icon = item.icon;
-                    const isConnected = integrations[item.key as keyof typeof integrations];
-                    return (
-                      <div key={item.key} className="p-5 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-3">
-                          <div className={`w-10 h-10 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] ${item.color} flex items-center justify-center shrink-0 shadow-2xs`}>
-                            <Icon size={20} />
-                          </div>
-                          <div>
-                            <h4 className="text-[15px] font-bold text-[var(--text-primary)]">{item.name}</h4>
-                            <p className="text-[12px] text-[var(--text-tertiary)] font-medium leading-snug">{item.desc}</p>
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={() => toggleIntegration(item.key as keyof typeof integrations)}
-                          className={`px-3.5 py-1.5 rounded-xl font-bold text-[12px] transition-all cursor-pointer shrink-0 ${isConnected ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border)] hover:bg-[var(--bg-card-hover)]'}`}
-                        >
-                          {isConnected ? 'Connected' : 'Connect'}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
 
 
             {/* ── SECTION 9 — Help & Support ── */}
