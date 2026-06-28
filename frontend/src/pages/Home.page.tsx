@@ -202,7 +202,7 @@ export default function HomePage() {
               </div>
 
               {/* Animated Waveform Bars Container */}
-              <div className="mb-8 p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] backdrop-blur-sm">
+              <div className="mb-8 p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs backdrop-blur-sm">
                 <div className="flex items-center justify-between text-[11px] font-bold text-[var(--text-primary)] uppercase tracking-wider mb-3 px-1">
                   <span>Voice Pitch & Modulation</span>
                   <span className="text-[var(--accent)] font-extrabold">Active Stream</span>

@@ -260,11 +260,11 @@ export default function DashboardPage() {
 
             <div className="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-[var(--border)]">
               {[
-                { time: 'Yesterday', title: 'Completed Interview Practice', score: 82, badgeColor: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
-                { time: '2 days ago', title: 'Completed Presentation Drill', score: 76, badgeColor: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
-                { time: '3 days ago', title: 'Vocabulary Challenge', score: 88, badgeColor: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
+                { time: 'Yesterday', title: 'Completed Interview Practice', score: 82, badgeColor: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20' },
+                { time: '2 days ago', title: 'Completed Presentation Drill', score: 76, badgeColor: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20' },
+                { time: '3 days ago', title: 'Vocabulary Challenge', score: 88, badgeColor: 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20' },
               ].map((act, idx) => (
-                <div key={idx} className="relative flex items-center justify-between p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] hover:bg-[var(--bg-card-hover)] transition-all">
+                <div key={idx} className="relative flex items-center justify-between p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs hover:border-emerald-500/30 transition-all">
                   <div className="absolute -left-[31px] w-5 h-5 rounded-full bg-[var(--bg-card)] border-4 border-emerald-500 shadow-xs" />
                   <div>
                     <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{act.time}</span>
