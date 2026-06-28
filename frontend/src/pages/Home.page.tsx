@@ -68,7 +68,12 @@ export default function HomePage() {
               }}
             >
               Master your speech.<br />
-              <span className="bg-gradient-to-r from-[var(--accent)] via-[#D4FF96] to-[#A3E635] bg-clip-text text-transparent">
+              <span 
+                className="bg-clip-text text-transparent"
+                style={{
+                  backgroundImage: 'linear-gradient(90deg, var(--gradient-hero-from) 0%, var(--gradient-hero-via) 50%, var(--gradient-hero-to) 100%)',
+                }}
+              >
                 Speak with total power.
               </span>
             </h1>

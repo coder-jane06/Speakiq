@@ -33,6 +33,11 @@
   --accent-dim:      rgba(200,249,125,0.10);
   --accent-glow:     rgba(200,249,125,0.18);
 
+  /* Hero Gradient Text */
+  --gradient-hero-from: #C8F97D;
+  --gradient-hero-via:  #D4FF96;
+  --gradient-hero-to:   #A3E635;
+
   /* Text */
   --text-primary:    #F0F0F5;
   --text-main:       #F0F0F5;
@@ -79,6 +84,11 @@ html.light, body.light {
   --accent-text:     #FFFFFF;
   --accent-dim:      rgba(62,140,0,0.10);
   --accent-glow:     rgba(62,140,0,0.15);
+
+  /* Hero Gradient Text (High Contrast Dark Forest Greens for Light Mode) */
+  --gradient-hero-from: #2D6A00;
+  --gradient-hero-via:  #3E8C00;
+  --gradient-hero-to:   #15803D;
 
   --text-primary:    #111118;
   --text-main:       #111118;
