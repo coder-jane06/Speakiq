@@ -65,12 +65,12 @@
 
 /* ── Light Mode ──────────────────────────────────────────────── */
 html.light, body.light {
-  --bg-base:         #F9FAFB;
-  --bg-main:         #F9FAFB;
+  --bg-base:         #F8F6F1;
+  --bg-main:         #F8F6F1;
   --bg-card:         #FFFFFF;
-  --bg-card-2:       #F3F4F6;
+  --bg-card-2:       #F8F6F1;
   --bg-hover:        #F3F4F6;
-  --bg-card-hover:   #F9FAFB;
+  --bg-card-hover:   #FFFFFF;
   --bg-card-active:  #E5E7EB;
   --bg-sidebar:      #FFFFFF;
 
