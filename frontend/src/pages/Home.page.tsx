@@ -167,11 +167,11 @@ export default function HomePage() {
 
             {/* Main Interactive Card Shell */}
             <div 
-              className="relative w-full rounded-[32px] overflow-hidden transition-all duration-500 hover:-translate-y-1.5 group bg-[var(--bg-card)] border border-[var(--border)] shadow-2xl p-8 sm:p-9"
+              className="relative w-full rounded-[32px] transition-all duration-500 hover:-translate-y-1.5 group bg-[var(--bg-card)] border border-[var(--border)] shadow-2xl p-8 sm:p-9"
             >
               {/* Subtle Top Inner Light Refraction */}
               <div 
-                className="absolute top-0 left-0 right-0 h-[1px] pointer-events-none"
+                className="absolute top-0 left-0 right-0 h-[1px] pointer-events-none rounded-t-[32px] overflow-hidden"
                 style={{
                   background: 'linear-gradient(90deg, transparent 0%, var(--border-accent) 50%, transparent 100%)',
                 }}
@@ -184,13 +184,13 @@ export default function HomePage() {
                     <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75 animate-ping" />
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--accent)]" />
                   </div>
-                  <span className="text-[13px] font-bold tracking-[0.12em] uppercase text-[var(--accent)] flex items-center gap-1.5">
+                  <span className="text-[13px] font-extrabold tracking-[0.12em] uppercase text-[var(--accent)] flex items-center gap-1.5">
                     <Brain size={15} />
                     <span>AI Listening & Analyzing</span>
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--bg-hover)] border border-[var(--border)] text-[11px] font-semibold text-[var(--text-secondary)]">
+                <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--bg-hover)] border border-[var(--border-md)] text-[11px] font-bold text-[var(--text-primary)] shadow-2xs">
                   <Activity size={12} className="text-blue-400 animate-pulse" />
                   <span>Real-time Audio Engine</span>
                 </div>
@@ -198,9 +198,9 @@ export default function HomePage() {
 
               {/* Animated Waveform Bars Container */}
               <div className="mb-8 p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] backdrop-blur-sm">
-                <div className="flex items-center justify-between text-[11px] font-medium text-[var(--text-secondary)] uppercase tracking-wider mb-3 px-1">
+                <div className="flex items-center justify-between text-[11px] font-bold text-[var(--text-primary)] uppercase tracking-wider mb-3 px-1">
                   <span>Voice Pitch & Modulation</span>
-                  <span className="text-[var(--accent)] font-bold">Active Stream</span>
+                  <span className="text-[var(--accent)] font-extrabold">Active Stream</span>
                 </div>
                 <div className="flex items-end justify-between gap-1.5 h-[76px] px-2">
                   {[
@@ -239,12 +239,12 @@ export default function HomePage() {
               <div className="flex items-center gap-5">
                 {/* Overall Score Circle/Box */}
                 <div 
-                  className="flex flex-col items-center justify-center w-20 h-20 rounded-[22px] flex-shrink-0 relative overflow-hidden bg-[var(--accent-dim)] border border-[var(--border-accent)]"
+                  className="flex flex-col items-center justify-center w-20 h-20 rounded-[22px] flex-shrink-0 relative overflow-hidden bg-[var(--accent-dim)] border border-[var(--border-accent)] shadow-xs"
                 >
                   <span className="text-[26px] font-extrabold tracking-tight text-[var(--accent)] leading-none" style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}>
                     94
                   </span>
-                  <span className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-secondary)] mt-1">
+                  <span className="text-[10px] font-extrabold tracking-widest uppercase text-[var(--text-primary)] mt-1">
                     Overall
                   </span>
                 </div>
@@ -258,8 +258,8 @@ export default function HomePage() {
                   ].map((dim) => (
                     <div key={dim.label} className="flex flex-col gap-1">
                       <div className="flex items-center justify-between text-[12px]">
-                        <span className="font-medium text-[var(--text-secondary)]">{dim.label}</span>
-                        <span className="font-bold text-[var(--text-primary)]">{dim.pct}%</span>
+                        <span className="font-bold text-[var(--text-primary)]">{dim.label}</span>
+                        <span className="font-extrabold text-[var(--text-primary)]">{dim.pct}%</span>
                       </div>
                       <div className="w-full h-1.5 rounded-full bg-[var(--bg-hover)] overflow-hidden p-[1px] border border-[var(--border)]">
                         <div
@@ -277,17 +277,17 @@ export default function HomePage() {
 
               {/* Subtle Floating Cards Orbiting/Positioned Around Main Card */}
               <div 
-                className="hidden sm:flex items-center gap-2.5 absolute -top-4 -right-4 px-4 py-2 rounded-2xl text-[12px] font-semibold backdrop-blur-xl bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] shadow-2xl animate-float"
+                className="hidden sm:flex items-center gap-2.5 absolute -top-4 -right-4 px-4 py-2 rounded-2xl text-[12px] font-bold backdrop-blur-xl bg-[var(--bg-card)] border border-[var(--border-md)] text-[var(--text-primary)] shadow-2xl animate-float z-20"
                 style={{
                   animationDuration: '6s',
                 }}
               >
-                <Zap size={14} className="text-amber-400" />
+                <Zap size={14} className="text-amber-400 fill-amber-400/20" />
                 <span>Pace: 142 wpm (Optimal)</span>
               </div>
 
               <div 
-                className="hidden sm:flex items-center gap-2.5 absolute -bottom-5 -left-4 px-4 py-2 rounded-2xl text-[12px] font-semibold backdrop-blur-xl bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] shadow-2xl animate-float"
+                className="hidden sm:flex items-center gap-2.5 absolute -bottom-5 -left-4 px-4 py-2 rounded-2xl text-[12px] font-bold backdrop-blur-xl bg-[var(--bg-card)] border border-[var(--border-md)] text-[var(--text-primary)] shadow-2xl animate-float z-20"
                 style={{
                   animationDelay: '1.5s',
                   animationDuration: '7s',
