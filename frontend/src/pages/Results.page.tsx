@@ -5,7 +5,7 @@ import { ScoreRing }         from '../components/results/ScoreRing'
 import { ROUTES, API_URL }   from '../constants'
 import { supabase } from '../services/supabase'
 import { useStreak } from '../hooks/useStreak'
-import { ArrowLeft, CheckCircle2, ChevronRight, Sparkles, TrendingUp, BarChart3, Cpu, Zap, Activity, Award, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, ChevronRight, Sparkles, TrendingUp, BarChart3, Brain, Zap, Activity, Award, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react'
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, XAxis, YAxis } from 'recharts'
 
 
@@ -107,7 +107,7 @@ export default function ResultsPage() {
               }}
             >
               <Sparkles className="absolute -top-1 -right-1 text-yellow-300 animate-bounce" size={20} />
-              <Cpu size={38} className="text-white drop-shadow-md animate-pulse" strokeWidth={2} />
+              <Brain size={38} className="text-white drop-shadow-md animate-pulse" strokeWidth={2} />
             </div>
           </div>
           
