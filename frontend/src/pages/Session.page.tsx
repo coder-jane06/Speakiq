@@ -340,7 +340,7 @@ export default function SessionPage() {
               onClick={() => setSetupStep('setup-level')}
               className="w-full py-4 text-[16px] font-bold rounded-full transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98]"
               style={selectedGoal ? {
-                background: 'var(--accent)', color: '#09090F', boxShadow: '0 0 32px var(--accent-glow)',
+                background: 'var(--accent)', color: 'var(--accent-text)', boxShadow: '0 0 32px var(--accent-glow)',
               } : {
                 background: 'var(--bg-card)', color: 'var(--text-tertiary)',
                 cursor: 'not-allowed', border: '1px solid var(--border)',
@@ -436,7 +436,7 @@ export default function SessionPage() {
               onClick={() => setSetupStep('setup-complete')}
               className="w-full py-4 text-[16px] font-bold rounded-full transition-all duration-200 flex items-center justify-center gap-2 active:scale-[0.98]"
               style={selectedLevel ? {
-                background: 'var(--accent)', color: '#09090F', boxShadow: '0 0 32px var(--accent-glow)',
+                background: 'var(--accent)', color: 'var(--accent-text)', boxShadow: '0 0 32px var(--accent-glow)',
               } : {
                 background: 'var(--bg-card)', color: 'var(--text-tertiary)',
                 cursor: 'not-allowed', border: '1px solid var(--border)',
@@ -812,7 +812,7 @@ export default function SessionPage() {
                 className="w-full py-5 text-[17px] font-bold rounded-full transition-all duration-300 active:scale-[0.98] relative overflow-hidden"
                 style={selectedTopic ? {
                   background: 'var(--accent)',
-                  color: '#09090F',
+                  color: 'var(--accent-text)',
                   boxShadow: '0 0 40px var(--accent-glow), 0 4px 24px rgba(0,0,0,0.3)',
                 } : {
                   background: 'var(--bg-card)', color: 'var(--text-tertiary)',
@@ -1234,7 +1234,7 @@ export default function SessionPage() {
                 className="px-8 py-3.5 rounded-[16px] font-bold text-[14px] transition-all duration-200"
                 style={{
                   background: 'var(--accent)',
-                  color: '#09090F',
+                  color: 'var(--accent-text)',
                 }}
               >
                 Try Again

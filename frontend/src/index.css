@@ -29,6 +29,7 @@
 
   /* Accent — lime green */
   --accent:          #C8F97D;
+  --accent-text:     #09090F;
   --accent-dim:      rgba(200,249,125,0.10);
   --accent-glow:     rgba(200,249,125,0.18);
 
@@ -75,6 +76,7 @@ html.light, body.light {
   --border-dark:     rgba(0,0,0,0.09);
 
   --accent:          #3E8C00;
+  --accent-text:     #FFFFFF;
   --accent-dim:      rgba(62,140,0,0.10);
   --accent-glow:     rgba(62,140,0,0.15);
 

@@ -86,7 +86,7 @@ export default function HomePage() {
                 className="group relative inline-flex items-center justify-center gap-3 font-bold text-[16px] px-8 py-4 rounded-[20px] transition-all duration-300 active:scale-[0.98] cursor-pointer overflow-hidden"
                 style={{
                   background: 'var(--accent)',
-                  color: '#09090F',
+                  color: 'var(--accent-text)',
                   boxShadow: '0 0 32px rgba(200,249,125,0.28)',
                 }}
                 onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 45px rgba(200,249,125,0.45), 0 10px 20px rgba(0,0,0,0.3)')}

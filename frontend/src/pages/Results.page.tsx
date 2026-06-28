@@ -196,7 +196,7 @@ export default function ResultsPage() {
           <button
             onClick={() => navigate(ROUTES.HOME)}
             className="w-full py-4 font-bold rounded-[var(--radius-md)] transition-all active:scale-95"
-            style={{ background: 'var(--accent)', color: '#09090F' }}
+            style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}
           >
             Go home
           </button>
@@ -533,7 +533,7 @@ export default function ResultsPage() {
                 <button
                   key={m}
                   onClick={() => setActiveTrendMetric(m)}
-                  className={`px-3 py-1.5 rounded-lg capitalize transition-all cursor-pointer ${activeTrendMetric === m ? 'bg-[var(--accent)] text-black font-bold' : 'hover:text-[var(--text-primary)]'}`}
+                  className={`px-3 py-1.5 rounded-lg capitalize transition-all cursor-pointer ${activeTrendMetric === m ? 'bg-[var(--accent)] text-[var(--accent-text)] font-bold' : 'hover:text-[var(--text-primary)]'}`}
                 >
                   {m}
                 </button>

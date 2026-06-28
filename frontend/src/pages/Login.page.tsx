@@ -272,7 +272,7 @@ export default function LoginPage() {
               className="flex-1 py-2.5 rounded-[14px] text-[13px] font-bold transition-all duration-200"
               style={{
                 background: mode === 'signin' ? 'var(--accent)' : 'transparent',
-                color: mode === 'signin' ? 'var(--bg-base)' : 'var(--text-secondary)',
+                color: mode === 'signin' ? 'var(--accent-text)' : 'var(--text-secondary)',
               }}
               onClick={() => switchMode('signin')}
             >
@@ -282,7 +282,7 @@ export default function LoginPage() {
               className="flex-1 py-2.5 rounded-[14px] text-[13px] font-bold transition-all duration-200"
               style={{
                 background: mode === 'signup' ? 'var(--accent)' : 'transparent',
-                color: mode === 'signup' ? 'var(--bg-base)' : 'var(--text-secondary)',
+                color: mode === 'signup' ? 'var(--accent-text)' : 'var(--text-secondary)',
               }}
               onClick={() => switchMode('signup')}
             >
@@ -417,7 +417,7 @@ export default function LoginPage() {
               className="w-full py-3.5 rounded-[14px] text-[15px] font-bold transition-all duration-200 mt-1 active:scale-[0.98]"
               style={{
                 background: loading ? 'var(--accent-dim)' : 'var(--accent)',
-                color: loading ? 'var(--text-secondary)' : 'var(--bg-base)',
+                color: loading ? 'var(--text-secondary)' : 'var(--accent-text)',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 boxShadow: loading ? 'none' : '0 0 24px rgba(200,249,125,0.18)',
               }}

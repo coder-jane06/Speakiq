@@ -167,7 +167,7 @@ export default function ProfilePage() {
           <div className="flex items-center gap-3 shrink-0 self-start md:self-center">
             <button
               onClick={() => navigate('/settings')}
-              className="px-4 py-2.5 rounded-[14px] font-extrabold text-[13px] bg-[var(--accent)] text-black hover:opacity-90 transition-all cursor-pointer shadow-xs flex items-center gap-2"
+              className="px-4 py-2.5 rounded-[14px] font-extrabold text-[13px] bg-[var(--accent)] text-[var(--accent-text)] hover:opacity-90 transition-all cursor-pointer shadow-xs flex items-center gap-2"
             >
               <Edit3 size={15} />
               <span>Edit Profile</span>

@@ -86,7 +86,7 @@ export default function OnboardingPage() {
           className="w-20 h-20 rounded-[24px] flex items-center justify-center mb-8"
           style={{
             background: 'var(--accent)',
-            color: 'var(--bg-base)',
+            color: 'var(--accent-text)',
             boxShadow: '0 0 40px var(--accent-glow)',
           }}
         >
@@ -143,7 +143,7 @@ export default function OnboardingPage() {
           className="w-full py-4 rounded-[16px] font-bold text-[16px] transition-all active:scale-[0.97] disabled:opacity-50"
           style={{
             background: 'var(--accent)',
-            color: 'var(--bg-base)',
+            color: 'var(--accent-text)',
             boxShadow: '0 0 32px var(--accent-glow)',
           }}
           onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}

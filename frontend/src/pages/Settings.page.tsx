@@ -206,17 +206,17 @@ export default function SettingsPage() {
                     onClick={() => setActiveTab(item.id)}
                     className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-[14px] font-bold transition-all cursor-pointer ${
                       isActive 
-                        ? 'bg-[var(--accent)] text-black shadow-md' 
+                        ? 'bg-[var(--accent)] text-[var(--accent-text)] shadow-md' 
                         : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isActive ? 'bg-black/15 text-black' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)]'}`}>
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isActive ? 'bg-black/15 text-[var(--accent-text)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)]'}`}>
                         <Icon size={16} />
                       </div>
                       <span>{item.label}</span>
                     </div>
-                    {isActive && <ChevronRight size={16} className="text-black" />}
+                    {isActive && <ChevronRight size={16} className="text-[var(--accent-text)]" />}
                   </button>
                 );
               })}
@@ -241,7 +241,7 @@ export default function SettingsPage() {
 
                 <div className="flex flex-col sm:flex-row items-center gap-6">
                   <div className="relative group cursor-pointer" onClick={() => { setTempName(resolvedName); setIsEditingName(true); }}>
-                    <div className="w-20 h-20 rounded-full bg-[var(--accent)] text-black font-extrabold text-[26px] flex items-center justify-center shadow-md border-4 border-[var(--bg-card)]">
+                    <div className="w-20 h-20 rounded-full bg-[var(--accent)] text-[var(--accent-text)] font-extrabold text-[26px] flex items-center justify-center shadow-md border-4 border-[var(--bg-card)]">
                       {userInitials}
                     </div>
                     <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[11px] font-bold">
@@ -323,7 +323,7 @@ export default function SettingsPage() {
                         <button
                           key={style}
                           onClick={() => setCoachingStyle(style)}
-                          className={`py-2.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer ${coachingStyle === style ? 'bg-[var(--accent)] text-black shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+                          className={`py-2.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer ${coachingStyle === style ? 'bg-[var(--accent)] text-[var(--accent-text)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
                         >
                           {style}
                         </button>
@@ -339,7 +339,7 @@ export default function SettingsPage() {
                         <button
                           key={lvl}
                           onClick={() => setFeedbackDetail(lvl)}
-                          className={`py-2.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer ${feedbackDetail === lvl ? 'bg-[var(--accent)] text-black shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+                          className={`py-2.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer ${feedbackDetail === lvl ? 'bg-[var(--accent)] text-[var(--accent-text)] shadow-xs' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
                         >
                           {lvl}
                         </button>
@@ -355,7 +355,7 @@ export default function SettingsPage() {
                         <button
                           key={goal}
                           onClick={() => { setSpeakingGoal(goal); saveProfileBackend(resolvedName); }}
-                          className={`px-4 py-2 rounded-xl font-bold text-[13px] border transition-all cursor-pointer ${speakingGoal === goal ? 'bg-[var(--accent)] text-black border-transparent' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border)] hover:bg-[var(--bg-card-hover)]'}`}
+                          className={`px-4 py-2 rounded-xl font-bold text-[13px] border transition-all cursor-pointer ${speakingGoal === goal ? 'bg-[var(--accent)] text-[var(--accent-text)] border-transparent' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border)] hover:bg-[var(--bg-card-hover)]'}`}
                         >
                           {goal}
                         </button>
@@ -371,7 +371,7 @@ export default function SettingsPage() {
                         <button
                           key={diff}
                           onClick={() => { setDifficulty(diff); saveProfileBackend(resolvedName); }}
-                          className={`px-4 py-2 rounded-xl font-bold text-[13px] border transition-all cursor-pointer ${difficulty === diff ? 'bg-[var(--accent)] text-black border-transparent' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border)] hover:bg-[var(--bg-card-hover)]'}`}
+                          className={`px-4 py-2 rounded-xl font-bold text-[13px] border transition-all cursor-pointer ${difficulty === diff ? 'bg-[var(--accent)] text-[var(--accent-text)] border-transparent' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border)] hover:bg-[var(--bg-card-hover)]'}`}
                         >
                           {diff}
                         </button>
@@ -443,7 +443,7 @@ export default function SettingsPage() {
                         <button
                           key={d}
                           onClick={() => setUiDensity(d)}
-                          className={`px-3 py-1.5 rounded-lg font-bold text-[12px] cursor-pointer ${uiDensity === d ? 'bg-[var(--accent)] text-black' : 'text-[var(--text-secondary)]'}`}
+                          className={`px-3 py-1.5 rounded-lg font-bold text-[12px] cursor-pointer ${uiDensity === d ? 'bg-[var(--accent)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}
                         >
                           {d}
                         </button>
@@ -744,7 +744,7 @@ export default function SettingsPage() {
             {activeTab === 'about' && (
               <section className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[28px] p-8 shadow-xl space-y-6">
                 <div className="flex items-center gap-4 pb-4 border-b border-[var(--border)]">
-                  <div className="w-14 h-14 rounded-2xl bg-[var(--accent)] text-black font-extrabold text-[24px] flex items-center justify-center shadow-md">
+                  <div className="w-14 h-14 rounded-2xl bg-[var(--accent)] text-[var(--accent-text)] font-extrabold text-[24px] flex items-center justify-center shadow-md">
                     🎙️
                   </div>
                   <div>

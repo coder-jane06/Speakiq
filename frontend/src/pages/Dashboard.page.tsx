@@ -130,10 +130,10 @@ export default function DashboardPage() {
             <div className="flex flex-col sm:flex-row lg:flex-col gap-3.5 shrink-0 min-w-[240px]">
               <button
                 onClick={() => navigate('/session')}
-                className="flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-bold text-[16px] text-black transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] shadow-lg shadow-emerald-500/20 group cursor-pointer"
-                style={{ background: 'var(--accent)' }}
+                className="flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-bold text-[16px] transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] shadow-lg shadow-emerald-500/20 group cursor-pointer"
+                style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}
               >
-                <Play size={18} className="fill-black transition-transform group-hover:scale-110" />
+                <Play size={18} className="transition-transform group-hover:scale-110" style={{ fill: 'var(--accent-text)' }} />
                 <span>▶ Continue Practice</span>
               </button>
 
@@ -181,8 +181,8 @@ export default function DashboardPage() {
 
             <button
               onClick={() => navigate('/session')}
-              className="px-8 py-4 rounded-2xl font-extrabold text-[15px] text-black transition-all duration-300 hover:scale-[1.04] active:scale-[0.98] shadow-md cursor-pointer shrink-0 w-full md:w-auto text-center"
-              style={{ background: 'var(--accent)' }}
+              className="px-8 py-4 rounded-2xl font-extrabold text-[15px] transition-all duration-300 hover:scale-[1.04] active:scale-[0.98] shadow-md cursor-pointer shrink-0 w-full md:w-auto text-center"
+              style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}
             >
               Start 🚀
             </button>
@@ -484,8 +484,8 @@ export default function DashboardPage() {
 
             <button
               onClick={() => navigate('/session')}
-              className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-extrabold text-[16px] text-black transition-all shadow-lg active:scale-[0.98] cursor-pointer shrink-0"
-              style={{ background: 'var(--accent)' }}
+              className="flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-extrabold text-[16px] transition-all shadow-lg active:scale-[0.98] cursor-pointer shrink-0"
+              style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}
             >
               <span>Resume →</span>
             </button>

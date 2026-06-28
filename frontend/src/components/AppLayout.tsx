@@ -57,7 +57,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           >
             <div
               className="w-9 h-9 rounded-[10px] flex items-center justify-center flex-shrink-0 shadow-[0_0_16px_var(--accent-glow)]"
-              style={{ background: 'var(--accent)', color: 'var(--bg-base)' }}
+              style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}
             >
               <Sparkles size={18} strokeWidth={2.5} />
             </div>
@@ -93,7 +93,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               className="flex items-center gap-3 mt-3 px-4 py-3 rounded-[12px] font-semibold text-[14px] transition-all"
               style={{
                 background:  'var(--accent)',
-                color:       'var(--bg-base)',
+                color:       'var(--accent-text)',
                 boxShadow:   '0 0 20px var(--accent-glow)',
               }}
             >
