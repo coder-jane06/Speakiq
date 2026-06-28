@@ -266,7 +266,7 @@ async def trigger_analysis(
             audio_bytes=audio_bytes,
             topic=topic_text,
             user_profile=user_profile,
-            session_number=user_profile.get("total_sessions", 0) + 1 if user_profile else 1,
+            session_number=(user_profile.get("total_sessions") or 0) + 1 if user_profile else 1,
             user_id=user_id,
             speaking_goal_override=speaking_goal,
             difficulty_tier=difficulty_tier,

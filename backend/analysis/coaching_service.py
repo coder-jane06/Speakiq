@@ -52,12 +52,16 @@ def pick_focus_area(user_profile: Optional[dict]) -> str:
     if not user_profile:
         return "filler_words"
 
+    def get_score(key: str) -> int:
+        val = user_profile.get(key)
+        return val if val is not None else 50
+
     scores = {
-        "filler_words":      user_profile.get("filler_score", 50),
-        "delivery_monotony": user_profile.get("delivery_score", 50),
-        "idea_structure":    user_profile.get("structure_score", 50),
-        "vocabulary":        user_profile.get("vocab_score", 50),
-        "confidence":        user_profile.get("confidence_score", 50),
+        "filler_words":      get_score("filler_score"),
+        "delivery_monotony": get_score("delivery_score"),
+        "idea_structure":    get_score("structure_score"),
+        "vocabulary":        get_score("vocab_score"),
+        "confidence":        get_score("confidence_score"),
     }
     last_coached = user_profile.get("last_coached", None)
     sorted_areas = sorted(scores.items(), key=lambda x: x[1])
@@ -158,16 +162,33 @@ def build_coaching_prompt(
         memory_section = ""
 
     # ── User profile history ───────────────────────────────────────────
-    if user_profile and user_profile.get("total_sessions", 0) > 1:
+    ai_prefs = user_profile.get("ai_coach_preferences", {}) if user_profile else {}
+    coaching_style = ai_prefs.get("style", "balanced")
+    feedback_detail = ai_prefs.get("detail", "basic")
+
+    style_instructions = {
+        "encouraging": "ADOPT A HIGHLY ENCOURAGING TONE. Focus heavily on praise, soft corrections, and building confidence.",
+        "balanced": "ADOPT A BALANCED TONE. Provide a fair mix of praise and constructive criticism.",
+        "strict": "ADOPT A STRICT, CRITICAL TONE. Be highly rigorous, point out every flaw, and do not sugarcoat your feedback. Demand excellence."
+    }
+    detail_instructions = {
+        "basic": "Keep feedback very simple, accessible, and high-level.",
+        "detailed": "Provide detailed, comprehensive feedback with thorough explanations.",
+        "expert": "Provide advanced, expert-level feedback using rhetorical terminology, linguistic analysis, and precise mechanics."
+    }
+    
+    tone_section = f"\n## Your Persona & Tone\n{style_instructions.get(coaching_style, style_instructions['balanced'])}\n{detail_instructions.get(feedback_detail, detail_instructions['basic'])}\n"
+
+    if user_profile and (user_profile.get("total_sessions") or 0) > 1:
         history = f"""
 ## Your coaching history with this user
-- Sessions completed: {user_profile.get("total_sessions", 0)}
+- Sessions completed: {user_profile.get("total_sessions") or 0}
 - Coaching tier: {tier}
 - Filler score trend: {user_profile.get("filler_trend", "stable")}
 - Their persistent top fillers: {user_profile.get("top_fillers", [])}
 - Delivery trend: {user_profile.get("delivery_trend", "stable")}
 - Last session you coached on: {user_profile.get("last_coached", "nothing yet")}
-- Current streak: {user_profile.get("current_streak", 1)} days
+- Current streak: {user_profile.get("current_streak") or 1} days
 
 {tier_instruction}
 
@@ -220,6 +241,7 @@ This is session #{session_num}. Be encouraging and welcoming.
         pre_scores = {"filler": 50, "delivery": 50, "structure": 50, "vocab": 50, "confidence": 50}
 
     return f"""You are an expert speech coach. Analyze this speaking session and return ONLY a JSON object.
+{tone_section}
 {goal_section}
 {memory_section}
 Topic: "{topic}"

@@ -101,7 +101,7 @@ async def update_user_profile(
             new_confidence = ema(confidence_score, profile.get('confidence_score'))
             
             # 4. Detect trend direction for filler_score
-            old_filler_score = profile.get('filler_score', new_filler)
+            old_filler_score = profile.get('filler_score') or new_filler
             if new_filler > old_filler_score + 5:
                 filler_trend = "improving"
             elif new_filler < old_filler_score - 5:
@@ -110,8 +110,8 @@ async def update_user_profile(
                 filler_trend = "stable"
                 
             # 5. Update streak
-            current_streak = profile.get('current_streak', 0)
-            longest_streak = profile.get('longest_streak', 0)
+            current_streak = profile.get('current_streak') or 0
+            longest_streak = profile.get('longest_streak') or 0
             last_date_str = profile.get('last_session_date')
             
             if last_date_str:
@@ -138,7 +138,7 @@ async def update_user_profile(
             if focus_area not in coached_on:
                 coached_on.append(focus_area)
                 
-            total_sessions = profile.get('total_sessions', 0) + 1
+            total_sessions = (profile.get('total_sessions') or 0) + 1
             
             update_data = {
                 "session_id_ref": session_id,

@@ -981,8 +981,6 @@ export default function SessionPage() {
                   <span>{isPaused ? '⏸ Session Paused' : '🔴 Recording Live'}</span>
                 </div>
                 <div className="flex items-center gap-3 text-[12px] font-bold text-[var(--text-secondary)]">
-                  <span>Words: <strong className="text-[var(--text-primary)]">{wordsSpoken}</strong></span>
-                  <span>•</span>
                   <span>Done: <strong className="text-emerald-500">{completionPct}%</strong></span>
                 </div>
               </div>
