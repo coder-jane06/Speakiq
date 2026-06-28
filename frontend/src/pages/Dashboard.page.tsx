@@ -365,15 +365,18 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { title: '🏆 5 Day Streak', desc: 'Consistent daily practice', color: 'from-amber-500/10 to-orange-500/10 border-amber-500/20 text-amber-700 dark:text-amber-400' },
-              { title: '🎯 Confidence Master', desc: 'Reached 85+ score', color: 'from-blue-500/10 to-indigo-500/10 border-blue-500/20 text-blue-700 dark:text-blue-400' },
-              { title: '🔥 First Perfect Score', desc: 'Zero filler hesitations', color: 'from-red-500/10 to-orange-500/10 border-red-500/20 text-red-700 dark:text-red-400' },
-              { title: '📚 Vocabulary Builder', desc: 'Used 10+ transition words', color: 'from-emerald-500/10 to-green-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400' },
+              { icon: '🏆', title: '5 Day Streak', desc: 'Consistent daily practice', badgeBg: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30' },
+              { icon: '🎯', title: 'Confidence Master', desc: 'Reached 85+ score', badgeBg: 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30' },
+              { icon: '🔥', title: 'First Perfect Score', desc: 'Zero filler hesitations', badgeBg: 'bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30' },
+              { icon: '📚', title: 'Vocabulary Builder', desc: 'Used 10+ transition words', badgeBg: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' },
             ].map((ach, i) => (
-              <div key={i} className={`p-5 rounded-[24px] bg-[var(--bg-card)] bg-gradient-to-br ${ach.color} border shadow-md flex items-center gap-4 hover:scale-[1.02] transition-transform`}>
+              <div key={i} className="p-5 rounded-[24px] bg-[var(--bg-card)] border border-[var(--border)] shadow-lg backdrop-blur-xl flex items-center gap-4 hover:-translate-y-1 hover:border-[var(--border-accent)] transition-all duration-300 group cursor-pointer">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-[22px] shrink-0 border shadow-2xs ${ach.badgeBg}`}>
+                  {ach.icon}
+                </div>
                 <div>
-                  <h4 className="text-[15px] font-extrabold">{ach.title}</h4>
-                  <p className="text-[12px] font-semibold mt-0.5 text-[var(--text-secondary)]">{ach.desc}</p>
+                  <h4 className="text-[15px] font-extrabold text-[var(--text-primary)] tracking-tight group-hover:text-[var(--accent)] transition-colors">{ach.title}</h4>
+                  <p className="text-[12px] font-medium text-[var(--text-secondary)] mt-0.5">{ach.desc}</p>
                 </div>
               </div>
             ))}
