@@ -448,32 +448,6 @@ export default function DashboardPage() {
         </section>
 
 
-        {/* ── SECTION 10 — Continue Learning (Large Bottom Card) ── */}
-        <section className="w-full">
-          <div className="rounded-[32px] p-8 sm:p-10 bg-[var(--bg-card)] border border-[var(--border)] text-white shadow-xl relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-            <div className="space-y-2 max-w-lg">
-              <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-400 bg-emerald-500/20 px-3 py-1 rounded-full border border-emerald-500/30">
-                RESUME WHERE YOU LEFT OFF
-              </span>
-              <h3 className="text-[26px] sm:text-[30px] font-[800] tracking-tight text-[var(--text-primary)] mt-1" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>
-                TED Talk Practice
-              </h3>
-              <p className="text-[14px] text-[var(--text-secondary)] font-medium">
-                2 minutes remaining
-              </p>
-            </div>
-
-            <button
-              onClick={() => navigate('/session')}
-              className="flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl font-extrabold text-[15px] transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] shadow-lg cursor-pointer shrink-0"
-              style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}
-            >
-              <Play size={18} style={{ fill: 'var(--accent-text)' }} />
-              <span>Resume Session</span>
-            </button>
-          </div>
-        </section>
-
       </div>
     </main>
   );
