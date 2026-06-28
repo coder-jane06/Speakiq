@@ -5,7 +5,7 @@ import { ScoreRing }         from '../components/results/ScoreRing'
 import { ROUTES, API_URL }   from '../constants'
 import { supabase } from '../services/supabase'
 import { useStreak } from '../hooks/useStreak'
-import { ArrowLeft, CheckCircle2, ChevronRight, Sparkles, TrendingUp, BarChart3, Brain, Zap, Activity, Award, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, ChevronRight, Sparkles, TrendingUp, BarChart3, Brain, Zap, Activity, Award, AlertTriangle, ChevronDown, ChevronUp, Trophy, Target, BookOpen } from 'lucide-react'
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, XAxis, YAxis } from 'recharts'
 
 
@@ -688,8 +688,8 @@ export default function ResultsPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {(scores.delivery || 0) > 80 ? (
               <div className="p-5 rounded-[24px] bg-[var(--bg-card)] bg-gradient-to-br from-amber-500/15 via-[var(--bg-card)] to-orange-500/10 border-2 border-amber-500/30 hover:border-amber-500/70 shadow-lg hover:shadow-amber-500/20 backdrop-blur-xl flex items-center gap-4 hover:-translate-y-1.5 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 group cursor-pointer relative overflow-hidden">
-                <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border-2 border-amber-500/40 flex items-center justify-center text-[28px] shrink-0 shadow-md group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
-                  🏆
+                <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border-2 border-amber-500/40 flex items-center justify-center shrink-0 shadow-md group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
+                  <Trophy size={28} className="text-amber-500 fill-amber-500/20" />
                 </div>
                 <div>
                   <h4 className="text-[16px] font-extrabold text-[var(--text-primary)] tracking-tight group-hover:text-amber-500 transition-colors">Strong Communicator</h4>
@@ -699,8 +699,8 @@ export default function ResultsPage() {
             ) : null}
             {(scores.structure || 0) > 75 ? (
               <div className="p-5 rounded-[24px] bg-[var(--bg-card)] bg-gradient-to-br from-blue-500/15 via-[var(--bg-card)] to-indigo-500/10 border-2 border-blue-500/30 hover:border-blue-500/70 shadow-lg hover:shadow-blue-500/20 backdrop-blur-xl flex items-center gap-4 hover:-translate-y-1.5 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 group cursor-pointer relative overflow-hidden">
-                <div className="w-14 h-14 rounded-2xl bg-blue-500/20 border-2 border-blue-500/40 flex items-center justify-center text-[28px] shrink-0 shadow-md group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
-                  🎯
+                <div className="w-14 h-14 rounded-2xl bg-blue-500/20 border-2 border-blue-500/40 flex items-center justify-center shrink-0 shadow-md group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
+                  <Target size={28} className="text-blue-500" />
                 </div>
                 <div>
                   <h4 className="text-[16px] font-extrabold text-[var(--text-primary)] tracking-tight group-hover:text-blue-500 transition-colors">Structured Thinker</h4>
@@ -710,8 +710,8 @@ export default function ResultsPage() {
             ) : null}
             {(scores.vocab || 0) > 70 ? (
               <div className="p-5 rounded-[24px] bg-[var(--bg-card)] bg-gradient-to-br from-emerald-500/15 via-[var(--bg-card)] to-green-500/10 border-2 border-emerald-500/30 hover:border-emerald-500/70 shadow-lg hover:shadow-emerald-500/20 backdrop-blur-xl flex items-center gap-4 hover:-translate-y-1.5 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 group cursor-pointer relative overflow-hidden">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border-2 border-emerald-500/40 flex items-center justify-center text-[28px] shrink-0 shadow-md group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
-                  📚
+                <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border-2 border-emerald-500/40 flex items-center justify-center shrink-0 shadow-md group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
+                  <BookOpen size={28} className="text-emerald-500 fill-emerald-500/20" />
                 </div>
                 <div>
                   <h4 className="text-[16px] font-extrabold text-[var(--text-primary)] tracking-tight group-hover:text-emerald-500 transition-colors">Vocabulary Builder</h4>
@@ -721,8 +721,8 @@ export default function ResultsPage() {
             ) : null}
             {(scores.filler || 0) > 85 ? (
               <div className="p-5 rounded-[24px] bg-[var(--bg-card)] bg-gradient-to-br from-purple-500/15 via-[var(--bg-card)] to-pink-500/10 border-2 border-purple-500/30 hover:border-purple-500/70 shadow-lg hover:shadow-purple-500/20 backdrop-blur-xl flex items-center gap-4 hover:-translate-y-1.5 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 group cursor-pointer relative overflow-hidden">
-                <div className="w-14 h-14 rounded-2xl bg-purple-500/20 border-2 border-purple-500/40 flex items-center justify-center text-[28px] shrink-0 shadow-md group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
-                  ✨
+                <div className="w-14 h-14 rounded-2xl bg-purple-500/20 border-2 border-purple-500/40 flex items-center justify-center shrink-0 shadow-md group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
+                  <Sparkles size={28} className="text-purple-500 fill-purple-500/20" />
                 </div>
                 <div>
                   <h4 className="text-[16px] font-extrabold text-[var(--text-primary)] tracking-tight group-hover:text-purple-500 transition-colors">Clean Speaker</h4>
@@ -733,8 +733,8 @@ export default function ResultsPage() {
             {/* Fallback if no achievements won */}
             {((scores.delivery || 0) <= 80 && (scores.structure || 0) <= 75 && (scores.vocab || 0) <= 70 && (scores.filler || 0) <= 85) && (
               <div className="p-5 rounded-[24px] bg-[var(--bg-card)] border-2 border-[var(--border)] shadow-md flex items-center gap-4 col-span-1 md:col-span-3">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border-2 border-emerald-500/40 flex items-center justify-center text-[28px] shrink-0">
-                  🌱
+                <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border-2 border-emerald-500/40 flex items-center justify-center shrink-0">
+                  <TrendingUp size={28} className="text-emerald-500" />
                 </div>
                 <div>
                   <h4 className="text-[16px] font-extrabold text-[var(--text-primary)] tracking-tight">Growing Communicator</h4>
