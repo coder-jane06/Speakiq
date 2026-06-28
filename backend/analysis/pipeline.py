@@ -190,26 +190,48 @@ async def run_analysis_pipeline(
             except Exception as e:
                 logger.error(f"[Pipeline] Memory fetch failed: {e}")
 
-        pre_scores = compute_scores_from_data(
-            transcript_result,
-            acoustic_result,
-            nlp_result,
-            speaking_goal=speaking_goal,
-            difficulty_tier=difficulty_tier,
-            session_history=session_history,
-        )
+        if transcript_result.word_count < 3:
+            from analysis.coaching_service import CoachingScores
+            pre_scores = {"filler": 0, "delivery": 0, "structure": 0, "vocab": 0, "confidence": 0}
+            coaching_report = CoachingReport(
+                scores=CoachingScores(filler=0, delivery=0, structure=0, vocab=0, confidence=0),
+                what_went_well="No speech detected.",
+                priority_fix="Speak up! We couldn't hear any words in this recording.",
+                example_moment="N/A",
+                daily_drill="Practice speaking clearly into the microphone.",
+                mechanical_tip="Check your microphone settings.",
+                micro_habit="Ensure your recording environment is quiet and your mic is active.",
+                encouragement="Don't worry, try again when you're ready!",
+                content_feedback="We need to hear your voice to give feedback on your content.",
+                focus_area="Audio Recording",
+                transcript_highlights=[],
+                session_comparison="N/A",
+                recurring_patterns="N/A",
+                improvement_noted="N/A",
+                drill_followup="N/A",
+                next_session_focus="Recording audio successfully.",
+            )
+        else:
+            pre_scores = compute_scores_from_data(
+                transcript_result,
+                acoustic_result,
+                nlp_result,
+                speaking_goal=speaking_goal,
+                difficulty_tier=difficulty_tier,
+                session_history=session_history,
+            )
 
-        coaching_report = await coaching_service.generate_report(
-            topic=             topic,
-            transcript_result= transcript_result,
-            acoustic_result=   acoustic_result,
-            nlp_result=        nlp_result,
-            user_profile=      user_profile,
-            session_number=    session_number,
-            pre_computed_scores=pre_scores,
-            session_history=   session_history,
-            speaking_goal=     speaking_goal,
-        )
+            coaching_report = await coaching_service.generate_report(
+                topic=             topic,
+                transcript_result= transcript_result,
+                acoustic_result=   acoustic_result,
+                nlp_result=        nlp_result,
+                user_profile=      user_profile,
+                session_number=    session_number,
+                pre_computed_scores=pre_scores,
+                session_history=   session_history,
+                speaking_goal=     speaking_goal,
+            )
 
         # ----------------------------------------------------------
         # STAGE 4: Save to Supabase
