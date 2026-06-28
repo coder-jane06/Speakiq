@@ -365,18 +365,45 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { icon: '🏆', title: '5 Day Streak', desc: 'Consistent daily practice', badgeBg: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30' },
-              { icon: '🎯', title: 'Confidence Master', desc: 'Reached 85+ score', badgeBg: 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30' },
-              { icon: '🔥', title: 'First Perfect Score', desc: 'Zero filler hesitations', badgeBg: 'bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30' },
-              { icon: '📚', title: 'Vocabulary Builder', desc: 'Used 10+ transition words', badgeBg: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' },
+              { 
+                icon: '🏆', 
+                title: '5 Day Streak', 
+                desc: 'Consistent daily practice', 
+                cardStyle: 'bg-[var(--bg-card)] bg-gradient-to-br from-amber-500/10 via-[var(--bg-card)] to-orange-500/5 border-amber-500/30 hover:border-amber-500/60 hover:shadow-amber-500/10',
+                badgeBg: 'bg-amber-500/15 border-amber-500/30 text-amber-500'
+              },
+              { 
+                icon: '🎯', 
+                title: 'Confidence Master', 
+                desc: 'Reached 85+ score', 
+                cardStyle: 'bg-[var(--bg-card)] bg-gradient-to-br from-blue-500/10 via-[var(--bg-card)] to-indigo-500/5 border-blue-500/30 hover:border-blue-500/60 hover:shadow-blue-500/10',
+                badgeBg: 'bg-blue-500/15 border-blue-500/30 text-blue-500'
+              },
+              { 
+                icon: '🔥', 
+                title: 'First Perfect Score', 
+                desc: 'Zero filler hesitations', 
+                cardStyle: 'bg-[var(--bg-card)] bg-gradient-to-br from-red-500/10 via-[var(--bg-card)] to-orange-500/5 border-red-500/30 hover:border-red-500/60 hover:shadow-red-500/10',
+                badgeBg: 'bg-red-500/15 border-red-500/30 text-red-500'
+              },
+              { 
+                icon: '📚', 
+                title: 'Vocabulary Builder', 
+                desc: 'Used 10+ transition words', 
+                cardStyle: 'bg-[var(--bg-card)] bg-gradient-to-br from-emerald-500/10 via-[var(--bg-card)] to-green-500/5 border-emerald-500/30 hover:border-emerald-500/60 hover:shadow-emerald-500/10',
+                badgeBg: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-500'
+              },
             ].map((ach, i) => (
-              <div key={i} className="p-5 rounded-[24px] bg-[var(--bg-card)] border border-[var(--border)] shadow-lg backdrop-blur-xl flex items-center gap-4 hover:-translate-y-1 hover:border-[var(--border-accent)] transition-all duration-300 group cursor-pointer">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-[22px] shrink-0 border shadow-2xs ${ach.badgeBg}`}>
+              <div 
+                key={i} 
+                className={`p-5 rounded-[24px] border shadow-md hover:shadow-xl backdrop-blur-xl flex items-center gap-4 hover:-translate-y-1.5 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 group cursor-pointer relative overflow-hidden ${ach.cardStyle}`}
+              >
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-[22px] shrink-0 border shadow-2xs group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 ${ach.badgeBg}`}>
                   {ach.icon}
                 </div>
                 <div>
                   <h4 className="text-[15px] font-extrabold text-[var(--text-primary)] tracking-tight group-hover:text-[var(--accent)] transition-colors">{ach.title}</h4>
-                  <p className="text-[12px] font-medium text-[var(--text-secondary)] mt-0.5">{ach.desc}</p>
+                  <p className="text-[12px] font-semibold text-[var(--text-secondary)] mt-0.5">{ach.desc}</p>
                 </div>
               </div>
             ))}
