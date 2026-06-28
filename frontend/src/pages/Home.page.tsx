@@ -167,26 +167,18 @@ export default function HomePage() {
 
             {/* Main Interactive Card Shell */}
             <div 
-              className="relative w-full rounded-[32px] overflow-hidden transition-all duration-500 hover:-translate-y-1.5 group"
-              style={{
-                background: 'rgba(17, 17, 24, 0.75)',
-                backdropFilter: 'blur(24px)',
-                WebkitBackdropFilter: 'blur(24px)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.6), 0 0 40px rgba(200, 249, 125, 0.12)',
-                padding: '36px 32px',
-              }}
+              className="relative w-full rounded-[32px] overflow-hidden transition-all duration-500 hover:-translate-y-1.5 group bg-[var(--bg-card)] border border-[var(--border)] shadow-2xl p-8 sm:p-9"
             >
               {/* Subtle Top Inner Light Refraction */}
               <div 
                 className="absolute top-0 left-0 right-0 h-[1px] pointer-events-none"
                 style={{
-                  background: 'linear-gradient(90deg, transparent 0%, rgba(200,249,125,0.4) 50%, transparent 100%)',
+                  background: 'linear-gradient(90deg, transparent 0%, var(--border-accent) 50%, transparent 100%)',
                 }}
               />
 
               {/* Card Header: AI Listening & Live Indicator */}
-              <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
+              <div className="flex items-center justify-between mb-8 pb-4 border-b border-[var(--border)]">
                 <div className="flex items-center gap-3">
                   <div className="relative flex items-center justify-center w-3 h-3">
                     <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75 animate-ping" />
@@ -198,17 +190,17 @@ export default function HomePage() {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] font-semibold text-[var(--text-secondary)]">
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--bg-hover)] border border-[var(--border)] text-[11px] font-semibold text-[var(--text-secondary)]">
                   <Activity size={12} className="text-blue-400 animate-pulse" />
                   <span>Real-time Audio Engine</span>
                 </div>
               </div>
 
               {/* Animated Waveform Bars Container */}
-              <div className="mb-8 p-4 rounded-2xl bg-black/30 border border-white/5 backdrop-blur-sm">
-                <div className="flex items-center justify-between text-[11px] font-medium text-[var(--text-tertiary)] uppercase tracking-wider mb-3 px-1">
+              <div className="mb-8 p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] backdrop-blur-sm">
+                <div className="flex items-center justify-between text-[11px] font-medium text-[var(--text-secondary)] uppercase tracking-wider mb-3 px-1">
                   <span>Voice Pitch & Modulation</span>
-                  <span className="text-[var(--accent)]">Active Stream</span>
+                  <span className="text-[var(--accent)] font-bold">Active Stream</span>
                 </div>
                 <div className="flex items-end justify-between gap-1.5 h-[76px] px-2">
                   {[
@@ -233,8 +225,8 @@ export default function HomePage() {
                       style={{
                         background: i % 3 === 0 
                           ? 'linear-gradient(180deg, #60A5FA 0%, var(--accent) 100%)' 
-                          : 'linear-gradient(180deg, var(--accent) 0%, rgba(200,249,125,0.4) 100%)',
-                        boxShadow: '0 0 12px rgba(200,249,125,0.3)',
+                          : 'linear-gradient(180deg, var(--accent) 0%, var(--border-accent) 100%)',
+                        boxShadow: '0 0 12px var(--accent-glow)',
                         animation: `waveBarDynamic 1.4s ease-in-out infinite alternate`,
                         animationDelay: bar.d,
                       }}
@@ -247,12 +239,7 @@ export default function HomePage() {
               <div className="flex items-center gap-5">
                 {/* Overall Score Circle/Box */}
                 <div 
-                  className="flex flex-col items-center justify-center w-20 h-20 rounded-[22px] flex-shrink-0 relative overflow-hidden"
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(200,249,125,0.15) 0%, rgba(200,249,125,0.03) 100%)',
-                    border: '1px solid rgba(200,249,125,0.3)',
-                    boxShadow: 'inset 0 0 20px rgba(200,249,125,0.1)',
-                  }}
+                  className="flex flex-col items-center justify-center w-20 h-20 rounded-[22px] flex-shrink-0 relative overflow-hidden bg-[var(--accent-dim)] border border-[var(--border-accent)]"
                 >
                   <span className="text-[26px] font-extrabold tracking-tight text-[var(--accent)] leading-none" style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}>
                     94
@@ -274,13 +261,12 @@ export default function HomePage() {
                         <span className="font-medium text-[var(--text-secondary)]">{dim.label}</span>
                         <span className="font-bold text-[var(--text-primary)]">{dim.pct}%</span>
                       </div>
-                      <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden p-[1px]">
+                      <div className="w-full h-1.5 rounded-full bg-[var(--bg-hover)] overflow-hidden p-[1px] border border-[var(--border)]">
                         <div
                           className="h-full rounded-full transition-all duration-1000 ease-out"
                           style={{
                             width: `${dim.pct}%`,
                             background: dim.color,
-                            boxShadow: `0 0 10px ${dim.color}80`,
                           }}
                         />
                       </div>
@@ -291,9 +277,8 @@ export default function HomePage() {
 
               {/* Subtle Floating Cards Orbiting/Positioned Around Main Card */}
               <div 
-                className="hidden sm:flex items-center gap-2.5 absolute -top-4 -right-4 px-4 py-2 rounded-2xl text-[12px] font-semibold backdrop-blur-xl border border-white/15 text-[var(--text-primary)] shadow-2xl animate-float"
+                className="hidden sm:flex items-center gap-2.5 absolute -top-4 -right-4 px-4 py-2 rounded-2xl text-[12px] font-semibold backdrop-blur-xl bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] shadow-2xl animate-float"
                 style={{
-                  background: 'rgba(22, 22, 31, 0.9)',
                   animationDuration: '6s',
                 }}
               >
@@ -302,9 +287,8 @@ export default function HomePage() {
               </div>
 
               <div 
-                className="hidden sm:flex items-center gap-2.5 absolute -bottom-5 -left-4 px-4 py-2 rounded-2xl text-[12px] font-semibold backdrop-blur-xl border border-white/15 text-[var(--text-primary)] shadow-2xl animate-float"
+                className="hidden sm:flex items-center gap-2.5 absolute -bottom-5 -left-4 px-4 py-2 rounded-2xl text-[12px] font-semibold backdrop-blur-xl bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] shadow-2xl animate-float"
                 style={{
-                  background: 'rgba(22, 22, 31, 0.9)',
                   animationDelay: '1.5s',
                   animationDuration: '7s',
                 }}
