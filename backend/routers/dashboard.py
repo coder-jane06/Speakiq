@@ -306,21 +306,6 @@ async def get_dashboard_stats(authorization: Optional[str] = Header(None)):
             continue
 
         if not scores:
-
-        if metrics and len(metrics) > 0:
-            coaching_raw = metrics[0].get("coaching_report")
-            if isinstance(coaching_raw, str):
-                try:
-                    coaching = json.loads(coaching_raw)
-                except json.JSONDecodeError:
-                    coaching = {}
-            else:
-                coaching = coaching_raw or {}
-            scores = coaching.get("scores", {})
-        else:
-            continue
-
-        if not scores:
             continue
 
         total_sessions += 1
