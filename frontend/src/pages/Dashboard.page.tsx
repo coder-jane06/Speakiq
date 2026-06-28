@@ -47,6 +47,15 @@ interface DashboardStats {
     type: 'positive' | 'warning' | 'neutral';
   }>;
   suggestions?: string[];
+  achievements?: Array<{
+    id: string;
+    icon: string;
+    title: string;
+    desc: string;
+    unlocked: boolean;
+    progress: number;
+    text_progress: string;
+  }>;
   top_fillers: { word: string; count: number }[];
   best_session: { date: string; avg_score: number };
   display_name?: string;
@@ -377,49 +386,37 @@ export default function DashboardPage() {
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { 
-                icon: '🏆', 
-                title: '5 Day Streak', 
-                desc: 'Consistent daily practice', 
-                cardStyle: 'bg-[var(--bg-card)] bg-gradient-to-br from-amber-500/10 via-[var(--bg-card)] to-orange-500/5 border-amber-500/30 hover:border-amber-500/60 hover:shadow-amber-500/10',
-                badgeBg: 'bg-amber-500/15 border-amber-500/30 text-amber-500'
-              },
-              { 
-                icon: '🎯', 
-                title: 'Confidence Master', 
-                desc: 'Reached 85+ score', 
-                cardStyle: 'bg-[var(--bg-card)] bg-gradient-to-br from-blue-500/10 via-[var(--bg-card)] to-indigo-500/5 border-blue-500/30 hover:border-blue-500/60 hover:shadow-blue-500/10',
-                badgeBg: 'bg-blue-500/15 border-blue-500/30 text-blue-500'
-              },
-              { 
-                icon: '🔥', 
-                title: 'First Perfect Score', 
-                desc: 'Zero filler hesitations', 
-                cardStyle: 'bg-[var(--bg-card)] bg-gradient-to-br from-red-500/10 via-[var(--bg-card)] to-orange-500/5 border-red-500/30 hover:border-red-500/60 hover:shadow-red-500/10',
-                badgeBg: 'bg-red-500/15 border-red-500/30 text-red-500'
-              },
-              { 
-                icon: '📚', 
-                title: 'Vocabulary Builder', 
-                desc: 'Used 10+ transition words', 
-                cardStyle: 'bg-[var(--bg-card)] bg-gradient-to-br from-emerald-500/10 via-[var(--bg-card)] to-green-500/5 border-emerald-500/30 hover:border-emerald-500/60 hover:shadow-emerald-500/10',
-                badgeBg: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-500'
-              },
-            ].map((ach, i) => (
-              <div 
-                key={i} 
-                className={`p-5 rounded-[24px] border shadow-md hover:shadow-xl backdrop-blur-xl flex items-center gap-4 hover:-translate-y-1.5 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 group cursor-pointer relative overflow-hidden ${ach.cardStyle}`}
-              >
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-[22px] shrink-0 border shadow-2xs group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 ${ach.badgeBg}`}>
-                  {ach.icon}
+            {(stats?.achievements?.filter(a => a.unlocked) || []).map((ach, i) => {
+              // Cycle through styles based on index
+              const styles = [
+                { card: 'from-amber-500/10 to-orange-500/5 border-amber-500/30 hover:border-amber-500/60 hover:shadow-amber-500/10', badge: 'bg-amber-500/15 border-amber-500/30 text-amber-500' },
+                { card: 'from-blue-500/10 to-indigo-500/5 border-blue-500/30 hover:border-blue-500/60 hover:shadow-blue-500/10', badge: 'bg-blue-500/15 border-blue-500/30 text-blue-500' },
+                { card: 'from-red-500/10 to-orange-500/5 border-red-500/30 hover:border-red-500/60 hover:shadow-red-500/10', badge: 'bg-red-500/15 border-red-500/30 text-red-500' },
+                { card: 'from-emerald-500/10 to-green-500/5 border-emerald-500/30 hover:border-emerald-500/60 hover:shadow-emerald-500/10', badge: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-500' },
+                { card: 'from-purple-500/10 to-fuchsia-500/5 border-purple-500/30 hover:border-purple-500/60 hover:shadow-purple-500/10', badge: 'bg-purple-500/15 border-purple-500/30 text-purple-500' },
+              ];
+              const s = styles[i % styles.length];
+              return (
+                <div 
+                  key={ach.id} 
+                  className={`p-5 rounded-[24px] border shadow-md hover:shadow-xl backdrop-blur-xl flex items-center gap-4 hover:-translate-y-1.5 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 group cursor-pointer relative overflow-hidden bg-[var(--bg-card)] bg-gradient-to-br via-[var(--bg-card)] ${s.card}`}
+                >
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-[22px] shrink-0 border shadow-2xs group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 ${s.badge}`}>
+                    {ach.icon}
+                  </div>
+                  <div>
+                    <h4 className="text-[15px] font-extrabold text-[var(--text-primary)] tracking-tight group-hover:text-[var(--accent)] transition-colors">{ach.title}</h4>
+                    <p className="text-[12px] font-semibold text-[var(--text-secondary)] mt-0.5">{ach.desc}</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-[15px] font-extrabold text-[var(--text-primary)] tracking-tight group-hover:text-[var(--accent)] transition-colors">{ach.title}</h4>
-                  <p className="text-[12px] font-semibold text-[var(--text-secondary)] mt-0.5">{ach.desc}</p>
-                </div>
+              );
+            })}
+            
+            {(!stats?.achievements || stats.achievements.filter(a => a.unlocked).length === 0) && (
+              <div className="col-span-full p-8 text-center text-[var(--text-tertiary)] border border-dashed border-[var(--border)] rounded-[24px]">
+                Complete sessions and improve your scores to unlock achievements!
               </div>
-            ))}
+            )}
           </div>
         </section>
 
@@ -432,12 +429,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {(stats?.suggestions && stats.suggestions.length > 0 ? stats.suggestions : [
-              { title: 'Public Speaking', desc: 'Keynote & presentation fluency', tag: 'Popular' },
-              { title: 'Interview Drill', desc: 'Executive Q&A storytelling', tag: 'High Impact' },
-              { title: 'Vocabulary Builder', desc: 'Expand professional phrasing', tag: 'Recommended' },
-              { title: 'Storytelling', desc: 'Master engaging narrative flow', tag: 'Creative' },
-            ]).map((sug: any, i: number) => (
+            {(stats?.suggestions && stats.suggestions.length > 0) ? stats.suggestions.map((sug: any, i: number) => (
               <div 
                 key={i} 
                 onClick={() => navigate('/session')}
@@ -445,7 +437,7 @@ export default function DashboardPage() {
               >
                 <div>
                   <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20 shadow-2xs">
-                    {sug.tag}
+                    {sug.tag || 'Recommended'}
                   </span>
                   <h4 className="text-[17px] font-bold text-[var(--text-primary)] mt-3 group-hover:text-emerald-400 transition-colors">
                     {sug.title}
@@ -460,7 +452,11 @@ export default function DashboardPage() {
                   <ChevronRight size={14} />
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="col-span-full p-8 text-center text-[var(--text-tertiary)] border border-dashed border-[var(--border)] rounded-[24px]">
+                Complete more sessions to get tailored practice suggestions!
+              </div>
+            )}
           </div>
         </section>
 

@@ -385,6 +385,47 @@ async def get_dashboard_stats(authorization: Optional[str] = Header(None)):
 
     dashboard_guidance = build_dashboard_recommendations(sessions_data, profile)
 
+    radar_averages = {"confidence": 0, "delivery": 0, "vocab": 0, "structure": 0, "filler": 0}
+    if total_sessions > 0:
+        for s in sessions_data:
+            for k in radar_averages:
+                radar_averages[k] += s["scores"].get(k, 0)
+        for k in radar_averages:
+            radar_averages[k] = int(radar_averages[k] / total_sessions)
+            
+    achievements = []
+    
+    achievements.append({
+        "id": "streak_5", "icon": "🏆", "title": "5 Day Streak", 
+        "desc": "Consistent daily practice",
+        "unlocked": current_streak >= 5, "progress": min(100, (current_streak/5)*100),
+        "text_progress": f"{current_streak} / 5 Days"
+    })
+    achievements.append({
+        "id": "confidence", "icon": "🎯", "title": "Confidence Master", 
+        "desc": "Reached 85+ confidence",
+        "unlocked": radar_averages["confidence"] >= 85, "progress": min(100, (radar_averages["confidence"]/85)*100),
+        "text_progress": "Need 85+ Confidence" if radar_averages["confidence"] < 85 else "Unlocked recently"
+    })
+    achievements.append({
+        "id": "filler", "icon": "🔥", "title": "Zero Filler Master", 
+        "desc": "Zero filler hesitations",
+        "unlocked": radar_averages["filler"] >= 90, "progress": min(100, (radar_averages["filler"]/90)*100),
+        "text_progress": "Need 90+ Filler Control" if radar_averages["filler"] < 90 else "Unlocked recently"
+    })
+    achievements.append({
+        "id": "vocab", "icon": "📚", "title": "Vocabulary Builder", 
+        "desc": "Strong professional phrasing",
+        "unlocked": radar_averages["vocab"] >= 80, "progress": min(100, (radar_averages["vocab"]/80)*100),
+        "text_progress": "Need 80+ Vocab" if radar_averages["vocab"] < 80 else "Unlocked recently"
+    })
+    achievements.append({
+        "id": "sessions_50", "icon": "🎤", "title": "50 Sessions", 
+        "desc": "Completed 50 speaking sessions",
+        "unlocked": total_sessions >= 50, "progress": min(100, (total_sessions/50)*100),
+        "text_progress": f"{total_sessions} / 50 Sessions" if total_sessions < 50 else "Unlocked recently"
+    })
+
     return {
         "total_sessions": total_sessions,
         "current_streak":  current_streak,
@@ -405,6 +446,7 @@ async def get_dashboard_stats(authorization: Optional[str] = Header(None)):
             "remaining": remaining_weekly,
         },
         "mini_insights": mini_insights,
+        "achievements": achievements,
         **dashboard_guidance,
     }
 

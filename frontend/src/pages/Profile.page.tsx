@@ -104,44 +104,9 @@ export default function ProfilePage() {
   const ms3 = Math.min(100, Math.round((currentStreak / 7) * 100));
   const ms4 = Math.min(100, Math.round((bestAvg / 100) * 100));
 
-  // Dynamic Achievements
-  const unlockedAchievements = [];
-  if (radarAverages.delivery >= 80 && radarAverages.confidence >= 80) {
-    unlockedAchievements.push({ icon: '🏆', title: 'Strong Communicator', unlocked: true, date: 'Unlocked recently' });
-  } else {
-    unlockedAchievements.push({ icon: '🏆', title: 'Strong Communicator', unlocked: false, progress: 'Need 80+ Delivery' });
-  }
-  
-  if (radarAverages.structure >= 85) {
-    unlockedAchievements.push({ icon: '🎯', title: 'Interview Master', unlocked: true, date: 'Unlocked recently' });
-  } else {
-    unlockedAchievements.push({ icon: '🎯', title: 'Interview Master', unlocked: false, progress: 'Need 85+ Structure' });
-  }
-
-  if (currentStreak >= 7) {
-    unlockedAchievements.push({ icon: '🔥', title: '7-Day Streak', unlocked: true, date: 'Unlocked recently' });
-  } else {
-    unlockedAchievements.push({ icon: '🔥', title: '7-Day Streak', unlocked: false, progress: `${currentStreak} / 7 Days` });
-  }
-
-  if (radarAverages.vocab >= 80) {
-    unlockedAchievements.push({ icon: '📚', title: 'Vocabulary Builder', unlocked: true, date: 'Unlocked recently' });
-  } else {
-    unlockedAchievements.push({ icon: '📚', title: 'Vocabulary Builder', unlocked: false, progress: 'Need 80+ Vocab' });
-  }
-
-  if (totalSessions >= 50) {
-    unlockedAchievements.push({ icon: '🎤', title: '50 Sessions', unlocked: true, date: 'Unlocked recently' });
-  } else {
-    unlockedAchievements.push({ icon: '🎤', title: '50 Sessions', unlocked: false, progress: `${totalSessions} / 50` });
-  }
-
-  if (radarAverages.filler >= 90) {
-    unlockedAchievements.push({ icon: '⚡', title: 'Zero Filler Master', unlocked: true, date: 'Unlocked recently' });
-  } else {
-    unlockedAchievements.push({ icon: '⚡', title: 'Zero Filler Master', unlocked: false, progress: 'Need 90+ Filler Control' });
-  }
-  const unlockedCount = unlockedAchievements.filter(a => a.unlocked).length;
+  const achievementsData = stats?.achievements || [];
+  const unlockedAchievements = achievementsData;
+  const unlockedCount = unlockedAchievements.filter((a: any) => a.unlocked).length;
 
   const displayedSessions = showAllSessions ? rawSessions : rawSessions.slice(0, 4);
 
@@ -315,11 +280,11 @@ export default function ProfilePage() {
                   <div className="flex items-center gap-1 mt-0.5">
                     {ach.unlocked ? (
                       <span className="text-[11px] font-bold text-emerald-500 flex items-center gap-1">
-                        <Check size={12} strokeWidth={3} /> {ach.date}
+                        <Check size={12} strokeWidth={3} /> {ach.text_progress || 'Unlocked'}
                       </span>
                     ) : (
                       <span className="text-[11px] font-semibold text-[var(--text-secondary)] flex items-center gap-1">
-                        <Lock size={11} className="text-[var(--text-tertiary)] shrink-0" /> {ach.progress}
+                        <Lock size={11} className="text-[var(--text-tertiary)] shrink-0" /> {ach.text_progress}
                       </span>
                     )}
                   </div>
