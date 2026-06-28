@@ -293,11 +293,11 @@ export default function ProfilePage() {
             </span>
           </div>
 
-          <div className="flex items-center gap-3.5 overflow-x-auto pb-3 pt-1 scrollbar-none">
+          <div className="flex items-center gap-4 overflow-x-auto pb-3 pt-1 scrollbar-none pr-6">
             {unlockedAchievements.map((ach, i) => (
               <div 
                 key={i}
-                className={`shrink-0 px-5 py-4 rounded-[22px] border flex items-center gap-3.5 transition-all duration-200 ${
+                className={`shrink-0 min-w-[230px] px-5 py-4 rounded-[22px] border flex items-center gap-3.5 transition-all duration-200 ${
                   ach.unlocked 
                     ? 'bg-gradient-to-br from-amber-500/10 via-[var(--bg-card)] to-emerald-500/5 border-amber-500/30 shadow-sm hover:border-amber-500/50' 
                     : 'bg-[var(--bg-card)] border-[var(--border)] shadow-xs hover:border-[var(--text-tertiary)]/40'
@@ -310,7 +310,7 @@ export default function ProfilePage() {
                 }`}>
                   {ach.icon}
                 </div>
-                <div>
+                <div className="flex-1 min-w-0">
                   <h4 className="text-[14px] font-extrabold text-[var(--text-primary)] whitespace-nowrap tracking-tight">{ach.title}</h4>
                   <div className="flex items-center gap-1 mt-0.5">
                     {ach.unlocked ? (
@@ -319,7 +319,7 @@ export default function ProfilePage() {
                       </span>
                     ) : (
                       <span className="text-[11px] font-semibold text-[var(--text-secondary)] flex items-center gap-1">
-                        <Lock size={11} className="text-[var(--text-tertiary)]" /> {ach.progress}
+                        <Lock size={11} className="text-[var(--text-tertiary)] shrink-0" /> {ach.progress}
                       </span>
                     )}
                   </div>
