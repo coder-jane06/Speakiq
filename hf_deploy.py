@@ -24,7 +24,11 @@ try:
 except Exception as e:
     print(f"Error creating space: {e}")
 
-secrets_to_add = ["SUPABASE_URL", "SUPABASE_SERVICE_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GROQ_API_KEY"]
+secrets_to_add = [
+    "SUPABASE_URL", "SUPABASE_SERVICE_KEY", 
+    "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GROQ_API_KEY",
+    "RESEND_API_KEY", "VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY", "VAPID_SUBJECT"
+]
 
 # Add secrets
 for key in secrets_to_add:

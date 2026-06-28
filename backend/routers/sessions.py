@@ -73,10 +73,10 @@ async def get_topic(
                     diff_tier = {"beginner": "easy", "advanced": "hard"}.get(tier, "medium")
 
                 skill_scores = {
-                    "structure": p.get("structure_score", 50),
-                    "vocab": p.get("vocab_score", 50),
-                    "delivery": p.get("delivery_score", 50),
-                    "confidence": p.get("confidence_score", 50),
+                    "structure": p.get("structure_score") or 50,
+                    "vocab": p.get("vocab_score") or 50,
+                    "delivery": p.get("delivery_score") or 50,
+                    "confidence": p.get("confidence_score") or 50,
                 }
                 weakest_skill = min(skill_scores, key=skill_scores.get)
 

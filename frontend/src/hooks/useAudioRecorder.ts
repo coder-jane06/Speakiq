@@ -1,4 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { supabase } from '../lib/supabase'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
+interface AudioPreferences {
+  mic: string
+  noiseCancellation: boolean
+  sensitivity: number
+  autoGain: boolean
+  quality: string
+  voiceEnhancement: boolean
+  livePreview: boolean
+}
 
 interface UseAudioRecorderReturn {
   isRecording:   boolean
@@ -6,7 +18,7 @@ interface UseAudioRecorderReturn {
   isMuted:       boolean
   audioBlob:     Blob | null
   analyserNode:  AnalyserNode | null
-  startRecording: () => Promise<void>
+  startRecording: (prefs?: AudioPreferences) => Promise<void>
   stopRecording:  () => void
   pauseRecording: () => void
   resumeRecording: () => void
@@ -27,13 +39,44 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
   const streamRef        = useRef<MediaStream | null>(null)
   const audioCtxRef      = useRef<AudioContext | null>(null)
 
-  const startRecording = useCallback(async () => {
+  const [audioPrefs, setAudioPrefs] = useState<AudioPreferences | null>(null)
+  
+  useEffect(() => {
+    async function fetchPrefs() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.access_token) {
+          const res = await fetch(`${API_URL}/dashboard/profile-status`, {
+            headers: { 'Authorization': `Bearer ${session.access_token}` }
+          })
+          if (res.ok) {
+            const data = await res.json()
+            if (data.audio_preferences) {
+              setAudioPrefs(data.audio_preferences)
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch audio preferences:", e)
+      }
+    }
+    fetchPrefs()
+  }, [])
+
+  const startRecording = useCallback(async (manualPrefs?: AudioPreferences) => {
+    const prefs = manualPrefs || audioPrefs
     setError(null)
     setAudioBlob(null)
     chunksRef.current = []
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const audioConstraints: MediaTrackConstraints = {
+        noiseSuppression: prefs?.noiseCancellation ?? true,
+        autoGainControl: prefs?.autoGain ?? true,
+        echoCancellation: true
+      }
+      
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints })
       streamRef.current = stream
 
       // Set up Web Audio API for waveform visualisation

@@ -306,21 +306,36 @@ async def get_dashboard_stats(authorization: Optional[str] = Header(None)):
             continue
 
         if not scores:
+
+        if metrics and len(metrics) > 0:
+            coaching_raw = metrics[0].get("coaching_report")
+            if isinstance(coaching_raw, str):
+                try:
+                    coaching = json.loads(coaching_raw)
+                except json.JSONDecodeError:
+                    coaching = {}
+            else:
+                coaching = coaching_raw or {}
+            scores = coaching.get("scores", {})
+        else:
+            continue
+
+        if not scores:
             continue
 
         total_sessions += 1
         session_obj = {
             "session_number": total_sessions,
-            "id": s.get("id", ""),
+            "id": s.get("id") or "",
             "date": s.get("created_at", "").split("T")[0] if s.get("created_at") else "",
-            "topic": s.get("topic_text", ""),
-            "duration_secs": metrics[0].get("duration_secs", 0) if metrics else 0,
+            "topic": s.get("topic_text") or "",
+            "duration_secs": (metrics[0].get("duration_secs") or 0) if metrics else 0,
             "scores": {
-                "filler":     scores.get("filler", 0),
-                "delivery":   scores.get("delivery", 0),
-                "structure":  scores.get("structure", 0),
-                "vocab":      scores.get("vocab", 0),
-                "confidence": scores.get("confidence", 0),
+                "filler":     scores.get("filler") or 0,
+                "delivery":   scores.get("delivery") or 0,
+                "structure":  scores.get("structure") or 0,
+                "vocab":      scores.get("vocab") or 0,
+                "confidence": scores.get("confidence") or 0,
             },
         }
         sessions_data.append(session_obj)
@@ -393,11 +408,11 @@ async def get_dashboard_stats(authorization: Optional[str] = Header(None)):
         "improvements":    improvements,
         "top_fillers":     top_fillers,
         "best_session":    best_session,
-        "display_name":    profile.get("display_name", ""),
+        "display_name":    profile.get("display_name") or "",
         "speaking_goal":   normalize_goal(profile.get("speaking_goal")),
         "difficulty_tier": normalize_difficulty(profile.get("difficulty_tier")),
-        "coaching_style":  profile.get("coaching_style", "Balanced"),
-        "feedback_detail": profile.get("feedback_detail", "Detailed"),
+        "coaching_style":  profile.get("coaching_style") or "Balanced",
+        "feedback_detail": profile.get("feedback_detail") or "Detailed",
         "weekly_goal": {
             "completed": sessions_this_week,
             "target": weekly_target,
@@ -620,15 +635,15 @@ async def get_profile_status(authorization: Optional[str] = Header(None)):
             "speaking_goal":          goal,
             "display_name":           profile.get("display_name"),
             "difficulty_tier":        difficulty,
-            "recording_duration_secs": profile.get("recording_duration_secs", 60),
-            "total_sessions":         profile.get("total_sessions", 0),
-            "coaching_style":         profile.get("coaching_style", "Balanced"),
-            "feedback_detail":        profile.get("feedback_detail", "Detailed"),
+            "recording_duration_secs": profile.get("recording_duration_secs") or 60,
+            "total_sessions":         profile.get("total_sessions") or 0,
+            "coaching_style":         profile.get("coaching_style") or "Balanced",
+            "feedback_detail":        profile.get("feedback_detail") or "Detailed",
             "appearance_preferences": merge_json(DEFAULT_APPEARANCE, profile.get("appearance_preferences")),
             "notification_preferences": merge_json(DEFAULT_NOTIFICATIONS, profile.get("notification_preferences")),
             "audio_preferences": merge_json(DEFAULT_AUDIO, profile.get("audio_preferences")),
             "preferred_pace_label": preferred_pace_label(goal, difficulty),
-            "preferred_feedback_label": f"{profile.get('feedback_detail', 'Detailed')} / {profile.get('coaching_style', 'Balanced')}",
+            "preferred_feedback_label": f"{profile.get('feedback_detail') or 'Detailed'} / {profile.get('coaching_style') or 'Balanced'}",
         }
     except Exception as e:
         logger.error(f"[dashboard] profile-status error: {e}")

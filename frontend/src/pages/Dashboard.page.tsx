@@ -117,11 +117,11 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] text-[13px] font-bold text-[var(--text-primary)] shadow-xs">
                   <Target size={16} className="text-emerald-500" />
-                  <span>Today's goal: <strong>1 Session</strong></span>
+                  <span>Today's goal: <strong>{stats?.weekly_goal?.remaining && stats.weekly_goal.remaining > 0 ? '1 Session' : 'Done! 🎉'}</strong></span>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] text-[13px] font-bold text-[var(--text-primary)] shadow-xs">
                   <Clock size={16} className="text-blue-500" />
-                  <span>Est. practice remaining: <strong>3 mins</strong></span>
+                  <span>Est. practice remaining: <strong>{stats?.today_focus?.estimated_minutes || 3} mins</strong></span>
                 </div>
               </div>
             </div>
@@ -137,25 +137,21 @@ export default function DashboardPage() {
                 🎯 TODAY'S CHALLENGE
               </span>
               <h2 className="text-[28px] font-[800] text-[var(--text-primary)] tracking-tight" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>
-                Interview Confidence
+                {stats?.today_focus?.title || 'Interview Confidence'}
               </h2>
               <p className="text-[14px] text-[var(--text-secondary)] font-medium">
-                Master high-stakes Q&A structuring and eliminate vocal hesitation in quick tactical bursts.
+                {stats?.today_focus?.description || 'Master high-stakes Q&A structuring and eliminate vocal hesitation in quick tactical bursts.'}
               </p>
               
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 <span className="text-[12px] font-bold text-[var(--text-secondary)] bg-[var(--bg-hover)] px-3 py-1 rounded-xl border border-[var(--border)] flex items-center gap-1">
-                  <Clock size={13} className="text-[var(--text-tertiary)]" /> Estimated Time: 3 minutes
+                  <Clock size={13} className="text-[var(--text-tertiary)]" /> Estimated Time: {stats?.today_focus?.estimated_minutes || 3} minutes
                 </span>
-                <span className="text-[12px] font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-xl border border-emerald-500/20">
-                  Confidence
-                </span>
-                <span className="text-[12px] font-bold text-blue-400 bg-blue-500/10 px-3 py-1 rounded-xl border border-blue-500/20">
-                  Structure
-                </span>
-                <span className="text-[12px] font-bold text-purple-400 bg-purple-500/10 px-3 py-1 rounded-xl border border-purple-500/20">
-                  Delivery
-                </span>
+                {(stats?.today_focus?.tags || ['Confidence', 'Structure', 'Delivery']).map((tag: string, i: number) => (
+                  <span key={i} className="text-[12px] font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-xl border border-emerald-500/20">
+                    {tag}
+                  </span>
+                ))}
               </div>
             </div>
 
@@ -259,22 +255,29 @@ export default function DashboardPage() {
             </div>
 
             <div className="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-[var(--border)]">
-              {[
-                { time: 'Yesterday', title: 'Completed Interview Practice', score: 82, badgeColor: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20' },
-                { time: '2 days ago', title: 'Completed Presentation Drill', score: 76, badgeColor: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20' },
-                { time: '3 days ago', title: 'Vocabulary Challenge', score: 88, badgeColor: 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20' },
-              ].map((act, idx) => (
-                <div key={idx} className="relative flex items-center justify-between p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs hover:border-emerald-500/30 transition-all">
-                  <div className="absolute -left-[31px] w-5 h-5 rounded-full bg-[var(--bg-card)] border-4 border-emerald-500 shadow-xs" />
-                  <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{act.time}</span>
-                    <h5 className="text-[15px] font-bold text-[var(--text-primary)] mt-0.5">{act.title}</h5>
-                  </div>
-                  <span className={`px-3 py-1 rounded-xl border text-[13px] font-extrabold ${act.badgeColor}`}>
-                    Score {act.score}
-                  </span>
-                </div>
-              ))}
+              {stats?.sessions && stats.sessions.length > 0 ? (
+                [...stats.sessions].reverse().slice(0, 3).map((act, idx) => {
+                  const score = Math.round((act.scores.filler + act.scores.delivery + act.scores.structure + act.scores.vocab + act.scores.confidence) / 5);
+                  let badgeColor = 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20';
+                  if (score < 70) badgeColor = 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20';
+                  else if (score < 85) badgeColor = 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20';
+
+                  return (
+                    <div key={idx} className="relative flex items-center justify-between p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs hover:border-emerald-500/30 transition-all">
+                      <div className="absolute -left-[31px] w-5 h-5 rounded-full bg-[var(--bg-card)] border-4 border-emerald-500 shadow-xs" />
+                      <div>
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{act.date}</span>
+                        <h5 className="text-[15px] font-bold text-[var(--text-primary)] mt-0.5 truncate max-w-[200px] sm:max-w-xs">{act.topic || 'Speaking Practice'}</h5>
+                      </div>
+                      <span className={`px-3 py-1 rounded-xl border text-[13px] font-extrabold ${badgeColor}`}>
+                        Score {score}
+                      </span>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="p-4 text-center text-sm text-[var(--text-tertiary)]">No recent activity yet. Start a session!</div>
+              )}
             </div>
           </section>
 
@@ -306,13 +309,15 @@ export default function DashboardPage() {
                   />
                 </svg>
                 <div className="absolute flex flex-col items-center">
-                  <span className="text-[20px] font-extrabold text-[var(--text-primary)]">57%</span>
-                  <span className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">4 / 7 Sessions</span>
+                  <span className="text-[20px] font-extrabold text-[var(--text-primary)]">{stats?.weekly_goal?.percent || 0}%</span>
+                  <span className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">{stats?.weekly_goal?.completed || 0} / {stats?.weekly_goal?.target || 7} Sessions</span>
                 </div>
               </div>
 
               <p className="text-[12px] font-medium text-[var(--text-secondary)] mt-2 px-2">
-                Practice two more sessions to complete this week's goal.
+                {stats?.weekly_goal?.remaining && stats.weekly_goal.remaining > 0 
+                  ? `Practice ${stats.weekly_goal.remaining} more sessions to complete this week's goal.` 
+                  : `You've completed your weekly goal! 🎉`}
               </p>
             </section>
 
@@ -323,33 +328,23 @@ export default function DashboardPage() {
               </h3>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col justify-between">
-                  <span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase">Confidence</span>
-                  <span className="text-[16px] font-extrabold text-emerald-400 flex items-center gap-1 mt-1">
-                    ↑ 8%
-                  </span>
-                </div>
-
-                <div className="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex flex-col justify-between">
-                  <span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase">Vocabulary</span>
-                  <span className="text-[16px] font-extrabold text-blue-400 flex items-center gap-1 mt-1">
-                    ↑ 3%
-                  </span>
-                </div>
-
-                <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex flex-col justify-between">
-                  <span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase">Delivery</span>
-                  <span className="text-[16px] font-extrabold text-purple-400 flex items-center gap-1 mt-1">
-                    ↑ 12%
-                  </span>
-                </div>
-
-                <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col justify-between">
-                  <span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase">Structure</span>
-                  <span className="text-[16px] font-extrabold text-amber-400 flex items-center gap-1 mt-1">
-                    ↓ 2%
-                  </span>
-                </div>
+                {[
+                  { key: 'confidence', label: 'Confidence', bg: 'bg-emerald-500/10 border-emerald-500/20', textCol: 'text-emerald-400' },
+                  { key: 'vocab', label: 'Vocabulary', bg: 'bg-blue-500/10 border-blue-500/20', textCol: 'text-blue-400' },
+                  { key: 'delivery', label: 'Delivery', bg: 'bg-purple-500/10 border-purple-500/20', textCol: 'text-purple-400' },
+                  { key: 'structure', label: 'Structure', bg: 'bg-amber-500/10 border-amber-500/20', textCol: 'text-amber-400' },
+                ].map((insight, idx) => {
+                  const val = (stats?.mini_insights as any)?.[insight.key] || 0;
+                  const isUp = val >= 0;
+                  return (
+                    <div key={idx} className={`p-3 rounded-2xl ${insight.bg} border flex flex-col justify-between`}>
+                      <span className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase">{insight.label}</span>
+                      <span className={`text-[16px] font-extrabold ${insight.textCol} flex items-center gap-1 mt-1`}>
+                        {isUp ? '↑' : '↓'} {Math.abs(val)}%
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </section>
 
@@ -419,12 +414,12 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
+            {(stats?.suggestions && stats.suggestions.length > 0 ? stats.suggestions : [
               { title: 'Public Speaking', desc: 'Keynote & presentation fluency', tag: 'Popular' },
               { title: 'Interview Drill', desc: 'Executive Q&A storytelling', tag: 'High Impact' },
               { title: 'Vocabulary Builder', desc: 'Expand professional phrasing', tag: 'Recommended' },
               { title: 'Storytelling', desc: 'Master engaging narrative flow', tag: 'Creative' },
-            ].map((sug, i) => (
+            ]).map((sug: any, i: number) => (
               <div 
                 key={i} 
                 onClick={() => navigate('/session')}
@@ -460,9 +455,9 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { icon: '🥈', text: '2 sessions until a 7-day streak', progress: 70 },
-              { icon: '⭐', text: '5 points until Silver Speaker', progress: 85 },
-              { icon: '🚀', text: '3 sessions until Advanced Level', progress: 50 },
+              { icon: '🥈', text: `${7 - (streak % 7)} sessions until a 7-day streak`, progress: ((streak % 7) / 7) * 100 },
+              { icon: '⭐', text: `${Math.max(0, 100 - (stats?.best_session?.avg_score || 0))} points until Perfect Speaker`, progress: stats?.best_session?.avg_score || 0 },
+              { icon: '🚀', text: `${Math.max(0, 15 - (stats?.total_sessions || 0))} sessions until Advanced Level`, progress: Math.min(100, ((stats?.total_sessions || 0) / 15) * 100) },
             ].map((m, i) => (
               <div key={i} className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] flex flex-col justify-between">
                 <div className="flex items-center gap-3 mb-3">
@@ -470,7 +465,7 @@ export default function DashboardPage() {
                   <span className="text-[13px] font-bold text-[var(--text-primary)] leading-snug">{m.text}</span>
                 </div>
                 <div className="w-full h-2 bg-[var(--bg-card)] rounded-full overflow-hidden border border-[var(--border)]">
-                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${m.progress}%` }} />
+                  <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${Math.max(0, m.progress)}%` }} />
                 </div>
               </div>
             ))}

@@ -75,6 +75,15 @@ DEFAULT_AUDIO = {
     "livePreview": False,
 }
 
+DEFAULT_INTEGRATIONS = {
+    "gcal": True,
+    "gdrive": False,
+    "notion": True,
+    "slack": False,
+    "zoom": True,
+    "teams": False,
+}
+
 
 def normalize_goal(value: Optional[str]) -> str:
     if not value:
@@ -456,6 +465,7 @@ class OnboardingData(BaseModel):
     appearance_preferences: Optional[dict[str, Any]] = None
     notification_preferences: Optional[dict[str, Any]] = None
     audio_preferences: Optional[dict[str, Any]] = None
+    integrations_preferences: Optional[dict[str, Any]] = None
 
 
 class PreferencesData(BaseModel):
@@ -468,6 +478,7 @@ class PreferencesData(BaseModel):
     appearance_preferences: Optional[dict[str, Any]] = None
     notification_preferences: Optional[dict[str, Any]] = None
     audio_preferences: Optional[dict[str, Any]] = None
+    integrations_preferences: Optional[dict[str, Any]] = None
 
 
 def build_profile_update(data: OnboardingData | PreferencesData, mark_complete: bool = True) -> dict[str, Any]:
@@ -490,6 +501,8 @@ def build_profile_update(data: OnboardingData | PreferencesData, mark_complete: 
         update_data["notification_preferences"] = merge_json(DEFAULT_NOTIFICATIONS, data.notification_preferences)
     if data.audio_preferences is not None:
         update_data["audio_preferences"] = merge_json(DEFAULT_AUDIO, data.audio_preferences)
+    if data.integrations_preferences is not None:
+        update_data["integrations_preferences"] = merge_json(DEFAULT_INTEGRATIONS, data.integrations_preferences)
     if mark_complete:
         update_data["onboarding_complete"] = True
     return update_data
@@ -521,6 +534,7 @@ def resilient_profile_write(db, user_id: str, update_data: dict[str, Any]) -> No
             "audio_preferences",
             "coaching_style",
             "feedback_detail",
+            "integrations_preferences"
         }
         core_payload = {k: v for k, v in update_data.items() if k not in optional_keys}
         if not core_payload:
@@ -599,12 +613,10 @@ async def get_profile_status(authorization: Optional[str] = Header(None)):
                 "onboarding_complete": True,
                 "speaking_goal": "general",
                 "difficulty_tier": "beginner",
-                "total_sessions": 0,
-                "coaching_style": "Balanced",
-                "feedback_detail": "Detailed",
                 "appearance_preferences": DEFAULT_APPEARANCE,
                 "notification_preferences": DEFAULT_NOTIFICATIONS,
                 "audio_preferences": DEFAULT_AUDIO,
+                "integrations_preferences": DEFAULT_INTEGRATIONS,
             }
 
         profile = result.data[0]
@@ -627,6 +639,7 @@ async def get_profile_status(authorization: Optional[str] = Header(None)):
             "appearance_preferences": merge_json(DEFAULT_APPEARANCE, profile.get("appearance_preferences")),
             "notification_preferences": merge_json(DEFAULT_NOTIFICATIONS, profile.get("notification_preferences")),
             "audio_preferences": merge_json(DEFAULT_AUDIO, profile.get("audio_preferences")),
+            "integrations_preferences": merge_json(DEFAULT_INTEGRATIONS, profile.get("integrations_preferences")),
             "preferred_pace_label": preferred_pace_label(goal, difficulty),
             "preferred_feedback_label": f"{profile.get('feedback_detail', 'Detailed')} / {profile.get('coaching_style', 'Balanced')}",
         }
@@ -639,6 +652,7 @@ async def get_profile_status(authorization: Optional[str] = Header(None)):
             "appearance_preferences": DEFAULT_APPEARANCE,
             "notification_preferences": DEFAULT_NOTIFICATIONS,
             "audio_preferences": DEFAULT_AUDIO,
+            "integrations_preferences": DEFAULT_INTEGRATIONS,
         }
 
 
@@ -684,6 +698,21 @@ async def export_user_data(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=500, detail="Data export failed")
 
 
+@router.delete("/purge-audio")
+async def purge_audio_recordings(authorization: Optional[str] = Header(None)):
+    user_id = get_user_id(authorization)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    db = get_db()
+    try:
+        db.table("sessions").delete().eq("user_id", user_id).execute()
+        return {"status": "ok", "message": "All audio recordings and sessions purged"}
+    except Exception as e:
+        logger.error("[dashboard] purge audio failed: %s", e)
+        raise HTTPException(status_code=500, detail="Audio purge failed")
+
+
 @router.post("/reset-personalization")
 async def reset_personalization(authorization: Optional[str] = Header(None)):
     user_id = get_user_id(authorization)
@@ -710,6 +739,32 @@ async def reset_personalization(authorization: Optional[str] = Header(None)):
         logger.error("[dashboard] reset personalization failed: %s", e)
         raise HTTPException(status_code=500, detail="Unable to reset personalization memory")
 
+
+class PushSubscriptionData(BaseModel):
+    endpoint: str
+    p256dh: str
+    auth: str
+
+@router.post("/push-subscribe")
+async def save_push_subscription(data: PushSubscriptionData, authorization: Optional[str] = Header(None)):
+    user_id = get_user_id(authorization)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
+        
+    db = get_db()
+    try:
+        # Upsert the push subscription
+        payload = {
+            "user_id": user_id,
+            "endpoint": data.endpoint,
+            "p256dh": data.p256dh,
+            "auth": data.auth
+        }
+        db.table("push_subscriptions").upsert(payload).execute()
+        return {"status": "ok"}
+    except Exception as e:
+        logger.error(f"[dashboard] push-subscribe failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save push subscription")
 
 class DrillCompletionData(BaseModel):
     session_id: str
