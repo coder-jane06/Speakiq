@@ -687,57 +687,62 @@ export default function ResultsPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {(scores.delivery || 0) > 80 ? (
-              <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs flex items-center gap-3.5 hover:border-amber-500/40 transition-all group">
-                <div className="w-11 h-11 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-[22px] shrink-0 shadow-2xs">
+              <div className="p-5 rounded-[24px] bg-[var(--bg-card)] bg-gradient-to-br from-amber-500/10 via-[var(--bg-card)] to-orange-500/5 border border-amber-500/30 hover:border-amber-500/60 shadow-lg backdrop-blur-xl flex items-center gap-4 hover:-translate-y-1 transition-all duration-300 group cursor-pointer relative overflow-hidden">
+                <div className="w-13 h-13 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-[26px] shrink-0 shadow-sm group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
                   🏆
                 </div>
                 <div>
-                  <h4 className="text-[15px] font-extrabold text-[var(--text-primary)] tracking-tight">Strong Communicator</h4>
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 inline-block mb-1">🏆 ACHIEVEMENT</span>
+                  <h4 className="text-[16px] font-extrabold text-[var(--text-primary)] tracking-tight">Strong Communicator</h4>
                   <p className="text-[12px] font-medium text-[var(--text-secondary)] mt-0.5">Maintained clear voice flow & tone</p>
                 </div>
               </div>
             ) : null}
             {(scores.structure || 0) > 75 ? (
-              <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs flex items-center gap-3.5 hover:border-blue-500/40 transition-all group">
-                <div className="w-11 h-11 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-[22px] shrink-0 shadow-2xs">
+              <div className="p-5 rounded-[24px] bg-[var(--bg-card)] bg-gradient-to-br from-blue-500/10 via-[var(--bg-card)] to-indigo-500/5 border border-blue-500/30 hover:border-blue-500/60 shadow-lg backdrop-blur-xl flex items-center gap-4 hover:-translate-y-1 transition-all duration-300 group cursor-pointer relative overflow-hidden">
+                <div className="w-13 h-13 rounded-2xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-[26px] shrink-0 shadow-sm group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
                   🎯
                 </div>
                 <div>
-                  <h4 className="text-[15px] font-extrabold text-[var(--text-primary)] tracking-tight">Structured Thinker</h4>
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30 inline-block mb-1">🎯 ACHIEVEMENT</span>
+                  <h4 className="text-[16px] font-extrabold text-[var(--text-primary)] tracking-tight">Structured Thinker</h4>
                   <p className="text-[12px] font-medium text-[var(--text-secondary)] mt-0.5">Clear introduction and conclusion</p>
                 </div>
               </div>
             ) : null}
             {(scores.vocab || 0) > 70 ? (
-              <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs flex items-center gap-3.5 hover:border-emerald-500/40 transition-all group">
-                <div className="w-11 h-11 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-[22px] shrink-0 shadow-2xs">
+              <div className="p-5 rounded-[24px] bg-[var(--bg-card)] bg-gradient-to-br from-emerald-500/10 via-[var(--bg-card)] to-green-500/5 border border-emerald-500/30 hover:border-emerald-500/60 shadow-lg backdrop-blur-xl flex items-center gap-4 hover:-translate-y-1 transition-all duration-300 group cursor-pointer relative overflow-hidden">
+                <div className="w-13 h-13 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-[26px] shrink-0 shadow-sm group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
                   📚
                 </div>
                 <div>
-                  <h4 className="text-[15px] font-extrabold text-[var(--text-primary)] tracking-tight">Vocabulary Builder</h4>
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 inline-block mb-1">📚 ACHIEVEMENT</span>
+                  <h4 className="text-[16px] font-extrabold text-[var(--text-primary)] tracking-tight">Vocabulary Builder</h4>
                   <p className="text-[12px] font-medium text-[var(--text-secondary)] mt-0.5">Used strong descriptive language</p>
                 </div>
               </div>
             ) : null}
             {(scores.filler || 0) > 85 ? (
-              <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs flex items-center gap-3.5 hover:border-purple-500/40 transition-all group">
-                <div className="w-11 h-11 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-[22px] shrink-0 shadow-2xs">
+              <div className="p-5 rounded-[24px] bg-[var(--bg-card)] bg-gradient-to-br from-purple-500/10 via-[var(--bg-card)] to-pink-500/5 border border-purple-500/30 hover:border-purple-500/60 shadow-lg backdrop-blur-xl flex items-center gap-4 hover:-translate-y-1 transition-all duration-300 group cursor-pointer relative overflow-hidden">
+                <div className="w-13 h-13 rounded-2xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-[26px] shrink-0 shadow-sm group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
                   ✨
                 </div>
                 <div>
-                  <h4 className="text-[15px] font-extrabold text-[var(--text-primary)] tracking-tight">Clean Speaker</h4>
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 inline-block mb-1">✨ ACHIEVEMENT</span>
+                  <h4 className="text-[16px] font-extrabold text-[var(--text-primary)] tracking-tight">Clean Speaker</h4>
                   <p className="text-[12px] font-medium text-[var(--text-secondary)] mt-0.5">Hardly used any filler words</p>
                 </div>
               </div>
             ) : null}
             {/* Fallback if no achievements won */}
             {((scores.delivery || 0) <= 80 && (scores.structure || 0) <= 75 && (scores.vocab || 0) <= 70 && (scores.filler || 0) <= 85) && (
-              <div className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs flex items-center gap-3.5 col-span-1 md:col-span-3">
-                <div className="w-11 h-11 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-[22px] shrink-0">
+              <div className="p-5 rounded-[24px] bg-[var(--bg-card)] border border-[var(--border)] shadow-md flex items-center gap-4 col-span-1 md:col-span-3">
+                <div className="w-13 h-13 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-[26px] shrink-0">
                   🌱
                 </div>
                 <div>
-                  <h4 className="text-[15px] font-extrabold text-[var(--text-primary)] tracking-tight">Growing Communicator</h4>
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 inline-block mb-1">JOURNEY</span>
+                  <h4 className="text-[16px] font-extrabold text-[var(--text-primary)] tracking-tight">Growing Communicator</h4>
                   <p className="text-[12px] font-medium text-[var(--text-secondary)] mt-0.5">Keep practicing to unlock badges!</p>
                 </div>
               </div>
