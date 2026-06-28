@@ -336,43 +336,61 @@ def compute_scores_from_data(
     text_l = text.lower()
     words = re.findall(r"[a-zA-Z']+", text_l)
     word_count = getattr(transcript, "word_count", None) or len(words)
+
+    # 1. 0-Word Fix: If there is no speech, all scores should be strictly zero.
+    if word_count == 0:
+        return {
+            "filler": 0,
+            "delivery": 0,
+            "structure": 0,
+            "vocab": 0,
+            "confidence": 0,
+        }
+
     sentence_parts = [s.strip() for s in re.split(r"[.!?]+", text) if s.strip()]
     sentence_count = getattr(nlp, "sentence_count", 0) if nlp else len(sentence_parts)
     avg_sentence_length = getattr(nlp, "avg_sentence_length", 0.0) if nlp else (
         word_count / sentence_count if sentence_count else 0
     )
 
-    transition_phrases = [
-        "first", "second", "third", "finally", "however", "therefore", "because",
-        "for example", "for instance", "on the other hand", "in conclusion",
-        "the key point", "my point", "as a result", "to summarize", "next",
-    ]
-    evidence_phrases = [
-        "for example", "for instance", "data", "research", "study", "survey",
-        "because", "evidence", "in my experience", "when i", "we measured",
-    ]
-    transition_count = sum(text_l.count(p) for p in transition_phrases)
-    evidence_count = sum(text_l.count(p) for p in evidence_phrases) + len(re.findall(r"\b\d+(\.\d+)?%?\b", text_l))
-
-    star_hits = sum(1 for p in ["situation", "task", "action", "result", "challenge", "impact", "learned"] if p in text_l)
-    debate_hits = sum(1 for p in ["claim", "argument", "evidence", "rebut", "opponent", "impact", "outweigh", "therefore"] if p in text_l)
-    presenter_hits = sum(1 for p in ["takeaway", "data", "slide", "first", "second", "finally", "recommend", "conclusion"] if p in text_l)
-    orator_hits = sum(1 for p in ["imagine", "story", "we must", "not only", "but also", "today", "together"] if p in text_l)
-
+    # Common metrics
+    evidence_count = len(re.findall(r"\b(for example|for instance|data|research|study|survey|because|evidence|in my experience|when i|we measured)\b", text_l)) + len(re.findall(r"\b\d+(\.\d+)?%?\b", text_l))
+    transition_count = len(re.findall(r"\b(first|second|third|finally|however|therefore|because|for example|for instance|on the other hand|in conclusion|the key point|my point|as a result|to summarize|next)\b", text_l))
+    first_person_i = len(re.findall(r"\b(i|me|my|mine)\b", text_l))
+    first_person_we = len(re.findall(r"\b(we|our|us)\b", text_l))
+    
+    # Orator specific: Rule of three (triads - very naive check for multiple 'and'/'or' in quick succession), Antithesis
+    orator_hits = len(re.findall(r"\b(imagine|story|we must|not only|but also|today|together)\b", text_l))
+    contrast_hits = len(re.findall(r"\b(but|yet|however|instead|rather|never|always)\b", text_l))
+    rhetorical_questions = text.count("?")
     sentence_starts = [re.findall(r"[a-zA-Z']+", s.lower())[:1] for s in sentence_parts]
     starts = [s[0] for s in sentence_starts if s]
     repeated_starts = len(starts) - len(set(starts)) if len(starts) > 1 else 0
-    contrast_hits = len(re.findall(r"\b(but|yet|however|instead|rather)\b", text_l))
-    rhetorical_questions = text.count("?")
-    first_person_i = len(re.findall(r"\b(i|me|my|mine)\b", text_l))
-    first_person_we = len(re.findall(r"\b(we|our|us)\b", text_l))
+
+    # Debater specific: DR. MO and 4-step refutation
+    debate_hits = len(re.findall(r"\b(claim|argument|evidence|rebut|opponent|impact|outweigh|therefore|deny|reverse|minimize)\b", text_l))
+    signposting = len(re.findall(r"\b(firstly|secondly|my first point|moving on|in response to)\b", text_l))
+
+    # Presenter specific:
+    presenter_hits = len(re.findall(r"\b(takeaway|data|slide|first|second|finally|recommend|conclusion|as you can see|raise your hand)\b", text_l))
+
+    # Interviewer specific: STAR
+    star_hits = len(re.findall(r"\b(situation|task|action|result|challenge|impact|learned)\b", text_l))
+    # Sequential STAR check (naive):
+    situation_idx = text_l.find("situation")
+    action_idx = text_l.find("action")
+    result_idx = text_l.find("result")
+    sequential_star_bonus = 5 if (situation_idx != -1 and action_idx != -1 and result_idx != -1 and situation_idx < action_idx < result_idx) else 0
 
     # --- FILLER / FLUENCY ---
     filler_rate = getattr(nlp, "fillers_per_minute", 0.0) if nlp else 0.0
     filler_count = getattr(nlp, "filler_count", 0) if nlp else 0
     hedge_count = getattr(nlp, "hedge_word_count", 0) if nlp else 0
     filler_score = density_score(filler_count, filler_rate)
-    hedge_penalty = min(18, hedge_count * (4 if speaking_goal in {"debater", "interviewer"} else 2))
+    
+    # Hedges hurt Debater and Interviewer the most
+    hedge_penalty_mult = 5 if speaking_goal == "debater" else (4 if speaking_goal == "interviewer" else 2)
+    hedge_penalty = min(25, hedge_count * hedge_penalty_mult)
     filler_score = clamp(filler_score - hedge_penalty)
 
     # --- DELIVERY ---
@@ -387,31 +405,34 @@ def compute_scores_from_data(
         hnr = getattr(acoustic, "hnr", 0.0)
         intensity_db = getattr(acoustic, "intensity_db", 0.0)
 
+        # Adjusted pace ranges per mode
         pace_ranges = {
             "orator": (105, 155, 80, 185),
             "presenter": (115, 155, 90, 185),
             "interviewer": (120, 160, 95, 185),
-            "debater": (140, 185, 110, 215),
+            "debater": (140, 185, 110, 215), # Fast pace expected
             "general": (120, 160, 90, 190),
         }
         pace_score = range_score(wpm, *pace_ranges.get(speaking_goal, pace_ranges["general"]))
 
         pitch_score = clamp((min(pitch_std, 85) / 85) * 75 + (monotony * 25))
         if speaking_goal == "orator":
-            pitch_score = clamp(pitch_score + 8)
+            pitch_score = clamp(pitch_score + 10) # Reward wide pitch variation
         if speaking_goal == "interviewer" and pitch_std > 90:
-            pitch_score = clamp(pitch_score - 8)
+            pitch_score = clamp(pitch_score - 10) # Penalize over-the-top expressiveness
 
         if speaking_goal == "orator":
+            # Dramatic pauses are okay, even long ones.
             pause_score = 100
             if silence_pct > 35:
-                pause_score -= min(35, (silence_pct - 35) * 2)
-            if longest_pause > 4.0:
-                pause_score -= min(30, (longest_pause - 4.0) * 8)
+                pause_score -= min(35, (silence_pct - 35) * 1.5)
+            if longest_pause > 5.0:
+                pause_score -= min(30, (longest_pause - 5.0) * 5)
         elif speaking_goal == "debater":
-            pause_score = range_score(longest_pause, 0.2, 1.6, 0.0, 3.0)
-            if silence_pct > 22:
-                pause_score -= min(25, (silence_pct - 22) * 1.5)
+            # Continuous talking expected, pauses are penalized.
+            pause_score = range_score(longest_pause, 0.2, 1.4, 0.0, 2.5)
+            if silence_pct > 20:
+                pause_score -= min(35, (silence_pct - 20) * 2.5)
         else:
             pause_score = range_score(longest_pause, 0.3, 2.2, 0.0, 4.0)
             if silence_pct > 28:
@@ -440,7 +461,7 @@ def compute_scores_from_data(
 
     # --- STRUCTURE ---
     if word_count <= 0:
-        structure_score = 35
+        structure_score = 35 # Should not happen due to early return
     else:
         length_target = {
             "beginner": (45, 110),
@@ -453,17 +474,17 @@ def compute_scores_from_data(
 
         mode_bonus = 0
         if speaking_goal == "interviewer":
-            mode_bonus = min(26, star_hits * 6)
+            mode_bonus = min(26, star_hits * 6 + sequential_star_bonus)
             if first_person_i > 0 and first_person_i >= first_person_we:
-                mode_bonus += 6
+                mode_bonus += 8
         elif speaking_goal == "debater":
-            mode_bonus = min(28, debate_hits * 6 + evidence_count * 3)
+            mode_bonus = min(30, debate_hits * 5 + signposting * 4 + evidence_count * 3)
         elif speaking_goal == "presenter":
-            mode_bonus = min(26, presenter_hits * 5 + evidence_count * 3)
+            mode_bonus = min(28, presenter_hits * 5 + signposting * 4 + evidence_count * 3)
         elif speaking_goal == "orator":
-            mode_bonus = min(26, orator_hits * 4 + repeated_starts * 5 + contrast_hits * 3 + rhetorical_questions * 3)
+            mode_bonus = min(28, orator_hits * 4 + repeated_starts * 6 + contrast_hits * 4 + rhetorical_questions * 4)
         else:
-            mode_bonus = min(18, transition_count * 3 + evidence_count * 4)
+            mode_bonus = min(20, transition_count * 3 + evidence_count * 4)
 
         structure_score = clamp(length_score * 0.28 + sentence_score * 0.24 + transition_score * 0.24 + 24 + mode_bonus)
 
@@ -482,22 +503,36 @@ def compute_scores_from_data(
         vocab_score = 50
 
     # --- CONFIDENCE ---
-    confidence_score = (
-        filler_score * 0.25
-        + delivery_score * 0.34
-        + structure_score * 0.22
-        + vocab_score * 0.09
-        + 10
+    # Weightings shift based on mode
+    if speaking_goal == "orator":
+        # Delivery is paramount
+        w_f, w_d, w_s, w_v = 0.20, 0.45, 0.20, 0.15
+    elif speaking_goal == "debater":
+        # Structure and vocab (logic) are paramount
+        w_f, w_d, w_s, w_v = 0.20, 0.20, 0.40, 0.20
+    elif speaking_goal == "interviewer":
+        # Structure (STAR) and Filler (professionalism) are key
+        w_f, w_d, w_s, w_v = 0.30, 0.20, 0.35, 0.15
+    else:
+        w_f, w_d, w_s, w_v = 0.25, 0.34, 0.22, 0.19
+
+    confidence_score = clamp(
+        filler_score * w_f
+        + delivery_score * w_d
+        + structure_score * w_s
+        + vocab_score * w_v
+        + (10 if speaking_goal == "general" else 5)
     )
+
     if speaking_goal == "interviewer":
         if first_person_i == 0 and word_count > 35:
-            confidence_score -= 8
+            confidence_score = clamp(confidence_score - 10)
         if first_person_we > first_person_i * 2 and first_person_we > 2:
-            confidence_score -= 6
+            confidence_score = clamp(confidence_score - 8)
     if speaking_goal == "debater" and hedge_count > 2:
-        confidence_score -= min(12, hedge_count * 2)
+        confidence_score = clamp(confidence_score - min(15, hedge_count * 3))
     if acoustic and getattr(acoustic, "jitter", 0.0) > 2.5:
-        confidence_score -= 7
+        confidence_score = clamp(confidence_score - 7)
 
     scores = {
         "filler": clamp(filler_score),

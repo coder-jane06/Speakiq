@@ -360,6 +360,30 @@ class CoachingService:
         """Generate coaching report. Always returns a report — never raises."""
 
         focus_area = pick_focus_area(user_profile)
+        
+        # --- 0-Word Fast Fail ---
+        if transcript_result and transcript_result.word_count == 0:
+            logger.info("[CoachingService] 0 words detected, bypassing LLM for fast fail report.")
+            return CoachingReport(
+                scores=CoachingScores(filler=0, delivery=0, structure=0, vocab=0, confidence=0),
+                what_went_well="Nothing to analyze.",
+                priority_fix="We couldn't detect any speech. Please check your microphone and try again.",
+                example_moment=None,
+                daily_drill="Record a 30-second audio check to ensure your microphone is picking up your voice clearly.",
+                mechanical_tip="Make sure you are in a quiet environment and your mic is not muted.",
+                micro_habit="Do a quick mic test before every session.",
+                encouragement="Don't worry, technical issues happen to the best of us!",
+                content_feedback="No speech detected.",
+                focus_area="microphone_check",
+                session_number=session_number,
+                transcript_highlights=[],
+                session_comparison="",
+                recurring_patterns=[],
+                improvement_noted="",
+                drill_followup="",
+                next_session_focus="audio_setup",
+            )
+            
         provider = getattr(self, 'provider', None)
 
         if self.client is None and not hasattr(self, 'openai_client'):
