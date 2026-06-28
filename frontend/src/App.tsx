@@ -108,6 +108,16 @@ export default function App() {
         {/* ── Auth ── */}
         <Route path="/login" element={<LoginPage />} />
 
+        {/* ── Results ── */}
+        <Route
+          path="/session/:sessionId/results"
+          element={
+            <ProtectedRoute>
+              <ResultsPage />
+            </ProtectedRoute>
+          }
+        />
+
         {/* ── Onboarding ── */}
         <Route
           path="/onboarding"

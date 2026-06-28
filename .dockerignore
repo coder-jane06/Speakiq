@@ -1,0 +1,14 @@
+venv/
+.venv/
+.venv*/
+__pycache__/
+*.pyc
+.env
+.env.*
+backend_logs.txt
+backend_logs2.txt
+temp_phase4/
+test_audio.webm
+.pytest_cache/
+.coverage
+htmlcov/

@@ -107,29 +107,26 @@ def build_coaching_prompt(
     # ── Speaking goal section ──────────────────────────────────────────
     goal_instructions = {
         "orator": """The user wants to become a powerful ORATOR. Tailor ALL coaching toward:
-- Storytelling arc and narrative flow
-- Emotional range and vocal expressiveness
-- Rhetorical devices (metaphors, repetition, tricolon)
-- Commanding openings and memorable closings
-- Audience engagement and presence""",
+- The "Big Three" Rhetorical Devices: The Rule of Three (Triads), Anaphora (Repetition), and Contrast (Antithesis). Look for these in the transcript.
+- Emotional pacing: Coach them on varying their speed (slowing down for gravity, speeding up for urgency).
+- Projection and Presence: Use their Intensity/Volume data to ensure they aren't trailing off.
+- Look for intentional, dramatic pauses. A high silence percentage can be a GOOD thing for an orator if placed correctly.""",
         "debater": """The user wants to excel at DEBATING. Tailor ALL coaching toward:
-- Logical argument structure and evidence usage
-- Clear thesis statements and counterargument anticipation
-- Assertive but respectful tone
-- Rebuttals and structured responses under pressure
-- Conciseness — every word must earn its place""",
+- The Four-Step Refutation Model (Signpost, State, Support, Impact).
+- The DR. MO Framework (Deny, Reverse, Minimize, Outweigh). Look for these in how they counterarguments.
+- Flag logical fallacies (e.g., ad hominem, red herring) if their reasoning is weak, and coach them to pivot back to the core issue.
+- Assertiveness vs Aggression: Their tone should be confident but not hostile.
+- Rebuttals: Fast WPM is acceptable here, provided they don't sacrifice clarity.""",
         "presenter": """The user wants to ace PRESENTATIONS. Tailor ALL coaching toward:
-- Clarity and conciseness above all
-- Professional pacing (not too fast, not too slow)
-- Data-driven communication with precise vocabulary
-- Smooth transitions between points
-- Opening hook and a clear takeaway close""",
+- The "Tagline-Evidence-Pause" pattern.
+- Clear slide transitions. Long pauses should be interpreted as transitioning between visual points.
+- Data-driven communication and precise vocabulary (Lexical Diversity).
+- Opening hooks and clear takeaway conclusions.""",
         "interviewer": """The user wants to excel in JOB INTERVIEWS. Tailor ALL coaching toward:
-- STAR method structure (Situation, Task, Action, Result)
-- Confident, concise answers without rambling
-- Professional vocabulary and authoritative tone
-- Strong opening statements
-- Definitive closings — no trailing off""",
+- The STAR Method (Situation, Task, Action, Result). Aggressively evaluate their answer ratio (e.g. did they spend too much time on the Situation?).
+- The "I vs We" Bias: Flag if they rely too heavily on "we" statements instead of claiming personal ownership with "I".
+- Conversational tone vs Rambling: Answers must be concise and avoid trailing off.
+- Nerves: Look closely at Jitter and Shimmer data to detect vocal strain or wavering, and coach them on breath control."""
     }
     goal_text = goal_instructions.get(
         speaking_goal,
@@ -367,7 +364,7 @@ class CoachingService:
 
         if self.client is None and not hasattr(self, 'openai_client'):
             logger.warning("[CoachingService] No client — returning fallback")
-            return self._fallback_report(focus_area, session_number)
+            return self._fallback_report(focus_area, session_number, pre_computed_scores, speaking_goal)
 
         prompt = build_coaching_prompt(
             topic=topic,
@@ -385,24 +382,44 @@ class CoachingService:
         logger.info(f"[CoachingService] Generating report (focus: {focus_area}, goal: {speaking_goal})")
 
         try:
-            if provider == "openai" and hasattr(self, 'openai_client'):
-                completion = self.openai_client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[{"role": "user", "content": prompt}],
-                    max_tokens=1600,
-                    temperature=0.3,
-                    response_format={"type": "json_object"}
-                )
-            else:
-                completion = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=[{"role": "user", "content": prompt}],
-                    max_tokens=1600,
-                    temperature=0.3,
-                    response_format={"type": "json_object"}
-                )
+            response_text = None
+            
+            # Helper function to call the LLM
+            def call_llm(client, is_openai=False):
+                if is_openai:
+                    completion = client.chat.completions.create(
+                        model="gpt-4o-mini",
+                        messages=[{"role": "user", "content": prompt}],
+                        max_tokens=1600,
+                        temperature=0.3,
+                        response_format={"type": "json_object"}
+                    )
+                else:
+                    completion = client.chat.completions.create(
+                        model=self.model,
+                        messages=[{"role": "user", "content": prompt}],
+                        max_tokens=1600,
+                        temperature=0.3,
+                        response_format={"type": "json_object"}
+                    )
+                return completion.choices[0].message.content.strip()
 
-            response_text = completion.choices[0].message.content.strip()
+            # Attempt Primary Provider
+            if provider == "groq" and self.client:
+                try:
+                    response_text = call_llm(self.client, is_openai=False)
+                except Exception as e:
+                    logger.warning(f"[CoachingService] Groq failed: {e}. Trying OpenAI fallback...")
+                    if hasattr(self, 'openai_client') and self.openai_client:
+                        response_text = call_llm(self.openai_client, is_openai=True)
+                    else:
+                        raise e # No fallback available, raise to trigger _fallback_report
+            
+            # Attempt OpenAI if it was primary
+            elif provider == "openai" and hasattr(self, 'openai_client') and self.openai_client:
+                response_text = call_llm(self.openai_client, is_openai=True)
+            else:
+                raise Exception("No valid LLM client configured")
 
             # Parse JSON response
             clean = response_text
@@ -449,23 +466,46 @@ class CoachingService:
             return report
 
         except Exception as e:
-            logger.error(f"[CoachingService] Failed: {e}")
-            return self._fallback_report(focus_area, session_number)
+            logger.error(f"[CoachingService] All LLM providers failed: {e}")
+            return self._fallback_report(focus_area, session_number, pre_computed_scores, speaking_goal)
 
-    def _fallback_report(self, focus_area: str, session_number: int) -> CoachingReport:
-        d = self.FALLBACK_REPORT
+    def _fallback_report(self, focus_area: str, session_number: int, pre_computed_scores: Optional[dict] = None, speaking_goal: str = "general") -> CoachingReport:
+        d = self.FALLBACK_REPORT.copy()
+        
+        # Inject the actual pre-computed scores so the user doesn't just see 50s everywhere
+        if pre_computed_scores:
+            d["scores"] = pre_computed_scores
+
+        d["next_session_focus"] = focus_area
+        
+        # Tailor fallback encouragement based on speaking_goal
+        goal_messages = {
+            "orator": "Even great orators experience technical pauses. Your analysis is safe; keep practicing your narrative flow.",
+            "debater": "A debater must adapt to the unexpected. Analysis was unavailable, but your resilience is key.",
+            "interviewer": "Interviews often have technical hiccups. Stay confident; your practice today still matters.",
+            "presenter": "Presentations can have tech issues. Keep focusing on clear transitions."
+        }
+        d["encouragement"] = goal_messages.get(speaking_goal, d["encouragement"])
+        d["priority_fix"] = f"Keep practicing for your {speaking_goal} goal. AI Analysis was temporarily unavailable due to server load."
+
         return CoachingReport(
-            scores=          CoachingScores(**d["scores"]),
-            what_went_well=  d["what_went_well"],
-            priority_fix=    d["priority_fix"],
-            example_moment=  d["example_moment"],
-            daily_drill=     d["daily_drill"],
-            mechanical_tip=  d["mechanical_tip"],
-            micro_habit=     d["micro_habit"],
-            encouragement=   d["encouragement"],
+            scores=CoachingScores(**d["scores"]),
+            what_went_well=d["what_went_well"],
+            priority_fix=d["priority_fix"],
+            example_moment=d["example_moment"],
+            daily_drill=d["daily_drill"],
+            mechanical_tip=d["mechanical_tip"],
+            micro_habit=d["micro_habit"],
+            encouragement=d["encouragement"],
             content_feedback=d["content_feedback"],
-            focus_area=      focus_area,
-            session_number=  session_number,
+            focus_area=focus_area,
+            session_number=session_number,
+            transcript_highlights=d["transcript_highlights"],
+            session_comparison=d["session_comparison"],
+            recurring_patterns=d["recurring_patterns"],
+            improvement_noted=d["improvement_noted"],
+            drill_followup=d["drill_followup"],
+            next_session_focus=d["next_session_focus"],
         )
 
 

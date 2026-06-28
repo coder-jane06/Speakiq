@@ -8,7 +8,7 @@ interface UseSessionFlowReturn {
   topic:           Topic | null
   sessionId:       string | null
   error:           string | null
-  startPrep:       (topic: Topic) => void
+  startPrep:       (topic: Topic, options?: SessionOptions) => void
   startRecording:  () => void
   finishRecording: (blob: Blob) => void
   skipPrep:        () => void
@@ -20,6 +20,11 @@ interface UseSessionFlowReturn {
   recordingDuration: number
   pauseTimer:      () => void
   resumeTimer:     () => void
+}
+
+interface SessionOptions {
+  speakingGoal?: string
+  difficultyTier?: string
 }
 
 export function useSessionFlow(): UseSessionFlowReturn {
@@ -37,6 +42,7 @@ export function useSessionFlow(): UseSessionFlowReturn {
   const recIntervalRef  = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const topicRef = useRef<Topic | null>(null)
+  const sessionOptionsRef = useRef<SessionOptions>({})
   const recordingDurationRef = useRef(recordingDuration)
 
   // Load user's preferred recording duration from profile-status endpoint
@@ -50,8 +56,8 @@ export function useSessionFlow(): UseSessionFlowReturn {
           headers: { Authorization: `Bearer ${token}` },
         })
         if (res.ok) {
-          // Always use 60 seconds (1 min) for sessions
-          const dur = 60
+          const data = await res.json()
+          const dur = Math.max(30, Math.min(Number(data.recording_duration_secs) || RECORDING_DURATION_SECS, 300))
           setRecordingDuration(dur)
           setRecSecsLeft(dur)
           recordingDurationRef.current = dur
@@ -73,9 +79,10 @@ export function useSessionFlow(): UseSessionFlowReturn {
     return () => clearIntervals()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const startPrep = useCallback((t: Topic) => {
+  const startPrep = useCallback((t: Topic, options: SessionOptions = {}) => {
     setTopic(t)
     topicRef.current = t
+    sessionOptionsRef.current = options
     setPrepSecsLeft(PREP_DURATION_SECS)
     setState('prep')
 
@@ -147,6 +154,12 @@ export function useSessionFlow(): UseSessionFlowReturn {
       formData.append('audio',      blob, 'recording.webm')
       formData.append('topic_id',   currentTopic?.id    ?? 'fallback')
       formData.append('topic_text', currentTopic?.text  ?? '')
+      if (sessionOptionsRef.current.speakingGoal) {
+        formData.append('speaking_goal', sessionOptionsRef.current.speakingGoal)
+      }
+      if (sessionOptionsRef.current.difficultyTier) {
+        formData.append('difficulty_tier', sessionOptionsRef.current.difficultyTier)
+      }
 
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
@@ -181,6 +194,7 @@ export function useSessionFlow(): UseSessionFlowReturn {
     setState('idle')
     setTopic(null)
     topicRef.current = null
+    sessionOptionsRef.current = {}
     setSessionId(null)
     setError(null)
     setPrepSecsLeft(PREP_DURATION_SECS)

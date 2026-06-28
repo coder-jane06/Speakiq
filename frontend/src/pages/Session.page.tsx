@@ -134,8 +134,8 @@ export default function SessionPage() {
   const tips = [
     '💡 Maintain strong pacing and clear pronunciation.',
     '💡 Finish your complete thought before pausing.',
-    '💡 Great confidence detected! Keep going strong.',
-    '💡 Excellent structure and vocabulary choices.',
+    '💡 Focus on your breathing and stay relaxed.',
+    '💡 Use intentional pauses to emphasize key points.',
   ]
 
   useEffect(() => {
@@ -710,7 +710,7 @@ export default function SessionPage() {
                     ⏱ ESTIMATED TIME
                   </p>
                   <p className="text-[14px] font-bold text-[var(--text-primary)]">
-                    1 min
+                    {Math.max(1, Math.round(flow.recordingDuration / 60))} min
                   </p>
                 </div>
                 <div>
@@ -806,7 +806,10 @@ export default function SessionPage() {
                 disabled={!selectedTopic}
                 onClick={() => {
                   if (selectedTopic) {
-                    flow.startPrep(selectedTopic)
+                    flow.startPrep(selectedTopic, {
+                      speakingGoal: selectedGoal,
+                      difficultyTier: selectedLevel,
+                    })
                   }
                 }}
                 className="w-full py-5 text-[17px] font-bold rounded-full transition-all duration-300 active:scale-[0.98] relative overflow-hidden"
@@ -866,7 +869,7 @@ export default function SessionPage() {
                     ⏱ ESTIMATED TIME
                   </p>
                   <p className="text-[14px] font-bold text-[var(--text-primary)]">
-                    1 min
+                    {Math.max(1, Math.round(flow.recordingDuration / 60))} min
                   </p>
                 </div>
                 <div>
@@ -963,7 +966,7 @@ export default function SessionPage() {
 
         {/* ── RECORDING: Premium AI Active Coach ── */}
         {isRecording && (() => {
-          const maxDur = 60
+          const maxDur = flow.recordingDuration
           const elapsed = Math.max(0, maxDur - flow.recSecsLeft)
           const wordsSpoken = Math.round(elapsed * 2.3)
           const completionPct = Math.min(100, Math.round((elapsed / maxDur) * 100))
@@ -997,7 +1000,7 @@ export default function SessionPage() {
                       🔥 {flow.topic?.difficulty ? flow.topic.difficulty.toUpperCase() : 'MEDIUM'}
                     </span>
                     <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[var(--bg-hover)] text-blue-500 border border-[var(--border)]">
-                      ⏱ 60s target
+                      ⏱ {flow.recordingDuration}s target
                     </span>
                   </div>
                 </div>

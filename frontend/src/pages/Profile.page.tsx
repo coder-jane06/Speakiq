@@ -17,14 +17,7 @@ interface ProfileStats {
   best_session?: any;
 }
 
-const SAMPLE_SESSIONS = [
-  { id: 's1', session_number: 9, topic: 'Describe your ideal day from start to finish.', date: '2026-06-27', scores: { filler: 65, delivery: 60, structure: 60, vocab: 60, confidence: 60 } },
-  { id: 's2', session_number: 8, topic: 'Summarise the most interesting thing you learned this week in a 60-second brief.', date: '2026-06-27', scores: { filler: 85, delivery: 80, structure: 80, vocab: 80, confidence: 80 } },
-  { id: 's3', session_number: 7, topic: 'Deliver the opening 90 seconds of a TED talk on any topic you are passionate about.', date: '2026-06-27', scores: { filler: 70, delivery: 70, structure: 70, vocab: 70, confidence: 70 } },
-  { id: 's4', session_number: 6, topic: 'What is your favourite season and why?', date: '2026-06-23', scores: { filler: 75, delivery: 70, structure: 72, vocab: 72, confidence: 72 } },
-  { id: 's5', session_number: 5, topic: 'Talk about a skill you wish you had', date: '2026-06-22', scores: { filler: 70, delivery: 70, structure: 75, vocab: 70, confidence: 70 } },
-  { id: 's6', session_number: 4, topic: 'Describe a challenge you faced and how you overcame it, using the STAR method.', date: '2026-06-20', scores: { filler: 98, delivery: 95, structure: 95, vocab: 96, confidence: 96 } },
-];
+
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -68,26 +61,93 @@ export default function ProfilePage() {
 
   const memberSince = user?.created_at
     ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-    : 'May 2026';
+    : 'Unknown';
 
   const rawSessions = (stats?.sessions && stats.sessions.length > 0) 
     ? [...stats.sessions].reverse() 
-    : SAMPLE_SESSIONS;
-
-  const latestSession = rawSessions[0];
+    : [];
   
-  const overallAvgScore = rawSessions.length > 0 
-    ? Math.round(rawSessions.reduce((acc, s) => {
-        const avg = s.scores ? (s.scores.filler + s.scores.delivery + s.scores.structure + s.scores.vocab + s.scores.confidence) / 5 : 75;
-        return acc + avg;
-      }, 0) / rawSessions.length)
-    : 78;
+  // Calculate dynamic stats
+  const validSessions = rawSessions.filter((s: any) => s.scores);
+  const totalScoreCount = validSessions.length;
+  const overallAvgScore = totalScoreCount > 0 
+    ? Math.round(validSessions.reduce((acc, s) => {
+        const sc = s.scores;
+        return acc + ((sc.filler + sc.delivery + sc.structure + sc.vocab + sc.confidence) / 5);
+      }, 0) / totalScoreCount)
+    : 0;
+
+  const totalPracticeSeconds = rawSessions.reduce((acc: number, s: any) => acc + (s.duration_secs || 0), 0);
+  const practiceMinutes = Math.round(totalPracticeSeconds / 60) || Math.round(totalSessions * 3); // Fallback if old data doesn't have duration_secs
+  const uniqueDays = new Set(rawSessions.map((s: any) => s.date)).size || 1;
+
+  // Radar logic
+  const radarAverages = {
+    confidence: 0, delivery: 0, vocab: 0, structure: 0, filler: 0
+  };
+  if (totalScoreCount > 0) {
+    validSessions.forEach(s => {
+      radarAverages.confidence += s.scores.confidence;
+      radarAverages.delivery += s.scores.delivery;
+      radarAverages.vocab += s.scores.vocab;
+      radarAverages.structure += s.scores.structure;
+      radarAverages.filler += s.scores.filler;
+    });
+    for (const key in radarAverages) {
+      (radarAverages as any)[key] = Math.round((radarAverages as any)[key] / totalScoreCount);
+    }
+  }
+
+  // Milestones Progress
+  const ms1 = Math.min(100, Math.round((totalSessions / 50) * 100));
+  const ms2 = Math.min(100, Math.round((practiceMinutes / 100) * 100));
+  const ms3 = Math.min(100, Math.round((currentStreak / 7) * 100));
+  const ms4 = Math.min(100, Math.round((bestAvg / 100) * 100));
+
+  // Dynamic Achievements
+  const unlockedAchievements = [];
+  if (radarAverages.delivery >= 80 && radarAverages.confidence >= 80) {
+    unlockedAchievements.push({ icon: '🏆', title: 'Strong Communicator', unlocked: true, date: 'Unlocked recently' });
+  } else {
+    unlockedAchievements.push({ icon: '🏆', title: 'Strong Communicator', unlocked: false, progress: 'Need 80+ Delivery' });
+  }
+  
+  if (radarAverages.structure >= 85) {
+    unlockedAchievements.push({ icon: '🎯', title: 'Interview Master', unlocked: true, date: 'Unlocked recently' });
+  } else {
+    unlockedAchievements.push({ icon: '🎯', title: 'Interview Master', unlocked: false, progress: 'Need 85+ Structure' });
+  }
+
+  if (currentStreak >= 7) {
+    unlockedAchievements.push({ icon: '🔥', title: '7-Day Streak', unlocked: true, date: 'Unlocked recently' });
+  } else {
+    unlockedAchievements.push({ icon: '🔥', title: '7-Day Streak', unlocked: false, progress: `${currentStreak} / 7 Days` });
+  }
+
+  if (radarAverages.vocab >= 80) {
+    unlockedAchievements.push({ icon: '📚', title: 'Vocabulary Builder', unlocked: true, date: 'Unlocked recently' });
+  } else {
+    unlockedAchievements.push({ icon: '📚', title: 'Vocabulary Builder', unlocked: false, progress: 'Need 80+ Vocab' });
+  }
+
+  if (totalSessions >= 50) {
+    unlockedAchievements.push({ icon: '🎤', title: '50 Sessions', unlocked: true, date: 'Unlocked recently' });
+  } else {
+    unlockedAchievements.push({ icon: '🎤', title: '50 Sessions', unlocked: false, progress: `${totalSessions} / 50` });
+  }
+
+  if (radarAverages.filler >= 90) {
+    unlockedAchievements.push({ icon: '⚡', title: 'Zero Filler Master', unlocked: true, date: 'Unlocked recently' });
+  } else {
+    unlockedAchievements.push({ icon: '⚡', title: 'Zero Filler Master', unlocked: false, progress: 'Need 90+ Filler Control' });
+  }
+  const unlockedCount = unlockedAchievements.filter(a => a.unlocked).length;
 
   const displayedSessions = showAllSessions ? rawSessions : rawSessions.slice(0, 4);
 
   const initials = user?.email?.charAt(0).toUpperCase() || 'G';
-  const displayName = stats?.display_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'gshaurya0606';
-  const username = `@${user?.email?.split('@')[0] || 'gshaurya0606'}`;
+  const displayName = stats?.display_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+  const username = `@${user?.email?.split('@')[0] || 'user'}`;
 
   const userLevel = totalSessions >= 15 ? 'Advanced' : totalSessions >= 5 ? 'Intermediate' : 'Beginner';
   const currentXP = totalSessions * 140 + currentStreak * 65 + 320;
@@ -147,7 +207,7 @@ export default function ProfilePage() {
               <div className="flex flex-wrap items-center gap-2.5 text-[13px] text-[var(--text-secondary)] font-medium">
                 <span className="text-[var(--text-primary)] font-semibold">{username}</span>
                 <span className="text-[var(--text-tertiary)]">•</span>
-                <span>{user?.email || 'gshaurya0606@gmail.com'}</span>
+                <span>{user?.email || 'user@example.com'}</span>
                 <span className="text-[var(--text-tertiary)]">•</span>
                 <span className="text-[var(--text-tertiary)]">Member since {memberSince}</span>
               </div>
@@ -193,8 +253,8 @@ export default function ProfilePage() {
               { label: 'Current Streak', val: `${currentStreak} Days`, icon: Flame },
               { label: 'Best Score', val: `${bestAvg}`, icon: Trophy },
               { label: 'Sessions Completed', val: `${totalSessions}`, icon: Mic },
-              { label: 'Practice Minutes', val: `${Math.round(totalSessions * 3)}m`, icon: Clock },
-              { label: 'Days Active', val: `30`, icon: Calendar },
+              { label: 'Practice Minutes', val: `${practiceMinutes}m`, icon: Clock },
+              { label: 'Days Active', val: `${uniqueDays}`, icon: Calendar },
               { label: 'Average Score', val: `${overallAvgScore}`, icon: TrendingUp },
             ].map((st, i) => {
               const Icon = st.icon;
@@ -226,18 +286,11 @@ export default function ProfilePage() {
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-[18px] font-bold text-[var(--text-primary)] tracking-tight">Achievements</h2>
-            <span className="text-[12px] text-[var(--text-tertiary)] font-medium">4 of 6 Unlocked</span>
+            <span className="text-[12px] text-[var(--text-tertiary)] font-medium">{unlockedCount} of {unlockedAchievements.length} Unlocked</span>
           </div>
 
           <div className="flex items-center gap-3.5 overflow-x-auto pb-2 scrollbar-none">
-            {[
-              { icon: '🏆', title: 'Strong Communicator', unlocked: true, date: 'Unlocked Jun 2026' },
-              { icon: '🎯', title: 'Interview Master', unlocked: true, date: 'Unlocked Jun 2026' },
-              { icon: '🔥', title: '7-Day Streak', unlocked: true, date: 'Unlocked May 2026' },
-              { icon: '📚', title: 'Vocabulary Builder', unlocked: true, date: 'Unlocked Jun 2026' },
-              { icon: '🎤', title: '50 Sessions', unlocked: false, progress: '48 / 50' },
-              { icon: '⚡', title: 'Zero Filler Master', unlocked: false, progress: 'In Progress' },
-            ].map((ach, i) => (
+            {unlockedAchievements.map((ach, i) => (
               <div 
                 key={i}
                 className={`shrink-0 px-5 py-4 rounded-[22px] border flex items-center gap-3.5 transition-all ${ach.unlocked ? 'bg-[var(--bg-card)] border-[var(--border)] hover:border-[var(--accent)] shadow-xs' : 'bg-[var(--bg-card)]/40 border-[var(--border)]/40 opacity-50'}`}
@@ -261,14 +314,14 @@ export default function ProfilePage() {
 
           <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[24px] p-6 sm:p-8 space-y-5 shadow-xs">
             {[
-              { key: 'confidence', label: 'Confidence', val: 66 },
-              { key: 'delivery', label: 'Delivery', val: 78 },
-              { key: 'vocab', label: 'Vocabulary', val: 50 },
-              { key: 'structure', label: 'Structure', val: 82 },
-              { key: 'filler', label: 'Filler Control', val: 100 },
+              { key: 'confidence', label: 'Confidence' },
+              { key: 'delivery', label: 'Delivery' },
+              { key: 'vocab', label: 'Vocabulary' },
+              { key: 'structure', label: 'Structure' },
+              { key: 'filler', label: 'Filler Control' },
             ].map(sk => {
-              const score = latestSession?.scores?.[sk.key] ?? sk.val;
-              const status = score >= 85 ? 'Excellent' : score >= 70 ? 'Strong' : score >= 55 ? 'Good' : 'Improving';
+              const score = (radarAverages as any)[sk.key] || 0;
+              const status = score >= 85 ? 'Excellent' : score >= 70 ? 'Strong' : score >= 55 ? 'Good' : score > 0 ? 'Improving' : 'Needs Data';
 
               return (
                 <div key={sk.key} className="space-y-2">
@@ -303,7 +356,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[24px] divide-y divide-[var(--border)] overflow-hidden shadow-xs">
-            {displayedSessions.map((s: any) => {
+            {displayedSessions.length > 0 ? displayedSessions.map((s: any) => {
               const avg = s.scores
                 ? Math.round((s.scores.filler + s.scores.delivery + s.scores.structure + s.scores.vocab + s.scores.confidence) / 5)
                 : 75;
@@ -321,7 +374,7 @@ export default function ProfilePage() {
                     <div className="flex items-center gap-2.5 text-[12px] text-[var(--text-tertiary)] font-medium">
                       <span>{s.date ? (s.date.includes('-') ? new Date(s.date).toLocaleDateString() : s.date) : 'Recently'}</span>
                       <span>•</span>
-                      <span>3 mins duration</span>
+                      <span>{s.duration_secs ? Math.round(s.duration_secs / 60) : 3} mins duration</span>
                     </div>
                   </div>
 
@@ -336,7 +389,12 @@ export default function ProfilePage() {
                   </div>
                 </div>
               );
-            })}
+            }) : (
+              <div className="p-8 text-center text-[var(--text-secondary)]">
+                <p className="text-[15px] font-bold">No sessions yet</p>
+                <p className="text-[13px] mt-1">Start a practice session to see your history here.</p>
+              </div>
+            )}
 
             {/* Toggle Button */}
             {rawSessions.length > 4 && (
@@ -360,10 +418,10 @@ export default function ProfilePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
             {[
-              { title: '50 Sessions', desc: '48 of 50 completed', icon: Mic, progress: '96%' },
-              { title: '100 Minutes Practiced', desc: '144 mins completed', icon: Clock, progress: '100%' },
-              { title: '7-Day Streak', desc: '5 of 7 days active', icon: Flame, progress: '71%' },
-              { title: 'Highest Score', desc: '96 pts achieved', icon: Trophy, progress: '100%' },
+              { title: '50 Sessions', desc: `${totalSessions} of 50 completed`, icon: Mic, progress: `${ms1}%` },
+              { title: '100 Minutes Practiced', desc: `${practiceMinutes} mins completed`, icon: Clock, progress: `${ms2}%` },
+              { title: '7-Day Streak', desc: `${currentStreak} of 7 days active`, icon: Flame, progress: `${ms3}%` },
+              { title: 'Highest Score', desc: `${bestAvg} pts achieved`, icon: Trophy, progress: `${ms4}%` },
             ].map((ms, i) => {
               const Icon = ms.icon;
               return (

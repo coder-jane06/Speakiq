@@ -140,6 +140,20 @@ class AcousticResult:
     # Very low variance = flat, tired delivery
     # Healthy variance = natural emphasis on key words
 
+    intensity_db: float = 0.0
+    # Average acoustic intensity (loudness) in decibels (dB). 
+    # Measures vocal projection and command.
+
+    # --- Voice Quality (Nerves & Control) ---
+    jitter: float = 0.0
+    # Cycle-to-cycle pitch variation (%). High jitter = wavering voice / nerves.
+
+    shimmer: float = 0.0
+    # Cycle-to-cycle amplitude variation (%). High shimmer = breathiness / strain.
+
+    hnr: float = 0.0
+    # Harmonics-to-Noise Ratio (dB). High HNR = clear, resonant voice.
+
     # --- Summary ---
     speaking_duration_secs: float = 0.0
     # Total time actually speaking (excluding silences)
@@ -415,6 +429,41 @@ class AcousticService:
             # --------------------------------------------------
             monotony_score = min(pitch_std / 80.0, 1.0) if pitch_std > 0 else 0.0
 
+            # --------------------------------------------------
+            # STEP 8: Advanced Voice Quality Metrics (Jitter, Shimmer, HNR, Intensity)
+            # --------------------------------------------------
+            # Jitter: cycle-to-cycle variation of fundamental period (T0 = 1/F0)
+            if len(voiced_f0) > 1:
+                t0 = 1.0 / voiced_f0
+                jitter = float(np.mean(np.abs(np.diff(t0))) / np.mean(t0)) * 100.0
+            else:
+                jitter = 0.0
+                
+            # Shimmer: cycle-to-cycle variation of amplitude
+            if len(speech_rms) > 1:
+                shimmer = float(np.mean(np.abs(np.diff(speech_rms))) / np.mean(speech_rms)) * 100.0
+            else:
+                shimmer = 0.0
+
+            # HNR: Harmonics-to-Noise Ratio
+            # We estimate HNR using the harmonic/percussive source separation
+            try:
+                y_harmonic, y_percussive = librosa.effects.hpss(y)
+                h_energy = np.sum(y_harmonic**2)
+                p_energy = np.sum(y_percussive**2)
+                if p_energy > 0:
+                    hnr = float(10 * np.log10(h_energy / p_energy))
+                else:
+                    hnr = 0.0
+            except Exception:
+                hnr = 0.0
+
+            # Intensity in dB
+            if energy_mean > 0:
+                intensity_db = float(20 * np.log10(energy_mean + 1e-9)) + 100  # Offset to typical dB range
+            else:
+                intensity_db = 0.0
+
             result = AcousticResult(
                 wpm=wpm,
                 pause_count=len(pauses),
@@ -425,6 +474,10 @@ class AcousticService:
                 pitch_std=round(pitch_std, 1),
                 energy_mean=round(energy_mean, 6),
                 energy_variance=round(energy_variance, 8),
+                intensity_db=round(intensity_db, 1),
+                jitter=round(jitter, 2),
+                shimmer=round(shimmer, 2),
+                hnr=round(hnr, 1),
                 speaking_duration_secs=round(speaking_duration, 1),
                 total_duration_secs=round(total_duration, 1),
                 monotony_score=round(monotony_score, 2)

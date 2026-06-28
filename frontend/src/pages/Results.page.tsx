@@ -14,7 +14,7 @@ export default function ResultsPage() {
   const { sessionId } = useParams<{ sessionId: string }>()
   const navigate      = useNavigate()
 
-  const { loading, error, session, coaching } = useCoachingReport(sessionId || 'latest')
+  const { loading, error, session, metrics, coaching } = useCoachingReport(sessionId || 'latest')
   const { streakData } = useStreak()
   const [stats, setStats] = useState<any>(null)
   
@@ -240,6 +240,24 @@ export default function ResultsPage() {
   } else {
     hookMessage = "Session complete. Get 1% better tomorrow.";
   }
+  let chartData: any[] = [];
+  if (stats?.sessions && stats.sessions.length > 0) {
+    const sorted = [...stats.sessions].sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    chartData = sorted.map((s: any, index: number) => {
+       const sc = s.scores || {};
+       const sKeys = Object.keys(sc);
+       const avg = Math.round(sKeys.reduce((acc, k) => acc + sc[k], 0) / (sKeys.length || 1));
+       return { session: `S${index + 1}`, score: activeTrendMetric === 'overall' ? avg : (sc[activeTrendMetric] || 0) };
+    });
+  } else {
+    chartData = [{ session: 'Current', score: activeTrendMetric === 'overall' ? avgScore : (scores[activeTrendMetric] || 0) }];
+  }
+
+  const displayDuration = (metrics as any)?.duration_secs 
+    ? Math.round((metrics as any).duration_secs) 
+    : (metrics as any)?.words?.length 
+      ? Math.round((metrics as any).words[(metrics as any).words.length - 1].end) 
+      : 0;
 
   return (
     <main
@@ -457,6 +475,74 @@ export default function ResultsPage() {
           </div>
         </div>
 
+        {/* ── SECTION 3.5 — Quantitative Session Stats ── */}
+        <div className="w-full mb-8">
+          <h2 className="text-[20px] font-bold text-[var(--text-primary)] mb-4 px-1 flex items-center justify-between">
+            <span>Quantitative Analytics</span>
+            <span className="text-[12px] font-normal text-[var(--text-tertiary)]">Actual session recording data</span>
+          </h2>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              {
+                label: 'Speaking Time',
+                value: `${displayDuration}s`,
+                desc: 'Total active recording time'
+              },
+              {
+                label: 'Words Spoken',
+                value: (metrics as any)?.words?.length || 0,
+                desc: 'Total transcribed words'
+              },
+              {
+                label: 'Pace (WPM)',
+                value: Math.round(metrics?.wpm || 0),
+                desc: 'Words per minute'
+              },
+              {
+                label: 'Silence',
+                value: `${Math.round(metrics?.silence_percentage || 0)}%`,
+                desc: 'Total silence duration'
+              },
+              {
+                label: 'Longest Pause',
+                value: `${(metrics?.longest_pause_sec || 0).toFixed(1)}s`,
+                desc: 'Maximum pause length'
+              },
+              {
+                label: 'Filler Words',
+                value: metrics?.filler_count || 0,
+                desc: 'Total filler words used'
+              }
+            ].map((stat, i) => (
+              <div key={i} className="p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs flex flex-col justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{stat.label}</span>
+                <div className="mt-1">
+                  <span className="text-[24px] font-extrabold text-[var(--text-primary)]">{stat.value}</span>
+                  <p className="text-[11px] font-medium text-[var(--text-secondary)] mt-0.5">{stat.desc}</p>
+                </div>
+              </div>
+            ))}
+            
+            {/* Filler Breakdown Card */}
+            <div className="col-span-2 p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] block mb-3">Filler Word Breakdown</span>
+              {metrics?.filler_detail && Object.keys(metrics.filler_detail).length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(metrics.filler_detail).map(([word, count]) => (
+                    <div key={word} className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-hover)] border border-[var(--border)] rounded-lg">
+                      <span className="text-[13px] font-semibold text-[var(--text-primary)] capitalize">{word}</span>
+                      <span className="text-[12px] font-bold text-[var(--accent)] px-1.5 py-0.5 bg-[var(--accent-dim)] rounded-md">{count as number}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[13px] font-medium text-emerald-500">Perfect! No filler words detected.</p>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* ── SECTION 4 — Performance Metrics ── */}
         <div className="w-full mb-8">
           <h2 className="text-[20px] font-bold text-[var(--text-primary)] mb-4 px-1 flex items-center justify-between">
@@ -543,12 +629,7 @@ export default function ResultsPage() {
 
           <div className="h-[200px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={[
-                { session: 'S1', score: 62 },
-                { session: 'S2', score: 68 },
-                { session: 'S3', score: 74 },
-                { session: 'S4', score: avgScore },
-              ]}>
+              <LineChart data={chartData}>
                 <XAxis dataKey="session" stroke="var(--text-tertiary)" fontSize={11} tickLine={false} />
                 <YAxis domain={[50, 100]} stroke="var(--text-tertiary)" fontSize={11} axisLine={false} />
                 <RechartsTooltip contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '12px', color: 'var(--text-primary)' }} />
@@ -566,31 +647,31 @@ export default function ResultsPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 text-center">
             <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
               <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Speaking Time</p>
-              <p className="text-[16px] font-extrabold text-[var(--text-primary)]">60s</p>
+              <p className="text-[16px] font-extrabold text-[var(--text-primary)]">{displayDuration}s</p>
             </div>
             <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
               <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Words Spoken</p>
-              <p className="text-[16px] font-extrabold text-[var(--text-primary)]">138</p>
+              <p className="text-[16px] font-extrabold text-[var(--text-primary)]">{(metrics as any)?.words?.length || 0}</p>
             </div>
             <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
               <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Pace (WPM)</p>
-              <p className="text-[16px] font-extrabold text-emerald-400">138</p>
+              <p className="text-[16px] font-extrabold text-emerald-400">{Math.round(metrics?.wpm || 0)}</p>
             </div>
             <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
               <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Longest Pause</p>
-              <p className="text-[16px] font-extrabold text-[var(--text-primary)]">1.8s</p>
+              <p className="text-[16px] font-extrabold text-[var(--text-primary)]">{(metrics?.longest_pause_sec || 0).toFixed(1)}s</p>
             </div>
             <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
               <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Confidence</p>
-              <p className="text-[16px] font-extrabold text-blue-400">92%</p>
+              <p className="text-[16px] font-extrabold text-blue-400">{scores.confidence || 0}%</p>
             </div>
             <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
               <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">Filler Words</p>
-              <p className="text-[16px] font-extrabold text-amber-400">2</p>
+              <p className="text-[16px] font-extrabold text-amber-400">{metrics?.filler_count || 0}</p>
             </div>
             <div className="p-3 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
               <p className="text-[10px] font-bold uppercase text-[var(--text-tertiary)]">AI Confidence</p>
-              <p className="text-[16px] font-extrabold text-emerald-400">99%</p>
+              <p className="text-[16px] font-extrabold text-emerald-400">{avgScore}%</p>
             </div>
           </div>
         </div>
@@ -601,27 +682,52 @@ export default function ResultsPage() {
             <Award size={18} className="text-yellow-400" /> Session Achievements
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-amber-500/20 flex items-center gap-3">
-              <span className="text-[28px]">🏆</span>
-              <div>
-                <h4 className="text-[14px] font-bold text-amber-400">Strong Communicator</h4>
-                <p className="text-[11px] text-[var(--text-secondary)] font-medium">Maintained clear voice flow & tone</p>
+            {(scores.delivery || 0) > 80 ? (
+              <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-amber-500/20 flex items-center gap-3">
+                <span className="text-[28px]">🏆</span>
+                <div>
+                  <h4 className="text-[14px] font-bold text-amber-400">Strong Communicator</h4>
+                  <p className="text-[11px] text-[var(--text-secondary)] font-medium">Maintained clear voice flow & tone</p>
+                </div>
               </div>
-            </div>
-            <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-blue-500/20 flex items-center gap-3">
-              <span className="text-[28px]">🎯</span>
-              <div>
-                <h4 className="text-[14px] font-bold text-blue-400">Structured Thinker</h4>
-                <p className="text-[11px] text-[var(--text-secondary)] font-medium">Clear introduction and conclusion</p>
+            ) : null}
+            {(scores.structure || 0) > 75 ? (
+              <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-blue-500/20 flex items-center gap-3">
+                <span className="text-[28px]">🎯</span>
+                <div>
+                  <h4 className="text-[14px] font-bold text-blue-400">Structured Thinker</h4>
+                  <p className="text-[11px] text-[var(--text-secondary)] font-medium">Clear introduction and conclusion</p>
+                </div>
               </div>
-            </div>
-            <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-emerald-500/20 flex items-center gap-3">
-              <span className="text-[28px]">📚</span>
-              <div>
-                <h4 className="text-[14px] font-bold text-emerald-400">Vocabulary Builder</h4>
-                <p className="text-[11px] text-[var(--text-secondary)] font-medium">Used strong descriptive language</p>
+            ) : null}
+            {(scores.vocab || 0) > 70 ? (
+              <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-emerald-500/20 flex items-center gap-3">
+                <span className="text-[28px]">📚</span>
+                <div>
+                  <h4 className="text-[14px] font-bold text-emerald-400">Vocabulary Builder</h4>
+                  <p className="text-[11px] text-[var(--text-secondary)] font-medium">Used strong descriptive language</p>
+                </div>
               </div>
-            </div>
+            ) : null}
+            {(scores.filler || 0) > 85 ? (
+              <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-purple-500/20 flex items-center gap-3">
+                <span className="text-[28px]">✨</span>
+                <div>
+                  <h4 className="text-[14px] font-bold text-purple-400">Clean Speaker</h4>
+                  <p className="text-[11px] text-[var(--text-secondary)] font-medium">Hardly used any filler words</p>
+                </div>
+              </div>
+            ) : null}
+            {/* Fallback if no achievements won */}
+            {((scores.delivery || 0) <= 80 && (scores.structure || 0) <= 75 && (scores.vocab || 0) <= 70 && (scores.filler || 0) <= 85) && (
+              <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] flex items-center gap-3 col-span-1 md:col-span-3">
+                <span className="text-[28px]">🌱</span>
+                <div>
+                  <h4 className="text-[14px] font-bold text-[var(--text-primary)]">Growing Communicator</h4>
+                  <p className="text-[11px] text-[var(--text-secondary)] font-medium">Keep practicing to unlock badges!</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
