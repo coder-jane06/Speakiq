@@ -93,8 +93,8 @@ export default function DashboardPage() {
         <section className="w-full rounded-[32px] p-8 sm:p-10 bg-[var(--bg-card)] border border-[var(--border)] shadow-xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
-            <div className="space-y-4 max-w-2xl">
+          <div className="relative z-10 w-full">
+            <div className="space-y-4 w-full">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[13px] font-bold shadow-xs">
                 <Sparkles size={15} className="text-emerald-400 fill-emerald-400 animate-pulse" />
                 <span>Interview Mastery • Beginner Journey</span>
@@ -105,37 +105,25 @@ export default function DashboardPage() {
               >
                 Good Morning, {userName} 👋
               </h1>
-              <p className="text-[17px] sm:text-[19px] text-[var(--text-secondary)] font-medium leading-relaxed">
+              <p className="text-[17px] sm:text-[19px] text-[var(--text-secondary)] font-medium leading-relaxed max-w-3xl">
                 Built for Interview Mastery. Designed around your Beginner journey. Ready for today's speaking challenge?
               </p>
 
               {/* Quick status chips */}
-              <div className="flex flex-wrap items-center gap-3 pt-2">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] text-[13px] font-bold text-[var(--text-primary)]">
+              <div className="flex flex-wrap items-center gap-3 pt-3">
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] text-[13px] font-bold text-[var(--text-primary)] shadow-xs">
                   <Flame size={16} className="text-orange-500 fill-orange-500" />
                   <span>Current streak: <strong className="text-orange-500">{streak} Days</strong></span>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] text-[13px] font-bold text-[var(--text-primary)]">
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] text-[13px] font-bold text-[var(--text-primary)] shadow-xs">
                   <Target size={16} className="text-emerald-500" />
                   <span>Today's goal: <strong>1 Session</strong></span>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] text-[13px] font-bold text-[var(--text-primary)]">
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] text-[13px] font-bold text-[var(--text-primary)] shadow-xs">
                   <Clock size={16} className="text-blue-500" />
                   <span>Est. practice remaining: <strong>3 mins</strong></span>
                 </div>
               </div>
-            </div>
-
-            {/* Uniform Primary CTA */}
-            <div className="shrink-0">
-              <button
-                onClick={() => navigate('/session')}
-                className="flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl font-extrabold text-[15px] transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] shadow-lg cursor-pointer"
-                style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}
-              >
-                <Play size={18} style={{ fill: 'var(--accent-text)' }} />
-                <span>Start Session</span>
-              </button>
             </div>
           </div>
         </section>
