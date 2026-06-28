@@ -29,7 +29,10 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
-    handlers=[logging.StreamHandler(sys.stdout)],
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler("app.log", encoding="utf-8")
+    ],
 )
 logger = logging.getLogger("speakiq")
 
@@ -138,6 +141,16 @@ async def system_status():
 @app.get("/api", tags=["system"])
 async def root():
     return {"message": "SpeakIQ API - see /docs for endpoints"}
+
+
+@app.get("/logs", tags=["system"])
+async def get_logs():
+    try:
+        with open("app.log", "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            return {"logs": lines[-100:]}
+    except Exception as e:
+        return {"error": str(e)}
 
 
 # ── Serve built frontend (React SPA) ─────────────────────────────────────────

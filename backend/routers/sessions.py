@@ -273,8 +273,7 @@ async def trigger_analysis(
         )
     except Exception as e:
         import traceback
-        logger.error(f"[sessions] Pipeline failed for {session_id}: {e}")
-        traceback.print_exc()
+        logger.error(f"[sessions] Pipeline failed for {session_id}:\n{traceback.format_exc()}")
         try:
             from config import get_db
             get_db().table("sessions").update({"status": "failed"}).eq("id", session_id).execute()

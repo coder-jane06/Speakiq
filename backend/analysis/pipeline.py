@@ -333,7 +333,8 @@ async def run_analysis_pipeline(
         return coaching_report
 
     except Exception as e:
-        logger.error(f"[Pipeline] Fatal error: {e}")
+        import traceback
+        logger.error(f"[Pipeline] Fatal error:\n{traceback.format_exc()}")
         try:
             from config import get_db
             get_db().table("sessions").update(
