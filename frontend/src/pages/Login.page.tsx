@@ -81,7 +81,7 @@ export default function LoginPage() {
         <div className="relative z-10">
           <div className="flex items-center gap-3">
             <img 
-              src="/logo.png" 
+              src={`${import.meta.env.BASE_URL}logo.png`}
               alt="Fluently logo" 
               className="w-10 h-10 object-contain flex-shrink-0" 
             />
@@ -219,7 +219,7 @@ export default function LoginPage() {
           {/* Mobile logo (shown only on small screens) */}
           <div className="flex lg:hidden items-center gap-2.5 mb-10 justify-center">
             <img 
-              src="/logo.png" 
+              src={`${import.meta.env.BASE_URL}logo.png`}
               alt="Fluently logo" 
               className="w-10 h-10 object-contain flex-shrink-0" 
             />

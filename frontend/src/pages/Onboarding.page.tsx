@@ -82,7 +82,7 @@ export default function OnboardingPage() {
 
         {/* Icon */}
         <img 
-          src="/logo.png" 
+          src={`${import.meta.env.BASE_URL}logo.png`}
           alt="Fluently logo" 
           className="w-24 h-24 object-contain mb-8" 
         />

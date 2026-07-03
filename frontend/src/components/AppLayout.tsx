@@ -56,7 +56,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             style={{ borderColor: 'var(--border)' }}
           >
             <img 
-              src="/logo.png" 
+              src={`${import.meta.env.BASE_URL}logo.png`}
               alt="Fluently logo" 
               className="w-10 h-10 object-contain flex-shrink-0" 
             />
