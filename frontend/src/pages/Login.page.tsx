@@ -80,19 +80,11 @@ export default function LoginPage() {
         {/* Top — Logo */}
         <div className="relative z-10">
           <div className="flex items-center gap-3">
-            <div
-              className="w-9 h-9 rounded-[11px] overflow-hidden flex items-center justify-center bg-white"
-              style={{
-                boxShadow: '0 0 20px rgba(200,249,125,0.25)',
-              }}
-            >
-              <img 
-                src="/logo.png" 
-                alt="Fluently logo" 
-                className="w-full h-full object-cover" 
-                style={{ objectPosition: 'center top', transform: 'scale(1.35) translateY(1.5px)' }} 
-              />
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="Fluently logo" 
+              className="w-10 h-10 object-contain flex-shrink-0" 
+            />
             <span
               className="text-[22px] font-black bg-gradient-to-r from-[var(--gradient-hero-from)] to-[var(--gradient-hero-to)] bg-clip-text text-transparent"
               style={{
@@ -226,16 +218,11 @@ export default function LoginPage() {
 
           {/* Mobile logo (shown only on small screens) */}
           <div className="flex lg:hidden items-center gap-2.5 mb-10 justify-center">
-            <div
-              className="w-8 h-8 rounded-[10px] overflow-hidden flex items-center justify-center bg-white shadow-[0_0_16px_var(--accent-glow)]"
-            >
-              <img 
-                src="/logo.png" 
-                alt="Fluently logo" 
-                className="w-full h-full object-cover" 
-                style={{ objectPosition: 'center top', transform: 'scale(1.35) translateY(1.5px)' }} 
-              />
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="Fluently logo" 
+              className="w-10 h-10 object-contain flex-shrink-0" 
+            />
             <span
               className="text-[20px] font-black bg-gradient-to-r from-[var(--gradient-hero-from)] to-[var(--gradient-hero-to)] bg-clip-text text-transparent"
               style={{

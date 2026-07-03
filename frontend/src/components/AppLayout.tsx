@@ -55,16 +55,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
             className="sidebar-logo flex items-center gap-3 px-5 py-5 border-b"
             style={{ borderColor: 'var(--border)' }}
           >
-            <div
-              className="w-9 h-9 rounded-[10px] overflow-hidden flex items-center justify-center flex-shrink-0 shadow-[0_0_16px_var(--accent-glow)] bg-white"
-            >
-              <img 
-                src="/logo.png" 
-                alt="Fluently logo" 
-                className="w-full h-full object-cover" 
-                style={{ objectPosition: 'center top', transform: 'scale(1.35) translateY(1.5px)' }} 
-              />
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="Fluently logo" 
+              className="w-10 h-10 object-contain flex-shrink-0" 
+            />
             <span
               className="sidebar-logo-text font-heading font-black text-[20px] tracking-tight bg-gradient-to-r from-[var(--gradient-hero-from)] to-[var(--gradient-hero-to)] bg-clip-text text-transparent"
             >

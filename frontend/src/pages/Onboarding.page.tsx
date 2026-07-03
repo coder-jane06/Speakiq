@@ -82,18 +82,11 @@ export default function OnboardingPage() {
 
         {/* Icon */}
         <div
-          className="w-20 h-20 rounded-[24px] overflow-hidden flex items-center justify-center mb-8 bg-white"
-          style={{
-            boxShadow: '0 0 40px var(--accent-glow)',
-          }}
-        >
           <img 
             src="/logo.png" 
             alt="Fluently logo" 
-            className="w-full h-full object-cover" 
-            style={{ objectPosition: 'center top', transform: 'scale(1.35) translateY(1.5px)' }} 
+            className="w-24 h-24 object-contain mb-8" 
           />
-        </div>
 
         <h1
           className="text-[36px] md:text-[42px] font-[700] tracking-[-0.03em] mb-4 leading-tight"
