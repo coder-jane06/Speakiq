@@ -81,12 +81,11 @@ export default function OnboardingPage() {
       <div className="relative z-10 w-full max-w-[480px] flex flex-col items-center text-center animate-fadeSlideUp">
 
         {/* Icon */}
-        <div
-          <img 
-            src="/logo.png" 
-            alt="Fluently logo" 
-            className="w-24 h-24 object-contain mb-8" 
-          />
+        <img 
+          src="/logo.png" 
+          alt="Fluently logo" 
+          className="w-24 h-24 object-contain mb-8" 
+        />
 
         <h1
           className="text-[36px] md:text-[42px] font-[700] tracking-[-0.03em] mb-4 leading-tight"
