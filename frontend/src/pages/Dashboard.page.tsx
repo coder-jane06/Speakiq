@@ -471,7 +471,7 @@ export default function DashboardPage() {
             {[
               { icon: '🥈', text: `${7 - (streak % 7)} sessions until a 7-day streak`, progress: ((streak % 7) / 7) * 100 },
               { icon: '⭐', text: `${Math.max(0, 100 - (stats?.best_session?.avg_score || 0))} points until Perfect Speaker`, progress: stats?.best_session?.avg_score || 0 },
-              { icon: '🚀', text: `${Math.max(0, 15 - (stats?.total_sessions || 0))} sessions until Advanced Level`, progress: Math.min(100, ((stats?.total_sessions || 0) / 15) * 100) },
+              { icon: '🚀', text: `${Math.max(0, 30 - (stats?.total_sessions || 0))} sessions until Advanced Level`, progress: Math.min(100, ((stats?.total_sessions || 0) / 30) * 100) },
             ].map((m, i) => (
               <div key={i} className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] flex flex-col justify-between">
                 <div className="flex items-center gap-3 mb-3">

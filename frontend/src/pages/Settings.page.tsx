@@ -157,7 +157,7 @@ export default function SettingsPage() {
     { id: 'privacy', label: 'Privacy & Security', icon: Shield },
     { id: 'personalization', label: 'AI Personalization', icon: Brain },
     { id: 'help', label: 'Help & Support', icon: HelpCircle },
-    { id: 'about', label: 'About SpeakIQ', icon: Info },
+    { id: 'about', label: 'About Fluently', icon: Info },
   ] as const;
 
   return (
@@ -694,7 +694,7 @@ export default function SettingsPage() {
                   </div>
                   <div>
                     <h2 className="text-[22px] font-extrabold text-[var(--text-primary)] tracking-tight" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>
-                      SpeakIQ AI Coach
+                      Fluently AI Coach
                     </h2>
                     <p className="text-[13px] text-[var(--text-tertiary)] font-semibold">Version 2.4.0-pro • Build 8920</p>
                   </div>

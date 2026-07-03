@@ -80,7 +80,7 @@ export default function HomePage() {
 
             {/* Supporting Copy */}
             <p className="text-[var(--text-secondary)] text-[18px] lg:text-[19px] font-normal leading-relaxed max-w-[520px]">
-              SpeakIQ acts as your private real-time communication copilot. Practice for just 3 minutes a day to eliminate filler words, refine your pace, and captivate any audience with effortless confidence.
+              Fluently acts as your private real-time communication copilot. Practice for just 3 minutes a day to eliminate filler words, refine your pace, and captivate any audience with effortless confidence.
             </p>
 
             {/* Dual CTAs */}
@@ -318,7 +318,7 @@ export default function HomePage() {
               Simplicity Meets Intelligence
             </span>
             <h2 className="text-[36px] sm:text-[44px] font-extrabold text-[var(--text-primary)] tracking-tight leading-tight" style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}>
-              How SpeakIQ Transforms Your Speaking
+              How Fluently Transforms Your Speaking
             </h2>
             <p className="text-[17px] text-[var(--text-secondary)] font-normal mt-3">
               A scientifically proven 4-step daily loop designed to build instinctual confidence in record time.
@@ -426,4 +426,4 @@ export default function HomePage() {
 
     </main>
   );
-}
+}

@@ -85,7 +85,7 @@ async def get_topic(
                 .select("topic_text")
                 .eq("user_id", user_id)
                 .order("created_at", desc=True)
-                .limit(10)
+                .limit(50)
                 .execute()
             )
             recent_topic_texts = [
@@ -295,7 +295,7 @@ async def list_sessions(authorization: Optional[str] = Header(None)):
             .select("id, topic_text, created_at, status")
             .eq("user_id", user_id)
             .order("created_at", desc=True)
-            .limit(50)
+            .limit(200)
             .execute()
         )
         return {"sessions": result.data}
@@ -353,4 +353,195 @@ async def get_session(session_id: str, authorization: Optional[str] = Header(Non
         raise
     except Exception as e:
         logger.error(f"[sessions] get failed {session_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{session_id}/transcript")
+async def get_transcript(session_id: str, authorization: Optional[str] = Header(None)):
+    """
+    Returns the full transcript with word-level timestamps and semantic labels.
+    Used by the interactive Results page for word highlighting and audio sync.
+    """
+    try:
+        from config import get_db
+        db = get_db()
+        
+        result = (
+            db.table("session_metrics")
+            .select("words, filler_positions")
+            .eq("session_id", session_id)
+            .limit(1)
+            .execute()
+        )
+        
+        if not result.data or len(result.data) == 0:
+            raise HTTPException(status_code=404, detail="Transcript not found")
+        
+        metrics = result.data[0]
+        
+        # Parse JSON fields
+        import json
+        words_raw = metrics.get("words")
+        words = json.loads(words_raw) if isinstance(words_raw, str) else (words_raw or [])
+        
+        filler_positions_raw = metrics.get("filler_positions")
+        filler_positions = json.loads(filler_positions_raw) if isinstance(filler_positions_raw, str) else (filler_positions_raw or [])
+        
+        # Create a set of filler word positions for fast lookup
+        filler_indices = {f["position"] for f in filler_positions if isinstance(f, dict) and "position" in f}
+        
+        # Add semantic type to each word
+        transcript_words = []
+        for idx, word_obj in enumerate(words):
+            if not isinstance(word_obj, dict):
+                continue
+            transcript_words.append({
+                "word": word_obj.get("word", ""),
+                "start": word_obj.get("start", 0),
+                "end": word_obj.get("end", 0),
+                "type": "filler" if idx in filler_indices else "normal"
+            })
+        
+        logger.info(f"[sessions] Transcript for {session_id}: {len(transcript_words)} words")
+        return transcript_words
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[sessions] transcript fetch failed {session_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{session_id}/audio-url")
+async def get_audio_url(session_id: str, authorization: Optional[str] = Header(None)):
+    """
+    Returns a signed URL for the audio file stored in Supabase storage.
+    The URL is valid for 1 hour and allows the frontend to play the audio.
+    """
+    try:
+        from config import get_db
+        db = get_db()
+        
+        # Fetch the session to get the audio_url path
+        result = (
+            db.table("sessions")
+            .select("audio_url")
+            .eq("id", session_id)
+            .limit(1)
+            .execute()
+        )
+        
+        if not result.data or len(result.data) == 0:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        audio_path = result.data[0].get("audio_url")
+        if not audio_path:
+            raise HTTPException(status_code=404, detail="Audio file not found")
+        
+        # Generate a signed URL valid for 1 hour (3600 seconds)
+        signed_url = db.storage.from_("audio-recordings").create_signed_url(
+            audio_path,
+            expires_in=3600
+        )
+        
+        logger.info(f"[sessions] Generated signed URL for {session_id}")
+        return {"url": signed_url["signedURL"]}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[sessions] audio URL generation failed {session_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{session_id}/transcript")
+async def get_session_transcript(session_id: str, authorization: Optional[str] = Header(None)):
+    """
+    Return the transcript as a list of word objects with semantic typing.
+    Each word has: { word, start, end, type } where type is 'normal' | 'filler' | 'hedge' | 'strong'
+    """
+    try:
+        from config import get_db
+        db = get_db()
+        
+        result = (
+            db.table("session_metrics")
+            .select("words, filler_positions")
+            .eq("session_id", session_id)
+            .limit(1)
+            .execute()
+        )
+        
+        if not result.data or len(result.data) == 0:
+            return []
+        
+        metrics = result.data[0]
+        
+        # Parse words JSON
+        import json
+        words = json.loads(metrics.get("words", "[]")) if isinstance(metrics.get("words"), str) else (metrics.get("words") or [])
+        filler_positions = json.loads(metrics.get("filler_positions", "[]")) if isinstance(metrics.get("filler_positions"), str) else (metrics.get("filler_positions") or [])
+        
+        # Create a set of filler word positions for fast lookup
+        filler_indices = {fp["position"] for fp in filler_positions if "position" in fp}
+        
+        # Add semantic type to each word
+        typed_words = []
+        for i, word in enumerate(words):
+            word_type = "filler" if i in filler_indices else "normal"
+            typed_words.append({
+                "word": word.get("word", ""),
+                "start": word.get("start", 0),
+                "end": word.get("end", 0),
+                "type": word_type
+            })
+        
+        return typed_words
+        
+    except Exception as e:
+        logger.error(f"[sessions] transcript failed {session_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{session_id}/audio-url")
+async def get_session_audio_url(session_id: str, authorization: Optional[str] = Header(None)):
+    """
+    Generate a signed URL for the session's audio file from Supabase Storage.
+    Returns: { url: string }
+    """
+    try:
+        from config import get_db
+        db = get_db()
+        
+        # Get the session to find the audio_url (storage path)
+        result = (
+            db.table("sessions")
+            .select("audio_url")
+            .eq("id", session_id)
+            .limit(1)
+            .execute()
+        )
+        
+        if not result.data or len(result.data) == 0:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        audio_path = result.data[0].get("audio_url")
+        if not audio_path:
+            raise HTTPException(status_code=404, detail="No audio file found for this session")
+        
+        # Generate a signed URL (valid for 1 hour)
+        signed_url = db.storage.from_("audio-recordings").create_signed_url(
+            path=audio_path,
+            expires_in=3600  # 1 hour
+        )
+        
+        if not signed_url or "signedURL" not in signed_url:
+            raise HTTPException(status_code=500, detail="Failed to generate signed URL")
+        
+        return {"url": signed_url["signedURL"]}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[sessions] audio-url failed {session_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))

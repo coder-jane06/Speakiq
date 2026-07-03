@@ -1,8 +1,10 @@
 """Sessions router — Phase 3 (with analysis pipeline)"""
 import logging, random, uuid, asyncio
 from typing import Optional
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form, BackgroundTasks, Header
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, BackgroundTasks, Header, Depends
+from auth import get_current_user
 import jwt
+from config import get_db
 from routers.dashboard import normalize_difficulty, normalize_goal
 
 logger = logging.getLogger(__name__)
@@ -85,7 +87,7 @@ async def get_topic(
                 .select("topic_text")
                 .eq("user_id", user_id)
                 .order("created_at", desc=True)
-                .limit(10)
+                .limit(50)
                 .execute()
             )
             recent_topic_texts = [
@@ -234,6 +236,7 @@ async def upload_session(
         user_id=user_id,
         speaking_goal=normalized_goal,
         difficulty_tier=normalized_difficulty,
+        authorization=authorization,
     )
 
     return {"session_id": session_id, "status": "analyzing", "audio_url": audio_url}
@@ -246,6 +249,7 @@ async def trigger_analysis(
     user_id: Optional[str] = None,
     speaking_goal: str = "general",
     difficulty_tier: str = "beginner",
+    authorization: str = None,
 ):
     """Background task — runs after the HTTP response is sent."""
     try:
@@ -270,6 +274,7 @@ async def trigger_analysis(
             user_id=user_id,
             speaking_goal_override=speaking_goal,
             difficulty_tier=difficulty_tier,
+            authorization=authorization,
         )
     except Exception as e:
         import traceback
@@ -296,7 +301,7 @@ async def list_sessions(authorization: Optional[str] = Header(None)):
             .select("id, topic_text, created_at, status")
             .eq("user_id", user_id)
             .order("created_at", desc=True)
-            .limit(50)
+            .limit(200)
             .execute()
         )
         return {"sessions": result.data}
@@ -355,3 +360,63 @@ async def get_session(session_id: str, authorization: Optional[str] = Header(Non
     except Exception as e:
         logger.error(f"[sessions] get failed {session_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{session_id}/transcript")
+async def get_transcript(session_id: str, user=Depends(get_current_user)):
+    db = get_db()
+    result = db.table("session_metrics").select("*").eq("session_id", session_id).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Session not found")
+    metrics = result.data[0]
+    
+    import json
+    
+    words_raw = metrics.get("words", "[]")
+    if isinstance(words_raw, str):
+        try:
+            words = json.loads(words_raw)
+        except:
+            words = []
+    else:
+        words = words_raw or []
+        
+    filler_positions_raw = metrics.get("filler_positions", "[]")
+    if isinstance(filler_positions_raw, str):
+        try:
+            fillers = json.loads(filler_positions_raw)
+        except:
+            fillers = []
+    else:
+        fillers = filler_positions_raw or []
+        
+    filler_set = {f["word"] for f in fillers if "word" in f}
+    
+    transcript_words = []
+    for w in words:
+        w_type = "normal"
+        if "word" not in w: continue
+        clean_word = w["word"].strip(".,!?").lower()
+        if clean_word in filler_set:
+            w_type = "filler"
+            
+        transcript_words.append({
+            "word": w["word"],
+            "start": w.get("start", 0),
+            "end": w.get("end", 0),
+            "type": w_type
+        })
+    return transcript_words
+
+@router.get("/{session_id}/audio-url")
+async def get_audio_url(session_id: str, user=Depends(get_current_user)):
+    db = get_db()
+    result = db.table("sessions").select("id").eq("id", session_id).eq("user_id", user["sub"]).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Session not found")
+        
+    url = db.storage.from_("audio-recordings").create_signed_url(
+        path=f"sessions/{session_id}/recording.webm",
+        expires_in=3600
+    )
+    return {"url": url.get("signedURL", "")}

@@ -8,10 +8,18 @@ const POLL_INTERVAL = 4000   // every 4 seconds
 
 interface Metrics {
   wpm?: number
+  duration_s?: number
   filler_count?: number
   filler_rate?: number
   filler_detail?: Record<string, number> | string
+  filler_words?: Array<{ word: string; count: number; timestamps?: number[] }>
+  words?: Array<{ word: string; start: number; end: number }> | string
+  pause_list?: Array<{ start: number; end: number; duration: number }> | string
+  pause_count?: number
   pitch_std?: number
+  pitch_variance?: number
+  pitch_mean?: number
+  silence_gaps?: Array<{ start: number; end: number; duration: number }>
   silence_percentage?: number
   longest_pause_sec?: number
   coaching_report?: Record<string, unknown> | string
@@ -20,6 +28,24 @@ interface Metrics {
   vocab_score?: number
   filler_score?: number
   confidence_score?: number
+}
+
+const SCORE_KEYS = ['filler', 'delivery', 'structure', 'vocab', 'confidence'] as const
+
+function normalizeScores(rawScores: unknown): Record<(typeof SCORE_KEYS)[number], number> {
+  if (!rawScores || typeof rawScores !== 'object') {
+    throw new Error('Analysis report is missing score data.')
+  }
+
+  const normalized = {} as Record<(typeof SCORE_KEYS)[number], number>
+  for (const key of SCORE_KEYS) {
+    const value = Number((rawScores as Record<string, unknown>)[key])
+    if (!Number.isFinite(value)) {
+      throw new Error(`Analysis report is missing ${key} score data.`)
+    }
+    normalized[key] = Math.max(0, Math.min(100, Math.round(value)))
+  }
+  return normalized
 }
 
 export interface CoachingReport {
@@ -35,6 +61,16 @@ export interface CoachingReport {
   daily_drill: string
   mechanical_tip: string
   micro_habit: string
+  worst_moment?: {
+    quote: string
+    timestamp_s: number
+    what_went_wrong: string
+  }
+  rewritten_sentences?: Array<{
+    before: string
+    after: string
+    improvement: string
+  }>
   // Allow other dynamic keys from the API
   [key: string]: unknown
 }
@@ -145,22 +181,63 @@ export function useCoachingReport(sessionId: string | undefined): CoachingReport
           ? JSON.parse(rawMetrics.coaching_report)
           : rawMetrics.coaching_report
 
-        // Parse filler_detail if JSON string
-        const fillerDetail = typeof rawMetrics.filler_detail === 'string'
-          ? JSON.parse(rawMetrics.filler_detail)
-          : (rawMetrics.filler_detail || {})
+        if (!coachingData || typeof coachingData !== 'object') {
+          throw new Error('Analysis report was malformed.')
+        }
+
+        const normalizedCoaching = {
+          ...(coachingData as Record<string, unknown>),
+          scores: normalizeScores((coachingData as Record<string, unknown>).scores)
+        } as CoachingReport
+
+        // Safe JSON parse helper
+        const parseJson = (val: any, fallback: any) => {
+          if (typeof val === 'string') {
+            try { return JSON.parse(val) } catch { return fallback }
+          }
+          return val || fallback
+        }
+
+        const fillerDetail = parseJson(rawMetrics.filler_detail, {})
+        const words = parseJson(rawMetrics.words, [])
+        const pauseList = parseJson(rawMetrics.pause_list, [])
+        
+        // Construct duration_s from last word's end timestamp
+        const duration_s = words.length > 0 ? words[words.length - 1].end : 0
+        
+        // Prepare filler_words for FillerBreakdown
+        const filler_words = Object.entries(fillerDetail).map(([word, count]) => ({
+          word,
+          count: Number(count) || 0,
+          timestamps: []
+        }))
 
         if (import.meta.env.DEV) {
           console.log('[Poll] SUCCESS - coaching report loaded')
         }
         
         setSession(data)
-        setMetrics({ ...rawMetrics, filler_detail: fillerDetail })
-        setCoaching(coachingData)
+        setMetrics({ 
+          ...rawMetrics, 
+          filler_detail: fillerDetail,
+          words,
+          pause_list: pauseList,
+          pitch_variance: rawMetrics.pitch_variance ?? rawMetrics.pitch_std ?? 0,
+          silence_gaps: pauseList,
+          duration_s,
+          filler_words
+        })
+        setCoaching(normalizedCoaching)
         setLoading(false)
 
       } catch (err) {
         console.error('[Poll] Error:', err)
+        const message = err instanceof Error ? err.message : ''
+        if (message.startsWith('Analysis report')) {
+          setError(message)
+          setLoading(false)
+          return
+        }
         if (!cancelled && elapsed < MAX_WAIT_MS) {
           // Don't count network blip as an attempt
           timer = setTimeout(poll, POLL_INTERVAL)

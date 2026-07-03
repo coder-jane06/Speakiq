@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 
 interface ProfileStats {
+  achievements?: any[]
   display_name?: string;
   total_sessions: number;
   current_streak: number;
@@ -114,7 +115,7 @@ export default function ProfilePage() {
   const displayName = stats?.display_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const username = `@${user?.email?.split('@')[0] || 'user'}`;
 
-  const userLevel = totalSessions >= 15 ? 'Advanced' : totalSessions >= 5 ? 'Intermediate' : 'Beginner';
+  const userLevel = totalSessions >= 30 ? 'Advanced' : totalSessions >= 15 ? 'Intermediate' : 'Beginner';
   const currentXP = totalSessions * 140 + currentStreak * 65 + 320;
   const nextLevelXP = 5000;
   const xpPercentage = Math.min(100, Math.round((currentXP / nextLevelXP) * 100));
@@ -259,7 +260,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex items-center gap-4 overflow-x-auto pb-3 pt-1 scrollbar-none pr-6">
-            {unlockedAchievements.map((ach, i) => (
+            {unlockedAchievements.map((ach: any, i: number) => (
               <div 
                 key={i}
                 className={`shrink-0 min-w-[230px] px-5 py-4 rounded-[22px] border flex items-center gap-3.5 transition-all duration-200 ${

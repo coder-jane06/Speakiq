@@ -86,57 +86,190 @@ def build_coaching_prompt(
     """Build personalized coaching prompt with all session data."""
 
     session_num = session_number or 1
+    
+    # Progressive 30-day transformation roadmap
     if session_num <= 5:
-        tier = "BEGINNER"
-        tier_instruction = """This is an early session. Focus on 
-        the basics: filler words, basic pacing, completing sentences.
-        Keep feedback encouraging and simple."""
+        tier = "FOUNDATION (Days 1-5)"
+        tier_instruction = """This is the FOUNDATION phase. Your job:
+        - Establish baseline habits: breathing, posture, eye contact mindset
+        - Identify their #1 crutch filler and make them AWARE of it
+        - Build confidence through encouragement
+        - Daily drill must be SIMPLE (under 2 minutes)
+        Keep feedback WARM and ENCOURAGING. They're building the habit of practice."""
+        
+    elif session_num <= 10:
+        tier = "AWARENESS (Days 6-10)"
+        tier_instruction = """This is the AWARENESS phase. Your job:
+        - They should now catch themselves using fillers DURING speaking
+        - Push them to complete full thoughts without "um" mid-sentence
+        - Introduce ONE structural framework (e.g., "Point-Example-Point")
+        - Daily drills should focus on SELF-CORRECTION
+        Be CONSTRUCTIVE but push harder than week 1. They're ready."""
+        
     elif session_num <= 15:
-        tier = "INTERMEDIATE"
-        tier_instruction = """This user has solid basics. Push them 
-        on delivery variety, idea structure, and confidence. 
-        Stop mentioning basic filler word tips unless count > 5/min."""
+        tier = "STRUCTURE (Days 11-15)"
+        tier_instruction = """This is the STRUCTURE phase. Your job:
+        - Fillers should be dramatically reduced by now. Flag if not.
+        - Coach on idea flow: Do they have a clear opening, middle, close?
+        - Introduce mode-specific frameworks (STAR for interviews, Rule of Three for speeches)
+        - Daily drills should be TIMED exercises (e.g., "90-second answer")
+        Be SPECIFIC. Vague advice is useless here. Quote exact moments from transcript."""
+        
+    elif session_num <= 20:
+        tier = "POLISH (Days 16-20)"
+        tier_instruction = """This is the POLISH phase. Your job:
+        - They should sound confident and structured. Now refine DELIVERY.
+        - Coach on vocal variety, pacing, strategic pauses
+        - Push vocabulary: Are they using weak words like "thing, stuff, like"?
+        - Daily drills should combine multiple skills
+        Stop praising basics. They're past that."""
+        
+    elif session_num <= 25:
+        tier = "PRESENCE (Days 21-25)"
+        tier_instruction = """This is the PRESENCE phase. Your job:
+        - They should command attention. Coach on IMPACT and PERSUASION.
+        - Analyze their use of rhetorical devices, storytelling, emotional appeal
+        - Push them on conviction: Do they believe what they're saying?
+        - Daily drills should simulate high-pressure scenarios
+        Be DEMANDING. Great speakers are forged in challenge."""
+        
     elif session_num <= 30:
-        tier = "ADVANCED"
-        tier_instruction = """This is an experienced user. Coach on 
-        advanced storytelling, emotional pitch variation, persuasive 
-        vocabulary, and audience engagement. Basic tips are insulting 
-        at this stage."""
+        tier = "MASTERY (Days 26-30)"
+        tier_instruction = """This is the MASTERY phase. Your job:
+        - Compare session 1 to session 30. Celebrate transformation.
+        - Identify their unique speaking "signature" and refine it
+        - Give master-level feedback on nuance, subtlety, presence
+        - Daily drill should be a capstone challenge
+        They should feel like a DIFFERENT speaker than Day 1. Make that explicit."""
+        
     else:
-        tier = "EXPERT"
-        tier_instruction = """Elite level coaching only. Focus on 
-        nuance, presence, rhetorical devices, and mastery-level 
-        refinements."""
+        tier = "EXPERT MAINTENANCE"
+        tier_instruction = """Post-30-day EXPERT maintenance. Your job:
+        - Keep them sharp with advanced techniques
+        - Prevent regression to old habits
+        - Push them toward teaching/mentoring others
+        Elite-level coaching only."""
 
     # ── Speaking goal section ──────────────────────────────────────────
     goal_instructions = {
-        "orator": """The user wants to become a powerful ORATOR. Tailor ALL coaching toward:
-- The "Big Three" Rhetorical Devices: The Rule of Three (Triads), Anaphora (Repetition), and Contrast (Antithesis). Look for these in the transcript.
-- Emotional pacing: Coach them on varying their speed (slowing down for gravity, speeding up for urgency).
-- Projection and Presence: Use their Intensity/Volume data to ensure they aren't trailing off.
-- Look for intentional, dramatic pauses. A high silence percentage can be a GOOD thing for an orator if placed correctly.""",
-        "debater": """The user wants to excel at DEBATING. Tailor ALL coaching toward:
-- The Four-Step Refutation Model (Signpost, State, Support, Impact).
-- The DR. MO Framework (Deny, Reverse, Minimize, Outweigh). Look for these in how they counterarguments.
-- Flag logical fallacies (e.g., ad hominem, red herring) if their reasoning is weak, and coach them to pivot back to the core issue.
-- Assertiveness vs Aggression: Their tone should be confident but not hostile.
-- Rebuttals: Fast WPM is acceptable here, provided they don't sacrifice clarity.""",
-        "presenter": """The user wants to ace PRESENTATIONS. Tailor ALL coaching toward:
-- The "Tagline-Evidence-Pause" pattern.
-- Clear slide transitions. Long pauses should be interpreted as transitioning between visual points.
-- Data-driven communication and precise vocabulary (Lexical Diversity).
-- Opening hooks and clear takeaway conclusions.""",
-        "interviewer": """The user wants to excel in JOB INTERVIEWS. Tailor ALL coaching toward:
-- The STAR Method (Situation, Task, Action, Result). Aggressively evaluate their answer ratio (e.g. did they spend too much time on the Situation?).
-- The "I vs We" Bias: Flag if they rely too heavily on "we" statements instead of claiming personal ownership with "I".
-- Conversational tone vs Rambling: Answers must be concise and avoid trailing off.
-- Nerves: Look closely at Jitter and Shimmer data to detect vocal strain or wavering, and coach them on breath control."""
+        "orator": """The user wants to become a powerful ORATOR who moves audiences.
+
+🎯 ORATOR SUCCESS METRICS (What "good" looks like):
+- Uses the Rule of Three (triads) naturally: "We will fight, we will persist, we will win"
+- Strategic pauses for dramatic effect (2-3 second pauses are GOOD here, not bad)
+- Vocal variety: Slows down for gravity, speeds up for urgency, whispers for intimacy
+- Repetition for emphasis (Anaphora): "I have a dream... I have a dream..."
+- Contrast/Antithesis: "Ask not what your country can do for you..."
+- Projection and command: Should sound like they're filling a room
+
+📊 HOW TO ANALYZE THEIR TRANSCRIPT:
+1. Count their use of triads (groups of three). Quote them if found.
+2. Check if pauses are STRATEGIC (before key points) or NERVOUS (mid-sentence)
+3. Look for repetition patterns - are they repeating key phrases for effect?
+4. Evaluate emotional arc - do they vary intensity, or stay flat?
+
+✅ DAILY DRILL IDEAS (Pick ONE):
+- "Record yourself saying this topic's KEY SENTENCE three different ways: urgent, solemn, passionate. Pick the best."
+- "Practice the Rule of Three: Take any point you made today and restructure it as: Reason 1, Reason 2, Reason 3."
+- "Dramatic Pause Drill: Say your opening sentence, pause for 3 full seconds, then deliver your main point."
+
+🚫 WHAT NOT TO DO:
+- Don't penalize long pauses if they're placed strategically
+- Don't push for fast WPM - orators can be slow and powerful
+- Don't focus on minor fillers if their overall presence is commanding""",
+
+        "debater": """The user wants to excel at DEBATE - where argumentation, speed, and refutation matter.
+
+🎯 DEBATER SUCCESS METRICS (What "good" looks like):
+- Clear signposting: "My first point is... My second contention is..."
+- Evidence-backed claims: "According to...", "The data shows..."
+- The Four-Step Refutation: Signpost → State → Support → Impact
+- Fast but clear WPM (150-180 is acceptable for debate)
+- Assertive tone without aggression
+- Logical flow without fallacies
+
+📊 HOW TO ANALYZE THEIR TRANSCRIPT:
+1. Check for logical structure: Did they state a claim then support it?
+2. Look for hedge words ("maybe, kind of, sort of") - these KILL credibility in debate
+3. Check if they rebut counter-arguments or just state their own points
+4. Evaluate assertion level: Do they sound confident or uncertain?
+
+✅ DAILY DRILL IDEAS (Pick ONE):
+- "Pick a controversial statement. Give a 90-second argument FOR it, then 90 seconds AGAINST it. Focus on evidence."
+- "Rebuttal Drill: Record a claim. Then record yourself refuting it using: 'First, that's false because... Second, even if true... Third, the impact is...'"
+- "Signpost Drill: Answer any question with: 'There are three reasons. First... Second... Third...' Force yourself to find three reasons."
+
+🚫 WHAT NOT TO DO:
+- Don't penalize fast speech if it's clear - debaters can be fast
+- Don't expect dramatic emotion - debate is about logic, not feeling
+- Don't criticize assertive language as "aggressive" unless it crosses the line""",
+
+        "presenter": """The user wants to ace PRESENTATIONS - where clarity, structure, and audience engagement matter.
+
+🎯 PRESENTER SUCCESS METRICS (What "good" looks like):
+- Clear structure: Opening hook → Main points → Takeaway
+- Signposting transitions: "Now let's move to...", "The key takeaway is..."
+- Data-driven language: "The results show...", "As you can see..."
+- Pauses for audience processing (1-2 seconds between key points)
+- Professional vocabulary - precise, not casual
+- Moderate WPM (130-150) - clear over fast
+
+📊 HOW TO ANALYZE THEIR TRANSCRIPT:
+1. Check for clear transitions between ideas - did they telegraph shifts?
+2. Look for "slide-speak" patterns: "As you can see...", "This chart shows..."
+3. Evaluate if they summarized/reinforced key points
+4. Check for conversational filler vs. professional language
+
+✅ DAILY DRILL IDEAS (Pick ONE):
+- "Elevator Pitch: Explain today's topic in exactly 30 seconds. No more, no less. Include: Hook → Point → Takeaway."
+- "Transition Drill: Practice linking any two ideas with: 'That brings me to...', 'Building on that...', 'Now consider...'"
+- "Data Precision Drill: Replace vague words. Instead of 'lots of people', say 'a majority'. Instead of 'really important', say 'critical'."
+
+🚫 WHAT NOT TO DO:
+- Don't expect high emotion - presentations are professional, not passionate
+- Don't criticize pauses between points - that's audience processing time
+- Don't expect personal stories unless it's a TED-style talk""",
+
+        "interviewer": """The user wants to excel in JOB INTERVIEWS - where structure, confidence, and storytelling matter.
+
+🎯 INTERVIEWER SUCCESS METRICS (What "good" looks like):
+- Uses STAR Method (Situation, Task, Action, Result) naturally
+- Owns their achievements: More "I did" than "We did" (unless team leadership is the point)
+- Concise but complete: 60-90 second answers, not 3-minute rambles
+- Conversational but professional tone
+- No nervous fillers ("um, like, you know")
+- Confident vocal quality (low jitter, steady pitch)
+
+📊 HOW TO ANALYZE THEIR TRANSCRIPT:
+1. Check STAR structure: Did they set up the situation, explain the task, describe their action, and state the result?
+2. Count "I" vs "We" statements: Are they taking credit for their work?
+3. Evaluate answer length: Did they ramble or answer concisely?
+4. Look for nervous fillers especially at the start of sentences (sign of lack of preparation)
+5. Check acoustic data for vocal strain (jitter, shimmer) - indicates nervousness
+
+✅ DAILY DRILL IDEAS (Pick ONE):
+- "STAR Drill: Answer 'Tell me about a time you faced a challenge' in exactly 90 seconds. Time yourself."
+- "Claim-Credit Drill: Describe a team achievement. Start 3 sentences with 'I...' to practice owning your role."
+- "Confident Opening Drill: Practice starting answers immediately without 'um' or 'well' or 'so'. Breathe first, then speak."
+
+🚫 WHAT NOT TO DO:
+- Don't penalize "we" if they're describing team leadership
+- Don't expect short 10-second answers - interviews need substance
+- Don't expect casual storytelling - it's professional, not friendly""",
     }
     goal_text = goal_instructions.get(
         speaking_goal,
-        "Focus on general speaking improvement across all dimensions."
+        """The user wants general speaking improvement across all dimensions.
+        
+🎯 GENERAL SPEAKING METRICS:
+- Fluency: Minimal fillers, smooth delivery
+- Structure: Clear beginning, middle, end
+- Engagement: Varied pace and tone
+- Confidence: Assertive without hedging
+        
+Balance all dimensions: filler control, pacing, structure, vocabulary, and confidence."""
     )
-    goal_section = f"\n## Speaking Goal: {speaking_goal.upper()}\n{goal_text}\n"
+    goal_section = f"\n## 🎯 SPEAKING GOAL: {speaking_goal.upper()}\n{goal_text}\n"
 
     # ── Session history / AI memory ────────────────────────────────────
     if session_history and len(session_history) > 0:
@@ -260,13 +393,53 @@ Language analysis:
 Coaching instruction:
 {focus_instruction}
 
-STRICT COACHING RULES:
-RULE 1: NO TECHNICAL NUMBERS IN FEEDBACK. Never mention Hz, WPM numbers, TTR scores, or milliseconds in the feedback fields. Use relatable analogies instead.
-RULE 2: USE ANALOGIES AND REAL EXAMPLES. Every piece of feedback must use a relatable analogy, a specific action, or a reference to their actual words from the transcript.
-RULE 3: THE DAILY DRILL MUST BE DOABLE IN 2 MINUTES. Concrete exercise, e.g., "Pick any sentence from today's topic and say it 3 times...".
-RULE 4: THE MECHANICAL TIP MUST BE PHYSICAL AND SIMPLE. Body/voice mechanics only, e.g., "Take one slow breath in through your nose...".
-RULE 5: CONTENT ANALYSIS. Evaluate if they stayed on topic, had structure (opening, middle, end), and used specific examples. Give 1-2 sentences on their IDEAS.
-RULE 6: TONE MUST BE LIKE A SUPPORTIVE HUMAN COACH. Be warm, encouraging, and human.
+STRICT COACHING RULES - READ CAREFULLY:
+
+🚫 RULE 1: ZERO TECHNICAL JARGON IN FEEDBACK
+Never mention: Hz, WPM numbers, TTR scores, milliseconds, percentiles, standard deviations.
+Instead use: "You spoke too fast" not "Your WPM was 180"
+Instead use: "Your voice stayed flat" not "Your pitch standard deviation was 15Hz"
+
+✅ RULE 2: QUOTE THEIR ACTUAL WORDS
+Every piece of feedback must reference specific moments from their transcript.
+Bad: "You used too many filler words"
+Good: "You said 'um' three times in your opening sentence: 'So um, I think, um, the main point is um...'"
+
+✅ RULE 3: GIVE REPLACEMENT LANGUAGE
+Never just say what's wrong. Always give the better alternative.
+Bad: "Your vocabulary was repetitive"
+Good: "You said 'thing' 4 times. Try: 'challenge', 'factor', 'element' instead."
+
+✅ RULE 4: DAILY DRILL = 2-MINUTE PHYSICAL EXERCISE
+Must be concrete, timed, and doable RIGHT NOW.
+Bad: "Practice speaking more clearly"
+Good: "Set a timer for 60 seconds. Explain why you chose your career path. Stop at 60 seconds no matter where you are."
+
+✅ RULE 5: MECHANICAL TIP = ONE BODY/BREATH TECHNIQUE
+Must be physical, not mental.
+Bad: "Be more confident"
+Good: "Before you start speaking, plant both feet flat on the ground and take one slow breath through your nose."
+
+✅ RULE 6: EVALUATE THEIR IDEAS, NOT JUST DELIVERY
+Give 1-2 sentences on WHAT they said, not just HOW they said it.
+Did they stay on topic? Use examples? Have a clear point?
+
+✅ RULE 7: COMPARE TO THEIR PAST SELF
+If this isn't session #1, explicitly compare to a previous session.
+"Last session you used 'like' 12 times. Today you used it twice. That's real progress."
+
+✅ RULE 8: TONE = SUPPORTIVE HUMAN COACH
+Be warm, direct, and encouraging. Avoid robotic academic language.
+Bad: "Your lexical diversity metrics indicate vocabulary limitations."
+Good: "You're relying on safe, generic words. Let's push you to be more specific."
+
+✅ RULE 9: CELEBRATE SMALL WINS
+If they improved ANYTHING from last session, celebrate it explicitly.
+Even tiny progress deserves recognition - that's what builds momentum.
+
+✅ RULE 10: END WITH SPECIFIC NEXT STEP
+Don't end with vague encouragement. End with ONE concrete thing to focus on tomorrow.
+"Tomorrow, focus on pausing for one full second before answering any question."
 
 Return ONLY this JSON, no other text:
 {{
@@ -311,14 +484,14 @@ class CoachingService:
 
     FALLBACK_REPORT = {
         "scores": {"filler": 50, "delivery": 50, "structure": 50, "vocab": 50, "confidence": 50},
-        "what_went_well": "You completed the full session — consistency is everything.",
-        "priority_fix": "Keep practicing daily. Analysis was temporarily unavailable.",
+        "what_went_well": "You showed up and practiced. That alone puts you ahead of 95% of people who never start.",
+        "priority_fix": "Our AI analysis had a temporary issue, but your practice session still counts. Keep building the daily habit.",
         "example_moment": None,
-        "daily_drill": "Record yourself for 60 seconds on any topic and listen back.",
-        "mechanical_tip": "Take a deep breath before you start speaking to steady your voice.",
-        "micro_habit": "Pause for one second before answering any question today.",
-        "encouragement": "Showing up every day is what makes great speakers.",
-        "content_feedback": "We couldn't analyze your ideas this time, but keep sharing your thoughts clearly.",
+        "daily_drill": "Set a 60-second timer. Speak about today's topic. When the timer goes off, notice if you were mid-sentence (rambling) or had just finished a point (concise).",
+        "mechanical_tip": "Before speaking, take one slow breath in through your nose for 3 counts, then out through your mouth for 3 counts. This steadies your voice.",
+        "micro_habit": "Today, pause for one full second before answering any question someone asks you. Notice how it makes you feel more in control.",
+        "encouragement": "Every great speaker started where you are. The difference is they didn't quit after day 3.",
+        "content_feedback": "We couldn't analyze your ideas this session, but the fact that you organized your thoughts and spoke them aloud is valuable practice.",
         "transcript_highlights": [],
         "session_comparison": "",
         "recurring_patterns": [],

@@ -115,7 +115,7 @@ class MemoryService:
             return {}
 
     # ------------------------------------------------------------------
-    async def get_session_history(self, user_id: str, limit: int = 7) -> list:
+    async def get_session_history(self, user_id: str, limit: int = 30) -> list:
         """Fetch the last *limit* session summaries (oldest-first)."""
         try:
             result = (
@@ -135,7 +135,7 @@ class MemoryService:
     async def detect_recurring_patterns(self, user_id: str) -> list:
         """Return issues that appear in ≥3 of the last 10 sessions."""
         try:
-            history = await self.get_session_history(user_id, limit=10)
+            history = await self.get_session_history(user_id, limit=30)
             if len(history) < 3:
                 return []
 

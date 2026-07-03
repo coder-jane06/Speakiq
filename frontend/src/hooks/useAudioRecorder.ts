@@ -80,7 +80,9 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
       streamRef.current = stream
 
       // Set up Web Audio API for waveform visualisation
-      const audioCtx  = new AudioContext()
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
+      const audioCtx  = new AudioContextClass()
+      if (audioCtx.state === 'suspended') { await audioCtx.resume() }
       audioCtxRef.current = audioCtx
       const source    = audioCtx.createMediaStreamSource(stream)
       const analyser  = audioCtx.createAnalyser()

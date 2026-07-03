@@ -19,7 +19,7 @@ BASE_DIR = Path(__file__).resolve().parent
 # Fallback: load from frontend/.env if backend/.env is missing
 frontend_env = {}
 try:
-    frontend_env_path = BASE_DIR.parent / "frontend" / ".env"
+    frontend_env_path = BASE_DIR / "frontend" / ".env"
     if frontend_env_path.exists():
         frontend_env = dotenv_values(frontend_env_path)
 except Exception as e:
@@ -27,6 +27,7 @@ except Exception as e:
 
 
 class Settings(BaseSettings):
+    supabase_jwt_secret: str = "super-secret-jwt-token-with-at-least-32-characters-long"
     supabase_url: str = os.getenv("SUPABASE_URL") or frontend_env.get("VITE_SUPABASE_URL") or ""
     supabase_service_key: str = os.getenv("SUPABASE_SERVICE_KEY") or frontend_env.get("VITE_SUPABASE_ANON_KEY") or ""
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")

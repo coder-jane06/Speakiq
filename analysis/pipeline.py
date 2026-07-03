@@ -44,6 +44,7 @@ async def run_analysis_pipeline(
     user_id: Optional[str] = None,
     speaking_goal_override: Optional[str] = None,
     difficulty_tier: str = "beginner",
+    authorization: str = None,
 ) -> Optional[CoachingReport]:
     """
     Run the full analysis pipeline on a recorded session.
@@ -93,12 +94,18 @@ async def run_analysis_pipeline(
                     f"{transcript_result.word_count} words"
                 )
             else:
-                logger.warning("[Pipeline] Transcription returned None — continuing")
+                raise RuntimeError("Whisper transcription returned None")
 
         except Exception as e:
             logger.error(f"[Pipeline] Whisper failed: {e}")
-            # Don't return — continue with None transcript
-            # Librosa can still run, coaching will use fallback
+            try:
+                from config import get_db
+                get_db().table("sessions").update(
+                    {"status": "failed"}
+                ).eq("id", session_id).execute()
+            except Exception as db_err:
+                logger.error(f"[Pipeline] Could not update session status after Whisper failure: {db_err}")
+            return None
 
         # ----------------------------------------------------------
         # STAGE 2: Acoustic + NLP analysis (run concurrently)
@@ -307,6 +314,7 @@ def compute_scores_from_data(
     nlp,
     speaking_goal: str = "general",
     difficulty_tier: str = "beginner",
+    authorization: str = None,
     session_history: Optional[list] = None,
 ) -> dict:
     def clamp(value: float, low: int = 0, high: int = 100) -> int:

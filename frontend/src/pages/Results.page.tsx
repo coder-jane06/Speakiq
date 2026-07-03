@@ -1,6 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useCoachingReport } from '../hooks/useCoachingReport'
+
+import { TranscriptViewer } from '../components/results/TranscriptViewer'
+import { AudioPlayer } from '../components/results/AudioPlayer'
+import type { AudioPlayerRef } from '../components/results/AudioPlayer'
+import { WorstMomentCard } from '../components/results/WorstMomentCard'
+import { SentenceRewriteCard } from '../components/results/SentenceRewriteCard'
+import { DeliveryDiagnosis } from '../components/results/DeliveryDiagnosis'
+import { FillerBreakdown } from '../components/results/FillerBreakdown'
 import { ScoreRing }         from '../components/results/ScoreRing'
 import { ROUTES, API_URL }   from '../constants'
 import { supabase } from '../services/supabase'
@@ -24,6 +32,34 @@ export default function ResultsPage() {
   const [showCelebration, setShowCelebration] = useState(false)
   const [expandedMetric, setExpandedMetric] = useState<string | null>(null)
   const [activeTrendMetric, setActiveTrendMetric] = useState<'overall' | 'confidence' | 'vocab' | 'delivery'>('overall')
+
+  const [transcript, setTranscript] = useState<any[]>([])
+  const [audioUrl, setAudioUrl] = useState<string>('')
+  const [currentAudioTime, setCurrentAudioTime] = useState(0)
+  const audioPlayerRef = useRef<AudioPlayerRef>(null)
+
+  useEffect(() => {
+    if (!sessionId || loading || !session) return;
+    
+    const fetchPhase2Data = async () => {
+      try {
+        const { data: { session: authSession } } = await supabase.auth.getSession();
+        const token = authSession?.access_token;
+        const headers = { 'Authorization': token ? `Bearer ${token}` : '' }
+        
+        const trRes = await fetch(`${API_URL}/sessions/${sessionId}/transcript`, { headers });
+        if (trRes.ok) setTranscript(await trRes.json());
+        
+        const auRes = await fetch(`${API_URL}/sessions/${sessionId}/audio-url`, { headers });
+        if (auRes.ok) {
+          const auData = await auRes.json();
+          setAudioUrl(auData.url);
+        }
+      } catch (err) { console.error("Phase 2 fetch error", err) }
+    };
+    fetchPhase2Data();
+  }, [sessionId, loading, session]);
+
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -253,8 +289,8 @@ export default function ResultsPage() {
     chartData = [{ session: 'Current', score: activeTrendMetric === 'overall' ? avgScore : (scores[activeTrendMetric] || 0) }];
   }
 
-  const displayDuration = (metrics as any)?.duration_secs 
-    ? Math.round((metrics as any).duration_secs) 
+  const displayDuration = (metrics as any)?.duration_s 
+    ? (metrics as any)?.duration_s.toFixed(1)
     : (metrics as any)?.words?.length 
       ? Math.round((metrics as any).words[(metrics as any).words.length - 1].end) 
       : 0;
@@ -331,9 +367,11 @@ export default function ResultsPage() {
                 <div className="flex items-baseline justify-center sm:justify-start gap-2 mb-3">
                   <span className="text-[48px] font-[800] text-[var(--text-primary)] leading-none tracking-tight">{avgScore}</span>
                   <span className="text-[20px] font-medium text-[var(--text-tertiary)]">/ 100</span>
-                  <span className="ml-3 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-[12px]">
-                    ↑ +7 improvement
-                  </span>
+                  {previousScores && avgScore > (Object.values(previousScores).reduce((a,b)=>a+b,0)/5) && (
+                    <span className="ml-3 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-[12px]">
+                      ↑ +{Math.round(avgScore - (Object.values(previousScores).reduce((a,b)=>a+b,0)/5))} improvement
+                    </span>
+                  )}
                 </div>
                 <p className="text-[16px] font-medium text-[var(--text-secondary)] max-w-[420px]">
                   "{hookMessage.replace('🔥 ', '')}"
@@ -348,6 +386,72 @@ export default function ResultsPage() {
               <span className="text-[12px] font-semibold text-[var(--text-tertiary)]">Streak: {streak} Days Active</span>
             </div>
           </div>
+        </div>
+
+        
+        {/* ── PHASE 2: RESULTS EXPERIENCE ── */}
+        <div className="w-full mb-8 flex flex-col gap-6 animate-cardEntrance" style={{ animationDelay: '0.15s', animationFillMode: 'forwards' }}>
+          
+          <div className="flex items-center justify-between">
+            <h2 className="text-[20px] font-bold text-[var(--text-primary)] flex items-center gap-2">
+               Your Speaking Analysis
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Left Column: Audio & Transcript */}
+            <div className="lg:col-span-2 flex flex-col gap-6">
+              {audioUrl && (
+                <AudioPlayer 
+                  ref={audioPlayerRef} 
+                  src={audioUrl} 
+                  onTimeUpdate={setCurrentAudioTime} 
+                />
+              )}
+              
+              <div className="p-6 rounded-[22px] bg-[var(--bg-card)] border border-[var(--border)] shadow-sm h-[400px] overflow-y-auto custom-scrollbar">
+                {transcript.length > 0 ? (
+                  <TranscriptViewer 
+                    words={transcript} 
+                    currentTime={currentAudioTime} 
+                    onWordClick={(time) => audioPlayerRef.current?.seekTo(time)} 
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-[var(--text-tertiary)]">Loading transcript...</div>
+                )}
+              </div>
+            </div>
+
+            {/* Right Column: Deep Insights */}
+            <div className="flex flex-col gap-6 h-full">
+              {coaching?.worst_moment && (
+                <WorstMomentCard 
+                  quote={coaching.worst_moment.quote}
+                  timestamp_s={coaching.worst_moment.timestamp_s}
+                  what_went_wrong={coaching.worst_moment.what_went_wrong}
+                  onJumpToTime={(time) => audioPlayerRef.current?.seekTo(time)}
+                />
+              )}
+              {coaching?.rewritten_sentences && (
+                <SentenceRewriteCard rewrites={coaching.rewritten_sentences} />
+              )}
+            </div>
+
+          </div>
+
+          {/* Delivery & Fillers Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <DeliveryDiagnosis 
+              wpm={metrics?.wpm || 0}
+              pitchVariance={metrics?.pitch_variance || 0}
+              silenceCount={(metrics?.silence_gaps || []).length}
+            />
+            <FillerBreakdown 
+              fillers={metrics?.filler_words || []}
+            />
+          </div>
+
         </div>
 
         {/* ── SECTION 2 — AI Coach Summary ── */}
@@ -609,14 +713,18 @@ export default function ResultsPage() {
           </div>
         </div>
 
-        {/* ── SECTION 5 — Progress Over Time ── */}
+        {/* ── SECTION 5 — Progress Over Time + 30-Day Transformation ── */}
         <div className="w-full rounded-[28px] p-8 mb-8 bg-[var(--bg-card)] border border-[var(--border)] shadow-xl animate-cardEntrance">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div>
               <h2 className="text-[20px] font-bold text-[var(--text-primary)] flex items-center gap-2">
-                <TrendingUp size={20} className="text-emerald-400" /> Progress Over Time
+                <TrendingUp size={20} className="text-emerald-400" /> Your 30-Day Transformation Journey
               </h2>
-              <p className="text-[12px] text-[var(--text-tertiary)] font-medium">Track your historical performance growth</p>
+              <p className="text-[12px] text-[var(--text-tertiary)] font-medium">
+                {stats?.sessions?.length >= 30 
+                  ? "🎉 Completed! Compare Day 1 vs Day 30" 
+                  : `Day ${stats?.sessions?.length || 1} of 30 — Keep the streak alive`}
+              </p>
             </div>
             <div className="flex items-center gap-1 bg-[var(--bg-hover)] p-1 rounded-xl text-[12px] font-bold text-[var(--text-secondary)] border border-[var(--border)]">
               {(['overall', 'confidence', 'vocab', 'delivery'] as const).map(m => (
@@ -630,6 +738,43 @@ export default function ResultsPage() {
               ))}
             </div>
           </div>
+
+          {/* 30-Day Milestone Progress Bar */}
+          {stats?.sessions && stats.sessions.length > 0 && (
+            <div className="mb-6 p-5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-blue-500/10 to-purple-500/10 border border-emerald-500/20">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] font-bold text-[var(--text-primary)]">
+                  {Math.min(30, stats.sessions.length)} / 30 Sessions Complete
+                </span>
+                <span className="text-[13px] font-bold text-emerald-400">
+                  {Math.round((Math.min(30, stats.sessions.length) / 30) * 100)}%
+                </span>
+              </div>
+              <div className="w-full h-3 rounded-full bg-[var(--bg-hover)] overflow-hidden border border-[var(--border)]">
+                <div 
+                  className="h-full bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500 rounded-full transition-all duration-700"
+                  style={{ width: `${Math.min(100, (stats.sessions.length / 30) * 100)}%` }}
+                />
+              </div>
+              <div className="mt-3 grid grid-cols-6 gap-2">
+                {[5, 10, 15, 20, 25, 30].map(milestone => {
+                  const reached = stats.sessions.length >= milestone;
+                  return (
+                    <div key={milestone} className={`text-center p-2 rounded-lg text-[11px] font-bold transition-all ${reached ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-[var(--bg-hover)] text-[var(--text-tertiary)] border border-[var(--border)]'}`}>
+                      {reached ? '✓' : ''} Day {milestone}
+                    </div>
+                  );
+                })}
+              </div>
+              {stats.sessions.length >= 30 && (
+                <div className="mt-4 p-3 rounded-xl bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border border-yellow-500/30 text-center">
+                  <span className="text-[14px] font-extrabold text-yellow-400">
+                    🏆 30-DAY CHALLENGE COMPLETE! You're in the top 1% of speakers who commit to transformation.
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="h-[200px] w-full">
             <ResponsiveContainer width="100%" height="100%">

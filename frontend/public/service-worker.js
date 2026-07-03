@@ -20,7 +20,7 @@ self.addEventListener('push', function(event) {
     } catch (e) {
       // Fallback for simple text
       event.waitUntil(
-        self.registration.showNotification('SpeakIQ', {
+        self.registration.showNotification('Fluently', {
           body: event.data.text()
         })
       );

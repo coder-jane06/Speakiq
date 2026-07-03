@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Depends
+from fastapi import Header, HTTPException
+from auth import get_current_user
 from pydantic import BaseModel
 from typing import Any, Optional
 import jwt

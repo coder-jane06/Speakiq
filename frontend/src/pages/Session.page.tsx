@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSessionFlow }  from '../hooks/useSessionFlow'
 import { useAudioRecorder } from '../hooks/useAudioRecorder'
-import { AudioWaveform } from '../components/AudioRecorder'
-import { ROUTES } from '../constants'
+import { LiveCues } from '../components/session/LiveCues'
+import { supabase } from '../services/supabase'
+import { ROUTES, API_URL } from '../constants'
 import { TopicCard } from '../components/TopicCard'
 import type { Topic } from '../types'
 import { ArrowLeft, ChevronRight, Sparkles, Mic, Trophy, Target, Zap, TrendingUp, Sliders, Pause, Play, MicOff, Activity, Volume2, CheckCircle, AlertTriangle } from 'lucide-react'
@@ -123,6 +124,7 @@ export default function SessionPage() {
   const recorder = useAudioRecorder()
 
   // 'setup-goal' → 'setup-level' → 'setup-complete' → flow states (idle, prep, recording...)
+  const [serverStatus, setServerStatus] = useState<string>('processing')
   const [setupStep, setSetupStep] = useState<'setup-goal' | 'setup-level' | 'setup-complete' | 'session'>('setup-goal')
   const [selectedGoal, setSelectedGoal] = useState('')
   const [selectedLevel, setSelectedLevel] = useState('')
@@ -170,10 +172,34 @@ export default function SessionPage() {
   }, [recorder.audioBlob])
 
   useEffect(() => {
+    let intervalId: any;
     if (flow.state === 'analyzing' && flow.sessionId) {
-      navigate(`/session/${flow.sessionId}/results`)
+      intervalId = setInterval(async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession()
+          const token = session?.access_token
+          const res = await fetch(`${API_URL}/sessions/${flow.sessionId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+          if (res.ok) {
+            const data = await res.json()
+            if (data.status) {
+              setServerStatus(data.status)
+            }
+            if (data.status === 'complete') {
+              clearInterval(intervalId)
+              navigate(`/session/${flow.sessionId}/results`)
+            } else if (data.status === 'failed') {
+              clearInterval(intervalId)
+            }
+          }
+        } catch (e) {
+          console.error("Polling error", e)
+        }
+      }, 2000)
     }
-  }, [flow.state, flow.sessionId])
+    return () => clearInterval(intervalId)
+  }, [flow.state, flow.sessionId, navigate])
 
   // Back: go back through setup steps or home
   const handleBack = () => {
@@ -1018,7 +1044,7 @@ export default function SessionPage() {
 
                 {/* Audio Waveform */}
                 <div className="w-full">
-                  <AudioWaveform analyserNode={recorder.analyserNode} isRecording={recorder.isRecording && !isPaused} />
+                  <LiveCues analyserNode={recorder.analyserNode} isPaused={isPaused} />
                 </div>
               </div>
 
@@ -1170,7 +1196,7 @@ export default function SessionPage() {
                   color: 'var(--text-primary)',
                 }}
               >
-                Analyzing your speech
+                {flow.state === 'uploading' ? 'Uploading recording...' : serverStatus === 'processing' ? 'Processing audio...' : serverStatus === 'transcribing' ? 'Transcribing speech...' : serverStatus === 'analyzing' ? 'Analyzing patterns...' : serverStatus === 'generating_feedback' ? 'Generating AI feedback...' : 'Finalizing report...'}
               </h2>
               <p
                 className="text-[15px] font-medium"

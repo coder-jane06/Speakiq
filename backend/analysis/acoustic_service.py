@@ -36,13 +36,24 @@ logger = logging.getLogger(__name__)
 
 # Try to find ffmpeg in system path first
 import shutil
+
+
+def _find_bundled_ffmpeg() -> Optional[str]:
+    """Find the repo-bundled ffmpeg.exe without hardcoding a version folder."""
+    here = Path(__file__).resolve()
+    for base in (here.parent, *here.parents):
+        root = base / "ffmpeg_unzipped"
+        if not root.exists():
+            continue
+        for candidate in root.rglob("ffmpeg.exe"):
+            return str(candidate)
+    return None
+
+
 if not shutil.which("ffmpeg"):
-    # Fallback to local unzipped ffmpeg
-    local_ffmpeg_bin = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        '..', '..', 'ffmpeg_unzipped', 'ffmpeg-7.0-essentials_build', 'bin'
-    )
-    os.environ['PATH'] = local_ffmpeg_bin + os.pathsep + os.environ.get('PATH', '')
+    bundled_ffmpeg = _find_bundled_ffmpeg()
+    if bundled_ffmpeg:
+        os.environ['PATH'] = str(Path(bundled_ffmpeg).parent) + os.pathsep + os.environ.get('PATH', '')
 
 
 # -------------------------------------------------------------
@@ -236,11 +247,11 @@ class AcousticService:
             # Try system ffmpeg, fallback to local
             ffmpeg_path = shutil.which("ffmpeg")
             if not ffmpeg_path:
-                ffmpeg_path = os.path.join(
-                    os.path.dirname(os.path.abspath(__file__)),
-                    '..', '..', 'ffmpeg_unzipped', 'ffmpeg-7.0-essentials_build', 'bin', 'ffmpeg.exe'
-                )
-                ffmpeg_path = os.path.normpath(ffmpeg_path)
+                ffmpeg_path = _find_bundled_ffmpeg()
+
+            if not ffmpeg_path:
+                logger.error("[AcousticService] ffmpeg not found in PATH or bundled ffmpeg_unzipped")
+                return None
 
 
             # Convert WebM to WAV (librosa reads WAV natively, no backend needed)
@@ -510,19 +521,26 @@ class AcousticService:
         Analyze from raw bytes (used when audio comes from upload).
         Same pattern as WhisperService.transcribe_from_bytes().
         """
-        with tempfile.NamedTemporaryFile(
+        # IMPORTANT: On Windows, we must close the file before external tools can read it
+        tmp = tempfile.NamedTemporaryFile(
             suffix="_recording.webm",
-            delete=False
-        ) as tmp:
-            tmp.write(audio_bytes)
-            tmp_path = tmp.name
-
+            delete=False,
+            mode='wb'  # Explicitly set binary write mode
+        )
         try:
+            tmp.write(audio_bytes)
+            tmp.flush()  # Ensure all bytes are written to disk
+            os.fsync(tmp.fileno())  # Force OS to write to disk (critical on Windows)
+            tmp_path = tmp.name
+            tmp.close()  # Close the file handle so ffmpeg can access it
+            
             return self.analyze(tmp_path, word_count=word_count)
         finally:
             try:
+                if not tmp.closed:
+                    tmp.close()
                 os.unlink(tmp_path)
-            except OSError:
+            except (OSError, NameError):
                 pass
 
 

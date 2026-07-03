@@ -76,17 +76,24 @@ class WhisperService:
             logger.error("[WhisperService] Model not loaded")
             return None
 
-        # Write bytes to temp file
-        with tempfile.NamedTemporaryFile(
+        # Write bytes to a closed temp file. On Windows, ffmpeg/faster-whisper
+        # cannot reliably read a NamedTemporaryFile while Python still holds it.
+        tmp = tempfile.NamedTemporaryFile(
             suffix=f"_{filename}",
-            delete=False
-        ) as tmp:
-            tmp.write(audio_bytes)
-            tmp_path = tmp.name
-
+            delete=False,
+            mode="wb",
+        )
+        tmp_path = tmp.name
         try:
+            tmp.write(audio_bytes)
+            tmp.flush()
+            os.fsync(tmp.fileno())
+            tmp.close()
+
             return await self.transcribe(tmp_path)
         finally:
+            if not tmp.closed:
+                tmp.close()
             try:
                 os.unlink(tmp_path)
             except OSError:
@@ -116,17 +123,17 @@ class WhisperService:
 
             # faster-whisper is CPU-bound so we run it in
             # a thread pool — same pattern as Librosa
-            def run_transcription():
+            def run_transcription(vad_filter: bool):
                 segments, info = self.model.transcribe(
                     audio_path,
                     language=language,
                     word_timestamps=True,   # get word-level timestamps
                     beam_size=5,            # higher = more accurate, slower
-                    vad_filter=True,        # filter out silence automatically
+                    vad_filter=vad_filter,  # filter out silence automatically
                 )
                 return list(segments), info
 
-            segments, info = await run_in_threadpool(run_transcription)
+            segments, info = await run_in_threadpool(run_transcription, True)
 
             # Flatten all segments into words and full transcript
             words = []
@@ -146,6 +153,31 @@ class WhisperService:
 
             transcript_text = " ".join(full_text_parts).strip()
             word_count      = len(transcript_text.split()) if transcript_text else 0
+
+            # Some valid browser recordings get over-filtered by VAD. If the
+            # recording has real duration but VAD found nothing, retry once
+            # without VAD before calling it no-speech.
+            duration = float(info.duration) if hasattr(info, 'duration') else 0.0
+            if word_count == 0 and duration >= 5.0:
+                logger.warning(
+                    "[WhisperService] VAD produced 0 words for %.1fs audio; retrying without VAD",
+                    duration,
+                )
+                segments, info = await run_in_threadpool(run_transcription, False)
+                words = []
+                full_text_parts = []
+                for segment in segments:
+                    full_text_parts.append(segment.text.strip())
+                    if segment.words:
+                        for w in segment.words:
+                            words.append(WordTimestamp(
+                                word=w.word.strip(),
+                                start=round(float(w.start), 2),
+                                end=round(float(w.end), 2)
+                            ))
+                transcript_text = " ".join(full_text_parts).strip()
+                word_count = len(transcript_text.split()) if transcript_text else 0
+
             duration        = float(info.duration) if hasattr(info, 'duration') else 0.0
             detected_lang   = info.language if hasattr(info, 'language') else language
 

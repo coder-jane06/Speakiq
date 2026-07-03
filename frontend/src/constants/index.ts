@@ -6,7 +6,7 @@ export const AUDIO_MIME_TYPE = 'audio/webm'
 export const MAX_UPLOAD_SIZE_MB = 10
 export const MAX_UPLOAD_SIZE_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024
 
-export const API_URL = import.meta.env.VITE_API_URL ?? ''
+export const API_URL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_URL ?? '')
 export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',

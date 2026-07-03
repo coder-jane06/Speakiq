@@ -84,6 +84,14 @@ async def run_analysis_pipeline(
 
         try:
             logger.info(f"[Pipeline] Stage 1: Whisper transcription...")
+            logger.debug(f"[Pipeline] Audio bytes size: {len(audio_bytes)} bytes")
+            
+            # CRITICAL: Verify audio bytes are not empty
+            if len(audio_bytes) < 1000:
+                logger.error(f"[Pipeline] Audio too small ({len(audio_bytes)} bytes) - likely corrupted")
+                # Don't continue - this is a critical error
+                raise Exception(f"Audio file too small: {len(audio_bytes)} bytes")
+            
             transcript_result = await whisper_service.transcribe_from_bytes(
                 audio_bytes=audio_bytes,
                 filename="recording.webm"
@@ -92,15 +100,37 @@ async def run_analysis_pipeline(
             if transcript_result:
                 logger.info(
                     f"[Pipeline] Transcription complete: "
-                    f"{transcript_result.word_count} words"
+                    f"{transcript_result.word_count} words, "
+                    f"{transcript_result.duration_secs:.1f}s duration"
                 )
+                
+                # CRITICAL: If we got a result but 0 words, something is wrong
+                if transcript_result.word_count == 0 and len(audio_bytes) > 100000:
+                    logger.warning(
+                        f"[Pipeline] Whisper returned 0 words but audio is {len(audio_bytes)} bytes - "
+                        f"this is likely a VAD issue, not empty audio"
+                    )
             else:
-                logger.warning("[Pipeline] Transcription returned None — continuing")
+                logger.error("[Pipeline] Whisper returned None - transcription completely failed")
+                # This is a CRITICAL ERROR - we should fail the session, not continue with fake data
+                raise Exception("Whisper transcription returned None")
 
         except Exception as e:
-            logger.error(f"[Pipeline] Whisper failed: {e}")
-            # Don't return — continue with None transcript
-            # Librosa can still run, coaching will use fallback
+            import traceback
+            logger.error(f"[Pipeline] Whisper failed: {e}\n{traceback.format_exc()}")
+            
+            # Mark session as failed and return
+            try:
+                from config import get_db
+                get_db().table("sessions").update(
+                    {"status": "failed"}
+                ).eq("id", session_id).execute()
+                logger.error(f"[Pipeline] Marked session {session_id} as failed due to Whisper error")
+            except Exception as db_err:
+                logger.error(f"[Pipeline] Could not update session status: {db_err}")
+            
+            # Return None to indicate complete failure
+            return None
 
         # ----------------------------------------------------------
         # STAGE 2: Acoustic + NLP analysis (run concurrently)
@@ -123,16 +153,25 @@ async def run_analysis_pipeline(
         async def run_acoustic():
             try:
                 logger.info("[Pipeline] Stage 2a: Acoustic analysis...")
+                logger.debug(f"[Pipeline] Word count for WPM calc: {transcript_result.word_count if transcript_result else 0}")
                 from fastapi.concurrency import run_in_threadpool
                 result = await run_in_threadpool(
                     acoustic_service.analyze_from_bytes,
                     audio_bytes,
                     transcript_result.word_count if transcript_result else 0
                 )
-                logger.info("[Pipeline] Acoustic analysis complete")
+                if result:
+                    logger.info(
+                        f"[Pipeline] Acoustic analysis complete — "
+                        f"WPM: {result.wpm:.0f}, Pauses: {result.pause_count}, "
+                        f"Pitch std: {result.pitch_std:.1f}"
+                    )
+                else:
+                    logger.warning("[Pipeline] Acoustic analysis returned None")
                 return result
             except Exception as e:
-                logger.error(f"[Pipeline] Acoustic analysis failed: {e}")
+                import traceback
+                logger.error(f"[Pipeline] Acoustic analysis failed: {e}\n{traceback.format_exc()}")
                 return None
 
         async def run_nlp():
@@ -141,16 +180,24 @@ async def run_analysis_pipeline(
                     logger.warning("[Pipeline] No transcript for NLP — skipping")
                     return None
                 logger.info("[Pipeline] Stage 2b: NLP analysis...")
+                logger.debug(f"[Pipeline] Transcript length: {len(transcript_result.transcript)} chars")
                 from fastapi.concurrency import run_in_threadpool
                 result = await run_in_threadpool(
                     nlp_service.analyze,
                     transcript_result.transcript,
                     transcript_result.duration_secs
                 )
-                logger.info("[Pipeline] NLP analysis complete")
+                if result:
+                    logger.info(
+                        f"[Pipeline] NLP analysis complete — "
+                        f"Fillers: {result.filler_count}, TTR: {result.ttr_score:.2f}"
+                    )
+                else:
+                    logger.warning("[Pipeline] NLP analysis returned None")
                 return result
             except Exception as e:
-                logger.error(f"[Pipeline] NLP analysis failed: {e}")
+                import traceback
+                logger.error(f"[Pipeline] NLP analysis failed: {e}\n{traceback.format_exc()}")
                 return None
 
         # Run both concurrently — this is the asyncio.gather pattern
@@ -168,14 +215,11 @@ async def run_analysis_pipeline(
         # ----------------------------------------------------------
         logger.info("[Pipeline] Stage 3: Generating coaching report...")
 
-        # We need a TranscriptResult even if Whisper failed
-        if not transcript_result:
-            from analysis.whisper_service import TranscriptResult
-            transcript_result = TranscriptResult(
-                transcript="[Transcription unavailable]",
-                word_count=0,
-                duration_secs=60.0
-            )
+               # CRITICAL: transcript must be valid at this point
+        if not transcript_result or transcript_result.word_count == 0:
+            logger.error("[Pipeline] Reached Stage 3 with invalid transcript")
+            return None
+
 
         session_history = []
         speaking_goal = speaking_goal_override or "general"
@@ -192,47 +236,26 @@ async def run_analysis_pipeline(
             except Exception as e:
                 logger.error(f"[Pipeline] Memory fetch failed: {e}")
 
-        if transcript_result.word_count < 3:
-            from analysis.coaching_service import CoachingScores
-            pre_scores = {"filler": 0, "delivery": 0, "structure": 0, "vocab": 0, "confidence": 0}
-            coaching_report = CoachingReport(
-                scores=CoachingScores(filler=0, delivery=0, structure=0, vocab=0, confidence=0),
-                what_went_well="No speech detected.",
-                priority_fix="Speak up! We couldn't hear any words in this recording.",
-                example_moment="N/A",
-                daily_drill="Practice speaking clearly into the microphone.",
-                mechanical_tip="Check your microphone settings.",
-                micro_habit="Ensure your recording environment is quiet and your mic is active.",
-                encouragement="Don't worry, try again when you're ready!",
-                content_feedback="We need to hear your voice to give feedback on your content.",
-                focus_area="Audio Recording",
-                transcript_highlights=[],
-                session_comparison="N/A",
-                recurring_patterns="N/A",
-                improvement_noted="N/A",
-                drill_followup="N/A",
-                next_session_focus="Recording audio successfully.",
-            )
-        else:
-            pre_scores = compute_scores_from_data(
-                transcript_result,
-                acoustic_result,
-                nlp_result,
-                speaking_goal=speaking_goal,
-                difficulty_tier=difficulty_tier,
-                session_history=session_history,
-            )
+        # Compute scores from data
+        pre_scores = compute_scores_from_data(
+            transcript_result,
+            acoustic_result,
+            nlp_result,
+            speaking_goal=speaking_goal,
+            difficulty_tier=difficulty_tier,
+            session_history=session_history,
+        )
 
-            coaching_report = await coaching_service.generate_report(
-                topic=             topic,
-                transcript_result= transcript_result,
-                acoustic_result=   acoustic_result,
-                nlp_result=        nlp_result,
-                user_profile=      user_profile,
-                session_number=    session_number,
-                pre_computed_scores=pre_scores,
-                session_history=   session_history,
-                speaking_goal=     speaking_goal,
+        coaching_report = await coaching_service.generate_report(
+            topic=             topic,
+            transcript_result= transcript_result,
+            acoustic_result=   acoustic_result,
+            nlp_result=        nlp_result,
+            user_profile=      user_profile,
+            session_number=    session_number,
+            pre_computed_scores=pre_scores,
+            session_history=   session_history,
+            speaking_goal=     speaking_goal,
             )
 
         # ----------------------------------------------------------
