@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase'
 import { API_URL, ROUTES } from '../constants'
-import { Sparkles } from 'lucide-react'
 
 /* ================================================================== */
 export default function OnboardingPage() {
@@ -83,21 +82,24 @@ export default function OnboardingPage() {
 
         {/* Icon */}
         <div
-          className="w-20 h-20 rounded-[24px] flex items-center justify-center mb-8"
+          className="w-20 h-20 rounded-[24px] overflow-hidden flex items-center justify-center mb-8 bg-white"
           style={{
-            background: 'var(--accent)',
-            color: 'var(--accent-text)',
             boxShadow: '0 0 40px var(--accent-glow)',
           }}
         >
-          <Sparkles size={36} strokeWidth={2} />
+          <img 
+            src="/logo.png" 
+            alt="Fluently logo" 
+            className="w-full h-full object-cover" 
+            style={{ objectPosition: 'center top', transform: 'scale(1.35) translateY(1.5px)' }} 
+          />
         </div>
 
         <h1
           className="text-[36px] md:text-[42px] font-[700] tracking-[-0.03em] mb-4 leading-tight"
           style={{ color: 'var(--text-primary)', fontFamily: "'Bricolage Grotesque', sans-serif" }}
         >
-          Welcome to SpeakIQ
+          Welcome to Fluently
         </h1>
         <p className="text-[17px] font-medium mb-10 max-w-[380px] leading-relaxed"
           style={{ color: 'var(--text-secondary)' }}

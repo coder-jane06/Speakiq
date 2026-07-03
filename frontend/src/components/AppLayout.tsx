@@ -3,7 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { ROUTES } from '../constants'
 import {
   Home, LayoutDashboard, Mic, User, Settings,
-  Sparkles, LogOut, Sun, Moon,
+  LogOut, Sun, Moon,
 } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
@@ -56,16 +56,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
             style={{ borderColor: 'var(--border)' }}
           >
             <div
-              className="w-9 h-9 rounded-[10px] flex items-center justify-center flex-shrink-0 shadow-[0_0_16px_var(--accent-glow)]"
-              style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}
+              className="w-9 h-9 rounded-[10px] overflow-hidden flex items-center justify-center flex-shrink-0 shadow-[0_0_16px_var(--accent-glow)] bg-white"
             >
-              <Sparkles size={18} strokeWidth={2.5} />
+              <img 
+                src="/logo.png" 
+                alt="Fluently logo" 
+                className="w-full h-full object-cover" 
+                style={{ objectPosition: 'center top', transform: 'scale(1.35) translateY(1.5px)' }} 
+              />
             </div>
             <span
-              className="sidebar-logo-text font-heading font-bold text-[17px] tracking-tight transition-all"
-              style={{ color: 'var(--text-primary)' }}
+              className="sidebar-logo-text font-heading font-black text-[20px] tracking-tight bg-gradient-to-r from-[var(--gradient-hero-from)] to-[var(--gradient-hero-to)] bg-clip-text text-transparent"
             >
-              SpeakIQ
+              Fluently
             </span>
           </div>
 

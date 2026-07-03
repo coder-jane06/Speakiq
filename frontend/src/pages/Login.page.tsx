@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { ROUTES } from '../constants'
 import { supabase } from '../services/supabase'
-import { Sparkles } from 'lucide-react'
 
 type Mode = 'signin' | 'signup'
 
@@ -82,23 +81,26 @@ export default function LoginPage() {
         <div className="relative z-10">
           <div className="flex items-center gap-3">
             <div
-              className="w-9 h-9 rounded-[11px] flex items-center justify-center"
+              className="w-9 h-9 rounded-[11px] overflow-hidden flex items-center justify-center bg-white"
               style={{
-                background: 'var(--accent)',
                 boxShadow: '0 0 20px rgba(200,249,125,0.25)',
               }}
             >
-              <Sparkles size={18} strokeWidth={2.5} style={{ color: 'var(--bg-base)' }} />
+              <img 
+                src="/logo.png" 
+                alt="Fluently logo" 
+                className="w-full h-full object-cover" 
+                style={{ objectPosition: 'center top', transform: 'scale(1.35) translateY(1.5px)' }} 
+              />
             </div>
             <span
-              className="text-[19px] font-bold"
+              className="text-[22px] font-black bg-gradient-to-r from-[var(--gradient-hero-from)] to-[var(--gradient-hero-to)] bg-clip-text text-transparent"
               style={{
                 fontFamily: "'Bricolage Grotesque', sans-serif",
-                color: 'var(--text-primary)',
                 letterSpacing: '-0.02em',
               }}
             >
-              SpeakIQ
+              Fluently
             </span>
           </div>
         </div>
@@ -225,19 +227,22 @@ export default function LoginPage() {
           {/* Mobile logo (shown only on small screens) */}
           <div className="flex lg:hidden items-center gap-2.5 mb-10 justify-center">
             <div
-              className="w-8 h-8 rounded-[10px] flex items-center justify-center"
-              style={{ background: 'var(--accent)' }}
+              className="w-8 h-8 rounded-[10px] overflow-hidden flex items-center justify-center bg-white shadow-[0_0_16px_var(--accent-glow)]"
             >
-              <Sparkles size={16} strokeWidth={2.5} style={{ color: 'var(--bg-base)' }} />
+              <img 
+                src="/logo.png" 
+                alt="Fluently logo" 
+                className="w-full h-full object-cover" 
+                style={{ objectPosition: 'center top', transform: 'scale(1.35) translateY(1.5px)' }} 
+              />
             </div>
             <span
-              className="text-[17px] font-bold"
+              className="text-[20px] font-black bg-gradient-to-r from-[var(--gradient-hero-from)] to-[var(--gradient-hero-to)] bg-clip-text text-transparent"
               style={{
                 fontFamily: "'Bricolage Grotesque', sans-serif",
-                color: 'var(--text-primary)',
               }}
             >
-              SpeakIQ
+              Fluently
             </span>
           </div>
 

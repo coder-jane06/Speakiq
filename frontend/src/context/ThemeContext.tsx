@@ -14,7 +14,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const params = new URLSearchParams(window.location.search);
     const urlTheme = params.get('theme');
     if (urlTheme === 'dark' || urlTheme === 'light') return urlTheme;
-    const saved = localStorage.getItem('speakiq_theme') as Theme;
+    const saved = localStorage.getItem('fluently_theme') as Theme;
     if (saved === 'dark' || saved === 'light') return saved;
     return 'light';
   });
@@ -23,7 +23,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
     root.classList.add(theme);
-    localStorage.setItem('speakiq_theme', theme);
+    localStorage.setItem('fluently_theme', theme);
 
     // Sync theme with URL query parameter
     const url = new URL(window.location.href);
