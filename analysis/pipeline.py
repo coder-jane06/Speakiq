@@ -269,6 +269,19 @@ async def run_analysis_pipeline(
         except Exception as e:
             logger.error(f"[Pipeline] Status update failed: {e}")
 
+        if user_id:
+            try:
+                from services.notification_service import send_session_complete_notifications
+
+                send_session_complete_notifications(
+                    user_id=user_id,
+                    session_id=session_id,
+                    topic=topic,
+                    coaching_report=coaching_report,
+                )
+            except Exception as e:
+                logger.error(f"[Pipeline] Notification dispatch failed: {e}")
+
         # Update streak
         if user_id:
             try:

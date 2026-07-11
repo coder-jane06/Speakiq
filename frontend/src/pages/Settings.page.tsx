@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../services/supabase';
-import { API_URL } from '../constants';
+import { API_URL, APP_BASE_URL, VAPID_PUBLIC_KEY } from '../constants';
 import {
   User, Sparkles, Monitor, Bell, Mic, Shield, Brain, HelpCircle, Info,
   Check, Download, Trash2, ChevronRight, Moon, Sun,
@@ -63,9 +63,57 @@ async function patchPreferences(token: string, payload: Record<string, unknown>)
   if (!res.ok) throw new Error('Failed to save preferences');
 }
 
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+}
+
+async function registerPushSubscription(token: string) {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    throw new Error('Push notifications are not supported in this browser');
+  }
+  if (!VAPID_PUBLIC_KEY) {
+    throw new Error('Missing VITE_VAPID_PUBLIC_KEY');
+  }
+
+  const permission = await Notification.requestPermission();
+  if (permission !== 'granted') {
+    throw new Error('Notification permission was not granted');
+  }
+
+  const registration = await navigator.serviceWorker.register(`${APP_BASE_URL}service-worker.js`);
+  const subscription = await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+  });
+  const subJson = subscription.toJSON();
+
+  const res = await fetch(`${API_URL}/dashboard/push-subscribe`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({
+      endpoint: subJson.endpoint,
+      p256dh: subJson.keys?.p256dh,
+      auth: subJson.keys?.auth,
+    }),
+  });
+  if (!res.ok) throw new Error('Failed to save push subscription');
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function SettingsPage() {
-  const { theme, toggleTheme } = useTheme();
+  const {
+    theme,
+    toggleTheme,
+    accentColor,
+    setAccentColor,
+    borderRadius: roundedCorners,
+    setBorderRadius: setRoundedCorners,
+    uiDensity,
+    setUiDensity,
+  } = useTheme();
   const { user } = useAuth();
 
   type TabId = 'profile' | 'aicoach' | 'appearance' | 'notifications' | 'audio' | 'privacy' | 'personalization' | 'help' | 'about';
@@ -91,9 +139,6 @@ export default function SettingsPage() {
   const [aiSaveMsg, setAiSaveMsg] = useState('');
 
   // ── Appearance tab ────────────────────────────────────────────────────────
-  const [accentColor, setAccentColor] = useState('green');
-  const [uiDensity, setUiDensity] = useState('Comfortable');
-  const [roundedCorners, setRoundedCorners] = useState(24);
   const [savingAppearance, setSavingAppearance] = useState(false);
   const [appearanceSaveMsg, setAppearanceSaveMsg] = useState('');
 
@@ -146,8 +191,14 @@ export default function SettingsPage() {
         if (data.coaching_style) setCoachingStyle(data.coaching_style);
         if (data.feedback_detail) setFeedbackDetail(data.feedback_detail);
         if (data.appearance_preferences) {
-          setAccentColor(data.appearance_preferences.accentColor ?? 'green');
-          setUiDensity(data.appearance_preferences.uiDensity ?? 'Comfortable');
+          const savedAccent = data.appearance_preferences.accentColor;
+          const safeAccent = ['green', 'blue', 'purple', 'orange', 'red'].includes(savedAccent)
+            ? savedAccent
+            : 'green';
+          const savedDensity = data.appearance_preferences.uiDensity;
+          const safeDensity = savedDensity === 'Compact' ? 'Compact' : 'Comfortable';
+          setAccentColor(safeAccent as Parameters<typeof setAccentColor>[0]);
+          setUiDensity(safeDensity);
           setRoundedCorners(data.appearance_preferences.roundedCorners ?? 24);
         }
         if (data.notification_preferences) {
@@ -234,6 +285,9 @@ export default function SettingsPage() {
       const token = await getToken();
       if (!token) throw new Error('Not authenticated');
       await patchPreferences(token, { notification_preferences: notifications });
+      if (notifications.push) {
+        await registerPushSubscription(token);
+      }
       showMsg(setNotifSaveMsg, '✓ Notifications saved');
     } catch (e) {
       showMsg(setNotifSaveMsg, '✗ Failed to save');
@@ -682,10 +736,12 @@ export default function SettingsPage() {
                         { id: 'green', color: 'bg-emerald-500' },
                         { id: 'blue', color: 'bg-blue-500' },
                         { id: 'purple', color: 'bg-purple-500' },
-                      ].map(acc => (
+                        { id: 'orange', color: 'bg-orange-500' },
+                        { id: 'red', color: 'bg-red-500' },
+                      ].map((acc) => (
                         <button
                           key={acc.id}
-                          onClick={() => setAccentColor(acc.id)}
+                          onClick={() => setAccentColor(acc.id as Parameters<typeof setAccentColor>[0])}
                           className={`w-8 h-8 rounded-full ${acc.color} flex items-center justify-center transition-transform cursor-pointer ${accentColor === acc.id ? 'ring-4 ring-emerald-500/40 scale-110' : 'opacity-70 hover:opacity-100'}`}
                         >
                           {accentColor === acc.id && <Check size={14} className="text-black" />}
@@ -701,7 +757,7 @@ export default function SettingsPage() {
                       <p className="text-[12px] text-[var(--text-tertiary)] font-medium">Adjust padding and item spacing</p>
                     </div>
                     <div className="flex bg-[var(--bg-card)] p-1 rounded-xl border border-[var(--border)]">
-                      {['Comfortable', 'Compact'].map(d => (
+                      {(['Comfortable', 'Compact'] as const).map(d => (
                         <button
                           key={d}
                           onClick={() => setUiDensity(d)}
@@ -755,6 +811,13 @@ export default function SettingsPage() {
                     <Bell size={20} className="text-amber-400" /> Notification Center
                   </h2>
                   <p className="text-[13px] text-[var(--text-tertiary)] font-medium">Manage alerts, streak updates, and practice reminders.</p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                  <p className="text-[13px] font-bold text-amber-300">Delivery status</p>
+                  <p className="text-[12px] text-amber-200/80 font-medium mt-1">
+                    Browser push is enabled when this device grants permission. Email reminders require Resend plus a scheduled job on the backend.
+                  </p>
                 </div>
 
                 <div className="divide-y divide-[var(--border)]">

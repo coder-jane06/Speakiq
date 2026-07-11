@@ -78,6 +78,8 @@ def build_coaching_prompt(
     pre_scores:        Optional[dict] = None,
     session_history:   Optional[list] = None,
     speaking_goal:     str = "general",
+    coaching_style:    str = "Balanced",
+    feedback_detail:   str = "Detailed",
 ) -> str:
     """Build personalized coaching prompt with all session data."""
 
@@ -300,10 +302,39 @@ This is session #{session_num}. Be encouraging and welcoming.
     }
     focus_instruction = focus_map.get(focus_area, "Focus on the weakest area.")
 
+    # ── Coaching style tone instruction ──────────────────────────────────────
+    style_instructions = {
+        "Encouraging": """TONE RULE: This user wants encouragement. Lead with genuine positives. Frame every critique 
+as a growth opportunity. Be warm, celebratory of wins, and never blunt. End with motivation.""",
+        "Balanced": """TONE RULE: Balanced coaching. Honest about weaknesses, warm about strengths. 
+Don't sugarcoat problems but don't be harsh either. This is the default coaching mode.""",
+        "Strict": """TONE RULE: This user wants strict, no-nonsense coaching. Be direct and demanding. 
+Minimize praise — they want hard truths. Identify the biggest flaw and attack it directly. 
+They can handle criticism and prefer it to empty encouragement.""",
+    }
+    style_section = style_instructions.get(coaching_style, style_instructions["Balanced"])
+
+    # ── Feedback detail level ─────────────────────────────────────────────────
+    detail_instructions = {
+        "Basic": """DETAIL LEVEL: Basic. Keep ALL text fields SHORT — 1-2 sentences max each. 
+No jargon. Simple actionable steps only. User wants a quick summary, not a deep dive.""",
+        "Detailed": """DETAIL LEVEL: Detailed. Give full context for each piece of feedback. 
+Include specific examples from the transcript. 2-4 sentences per field is appropriate.""",
+        "Expert": """DETAIL LEVEL: Expert. Go deep. Reference specific linguistic patterns, 
+acoustic data interpretation, and advanced frameworks. User is sophisticated and wants 
+professional-grade analysis. Use precise language. 3-5 sentences per field.""",
+    }
+    detail_section = detail_instructions.get(feedback_detail, detail_instructions["Detailed"])
+
     if pre_scores is None:
         pre_scores = {"filler": 50, "delivery": 50, "structure": 50, "vocab": 50, "confidence": 50}
 
     return f"""You are an elite AI speech coach with deep memory of this user's journey. Return ONLY valid JSON — no extra text.
+
+## USER PREFERENCES (MANDATORY — follow these exactly)
+{style_section}
+{detail_section}
+
 {goal_section}
 {personality_section}
 {memory_section}
@@ -330,6 +361,14 @@ RULE 3: THE DAILY DRILL MUST BE DOABLE IN 2 MINUTES. Concrete exercise, e.g., "P
 RULE 4: THE MECHANICAL TIP MUST BE PHYSICAL AND SIMPLE. Body/voice mechanics only, e.g., "Take one slow breath in through your nose...".
 RULE 5: CONTENT ANALYSIS. Evaluate if they stayed on topic, had structure (opening, middle, end), and used specific examples. Give 1-2 sentences on their IDEAS.
 RULE 6: TONE MUST BE LIKE A SUPPORTIVE HUMAN COACH. Be warm, encouraging, and human.
+
+SUMMARY QUALITY RULES:
+- Do not write generic feedback. Every summary field must mention either a specific phrase from the transcript, the user's topic, or the exact speaking behavior detected.
+- Pick one bottleneck only. The priority_fix should name the highest-leverage issue for the next session, not list multiple problems.
+- Connect cause to effect. Explain how the behavior changed listener trust, clarity, energy, or persuasion.
+- Make the daily_drill operational: include the exact reps, timing, and success criterion.
+- If the transcript is short or thin, say that the main issue is low evidence/low elaboration and coach them to expand with one example.
+- Avoid vague compliments like "good job" unless followed by the specific behavior that made it good.
 
 Return ONLY this JSON, no other text:
 {{
@@ -475,6 +514,9 @@ class CoachingService:
             logger.warning("[CoachingService] No client — returning fallback")
             return self._fallback_report(focus_area, session_number, pre_computed_scores, speaking_goal)
 
+        coaching_style = (user_profile or {}).get("coaching_style", "Balanced")
+        feedback_detail = (user_profile or {}).get("feedback_detail", "Detailed")
+
         prompt = build_coaching_prompt(
             topic=topic,
             transcript_result=transcript_result,
@@ -486,6 +528,8 @@ class CoachingService:
             pre_scores=pre_computed_scores,
             session_history=session_history,
             speaking_goal=speaking_goal,
+            coaching_style=coaching_style,
+            feedback_detail=feedback_detail,
         )
 
         logger.info(f"[CoachingService] Generating report (focus: {focus_area}, goal: {speaking_goal})")

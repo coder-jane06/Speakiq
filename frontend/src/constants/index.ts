@@ -7,6 +7,8 @@ export const MAX_UPLOAD_SIZE_MB = 10
 export const MAX_UPLOAD_SIZE_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024
 
 export const API_URL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_URL ?? '')
+export const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY ?? ''
+export const APP_BASE_URL = import.meta.env.BASE_URL
 export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
