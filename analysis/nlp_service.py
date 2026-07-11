@@ -43,23 +43,46 @@ logger = logging.getLogger(__name__)
 # For text analysis running on thousands of words, this matters.
 # -------------------------------------------------------------
 FILLER_WORDS = {
-    # Hesitation sounds
-    "um", "uh", "er", "ah", "hmm",
+    # ── Hesitation sounds (universal) ─────────────────────────
+    "um", "uh", "er", "ah", "hmm", "hm",
 
-    # Verbal crutches
+    # ── Classic verbal crutches ───────────────────────────────
     "like", "basically", "literally", "actually", "honestly",
-    "seriously", "clearly", "obviously", "simply",
+    "seriously", "clearly", "obviously", "simply", "naturally",
+    "essentially", "totally", "definitely", "absolutely", "exactly",
+    "certainly", "frankly", "truthfully", "genuinely",
 
-    # Thinking phrases
+    # ── Meta-commentary / stalling openers ───────────────────
+    "so", "well", "right", "okay", "now", "yeah", "yep",
+    "alright", "anyway", "anyways", "oh", "oh well",
+
+    # ── Multi-word thinking phrases ───────────────────────────
     "you know", "i mean", "you see", "you get me",
     "know what i mean", "you know what i mean",
-
-    # Hedging (weaken your message — treated as fillers here)
-    "kind of", "sort of", "kinda", "sorta",
-
-    # Filler transitions
-    "right", "okay so", "so yeah", "and so", "so basically",
+    "if you will", "if you like", "as it were",
+    "so to speak", "per se", "in a sense",
     "at the end of the day", "the thing is",
+    "long story short", "to make a long story short",
+    "the fact of the matter is", "as a matter of fact",
+    "in all honesty", "to be fair", "to be honest",
+    "to tell you the truth", "in terms of",
+    "i was like", "she was like", "he was like",
+    "i'm going to be honest", "i just want to say",
+
+    # ── Hedging qualifiers (vagueness signals) ────────────────
+    "kind of", "sort of", "kinda", "sorta",
+    "a little bit", "a bit",
+
+    # ── Filler transitions ────────────────────────────────────
+    "okay so", "so yeah", "and so", "so basically",
+    "so then", "and then", "but then",
+    "going forward", "moving forward",
+    "at the same time",
+    "needless to say",
+
+    # ── Modern/Gen-Z speech fillers ───────────────────────────
+    "lowkey", "highkey", "no cap", "for real", "i feel",
+    "it's like", "that's like", "which is like",
 }
 
 # -------------------------------------------------------------
@@ -71,6 +94,7 @@ FILLER_WORDS = {
 #
 # Hedge words signal lack of confidence to the listener.
 # Great speakers minimize hedges when making key points.
+# This is especially damaging in DEBATER and INTERVIEWER modes.
 # -------------------------------------------------------------
 HEDGE_WORDS = {
     "maybe", "perhaps", "possibly", "probably", "might",
@@ -78,12 +102,27 @@ HEDGE_WORDS = {
     "i believe", "i feel like", "it seems", "it appears",
     "kind of", "sort of", "somewhat", "rather", "fairly",
     "quite", "a bit", "a little",
+    "i'm not sure but", "i could be wrong", "don't quote me",
+    "if i'm not mistaken", "to some extent", "in some ways",
+    "more or less", "more or less", "around", "roughly",
+    "approximately", "almost", "nearly",
+}
+
+# Power words: when these appear, they BOOST confidence scores.
+# Especially in DEBATER and ORATOR modes.
+POWER_WORDS = {
+    "clearly", "undeniably", "without doubt", "proven", "evidence shows",
+    "data confirms", "research demonstrates", "the fact is",
+    "i am certain", "this proves", "this demonstrates",
+    "the key insight", "most importantly", "crucially",
+    "fundamentally", "the bottom line",
 }
 
 # Phrases that indicate incomplete thoughts
 INCOMPLETE_INDICATORS = {
     "anyway", "whatever", "etc", "and stuff", "or something",
-    "or whatever", "and things like that",
+    "or whatever", "and things like that", "and so on",
+    "blah blah", "you know what i mean", "and whatnot",
 }
 
 
@@ -125,35 +164,25 @@ class NLPResult:
 
     # --- Vocabulary ---
     ttr_score: float = 0.0
-    # Type-Token Ratio = unique_words / total_words
-    # Measures vocabulary diversity.
-    # 0.3 = very repetitive (using same words over and over)
-    # 0.7 = very diverse vocabulary
-    # Native speakers in conversation: typically 0.4-0.6
-
     unique_word_count: int = 0
     total_word_count: int = 0
 
     # --- Hedging ---
     hedge_word_count: int = 0
     hedge_words_found: list[str] = field(default_factory=list)
-    # Which hedge words appeared — coaching can target these specifically
+
+    # --- Power / Authority Language ---
+    power_word_count: int = 0
+    # Counts assertive, authoritative phrases like "this proves", "the fact is"
+    # High power word count = confident speaker. Boosts confidence + vocab scores.
 
     # --- Sentence structure ---
     sentence_count: int = 0
     avg_sentence_length: float = 0.0
-    # Short sentences (< 8 words avg) = fragmented, incomplete thoughts
-    # Long sentences (> 25 words avg) = run-on, hard to follow
-    # Sweet spot: 12-18 words average
-
     incomplete_sentence_count: int = 0
-    # Sentences that trail off or end with fillers
 
     # --- Content quality ---
     top_words: list[str] = field(default_factory=list)
-    # Most frequent content words (excluding stop words like "the", "is")
-    # Reveals what topics the speaker actually covered
-
     word_count: int = 0
 
 
@@ -365,13 +394,26 @@ class NLPService:
 
             # --------------------------------------------------
             # STEP 6: Top content words
-            # Most frequent content words reveal topic coverage.
-            # Counter from collections counts occurrences.
             # --------------------------------------------------
             from collections import Counter
             word_freq  = Counter(content_tokens)
-            # most_common(8) = top 8 most frequent words
             top_words  = [word for word, _ in word_freq.most_common(8)]
+
+            # --------------------------------------------------
+            # STEP 6b: Power / Authority Word Detection
+            #
+            # Power words are assertive, confident phrases that
+            # signal authority to the listener. Unlike filler
+            # words (which hurt scores), power words BOOST the
+            # confidence and vocab scores.
+            # This is a key differentiator from generic speech tools.
+            # --------------------------------------------------
+            text_lower = transcript.lower()
+            power_count = 0
+            for pw in POWER_WORDS:
+                import re as _re
+                matches = _re.findall(r'\b' + _re.escape(pw) + r'\b', text_lower)
+                power_count += len(matches)
 
             result = NLPResult(
                 filler_count=filler_count,
@@ -383,6 +425,7 @@ class NLPService:
                 total_word_count=total_word_count,
                 hedge_word_count=hedge_count,
                 hedge_words_found=hedge_words_found,
+                power_word_count=power_count,
                 sentence_count=sentence_count,
                 avg_sentence_length=avg_sentence_length,
                 incomplete_sentence_count=incomplete_count,

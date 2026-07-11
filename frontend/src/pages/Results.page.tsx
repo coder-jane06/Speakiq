@@ -474,12 +474,17 @@ export default function ResultsPage() {
                   <CheckCircle2 size={17} className="text-emerald-600 dark:text-emerald-400" /> Core Strengths
                 </h3>
                 <p className="text-[14px] font-medium text-[var(--text-primary)] leading-relaxed mb-4">
-                  {(coaching.what_went_well as string) || "You demonstrated excellent presence and clear vocal delivery."}
+                  {(coaching.what_went_well as string) || 'You completed the session — consistency is everything.'}
                 </p>
               </div>
+              {/* Dynamic strength chips from scores */}
               <div className="flex flex-wrap gap-1.5 pt-2">
-                <span className="px-3 py-1 rounded-xl bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 font-extrabold text-[12px]">✓ Clear Delivery</span>
-                <span className="px-3 py-1 rounded-xl bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 font-extrabold text-[12px]">✓ Solid Confidence</span>
+                {scores.confidence >= 70 && <span className="px-3 py-1 rounded-xl bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 font-extrabold text-[12px]">✓ Confident Delivery</span>}
+                {scores.filler >= 75 && <span className="px-3 py-1 rounded-xl bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 font-extrabold text-[12px]">✓ Few Fillers</span>}
+                {scores.structure >= 70 && <span className="px-3 py-1 rounded-xl bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 font-extrabold text-[12px]">✓ Clear Structure</span>}
+                {scores.vocab >= 70 && <span className="px-3 py-1 rounded-xl bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 font-extrabold text-[12px]">✓ Strong Vocabulary</span>}
+                {scores.delivery >= 70 && <span className="px-3 py-1 rounded-xl bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 font-extrabold text-[12px]">✓ Solid Delivery</span>}
+                {Object.values(scores).every(v => v < 70) && <span className="px-3 py-1 rounded-xl bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 font-extrabold text-[12px]">✓ Showed Up</span>}
               </div>
             </div>
 
@@ -490,12 +495,17 @@ export default function ResultsPage() {
                   <AlertTriangle size={17} className="text-amber-600 dark:text-amber-400" /> Needs Improvement
                 </h3>
                 <p className="text-[14px] font-medium text-[var(--text-primary)] leading-relaxed mb-4">
-                  {(coaching.priority_fix as string) || "Focus on structuring your key transitions for maximum clarity."}
+                  {(coaching.priority_fix as string) || 'Keep practicing your weakest skill consistently.'}
                 </p>
               </div>
+              {/* Dynamic weak chips from scores */}
               <div className="flex flex-wrap gap-1.5 pt-2">
-                <span className="px-3 py-1 rounded-xl bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-extrabold text-[12px]">⚠ Structure Transitions</span>
-                <span className="px-3 py-1 rounded-xl bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-extrabold text-[12px]">⚠ Vocabulary Variety</span>
+                {scores.filler < 70 && <span className="px-3 py-1 rounded-xl bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-extrabold text-[12px]">⚠ Filler Words</span>}
+                {scores.structure < 70 && <span className="px-3 py-1 rounded-xl bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-extrabold text-[12px]">⚠ Answer Structure</span>}
+                {scores.vocab < 70 && <span className="px-3 py-1 rounded-xl bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-extrabold text-[12px]">⚠ Vocabulary Range</span>}
+                {scores.confidence < 70 && <span className="px-3 py-1 rounded-xl bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-extrabold text-[12px]">⚠ Confidence</span>}
+                {scores.delivery < 70 && <span className="px-3 py-1 rounded-xl bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-extrabold text-[12px]">⚠ Delivery Pace</span>}
+                {Object.values(scores).every(v => v >= 70) && <span className="px-3 py-1 rounded-xl bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 font-extrabold text-[12px]">✓ All Skills Above 70!</span>}
               </div>
             </div>
 
@@ -506,12 +516,14 @@ export default function ResultsPage() {
                   <Zap size={17} className="text-blue-600 dark:text-blue-400 fill-blue-500/20" /> Recommended Action
                 </h3>
                 <p className="text-[15px] font-extrabold text-[var(--text-primary)] leading-relaxed mb-2">
-                  {(coaching.daily_drill as string) || "Practice 2-minute timed delivery with structured pauses."}
+                  {(coaching.daily_drill as string) || 'Record yourself and listen back once to identify one thing to improve.'}
                 </p>
               </div>
               <div className="mt-4 pt-4 border-t border-blue-500/20 flex items-center justify-between text-[13px] font-bold text-blue-700 dark:text-blue-300">
-                <span>Estimated Impact:</span>
-                <span className="px-3 py-1 rounded-full text-[12px] font-extrabold shadow-md" style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}>+15% Score Boost</span>
+                <span>Focus Area:</span>
+                <span className="px-3 py-1 rounded-full text-[12px] font-extrabold shadow-md capitalize" style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}>
+                  {String((coaching as any).focus_area || 'Balanced Practice').replace(/_/g, ' ')}
+                </span>
               </div>
             </div>
           </div>
@@ -698,13 +710,15 @@ export default function ResultsPage() {
 
                   {isExp && (
                     <div className="mt-4 pt-3 border-t border-[var(--border)] text-[12px] space-y-2 text-[var(--text-secondary)] animate-fadeSlideUp">
-                      <p className="font-bold text-[var(--text-primary)]">Why this score?</p>
-                      <p className="text-[var(--text-secondary)]">Speech analysis evaluated rhythm and pause frequency during your response.</p>
-                      <p className="font-bold text-[var(--text-primary)] mt-2">AI Suggestions & Exercises:</p>
-                      <div className="flex flex-wrap gap-1">
-                        <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 font-semibold rounded border border-emerald-500/20">✓ Slow down delivery</span>
-                        <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 font-semibold rounded border border-blue-500/20">✓ Pause deliberately</span>
-                      </div>
+                      <p className="font-bold text-[var(--text-primary)]">AI Coaching Insight:</p>
+                      <p className="text-[var(--text-secondary)] leading-relaxed">
+                        {m.id === lowestKey
+                          ? (coaching.priority_fix as string) || 'This is your main improvement area for this session.'
+                          : (coaching.mechanical_tip as string) || 'Keep working on this dimension for consistent improvement.'}
+                      </p>
+                      {(coaching as any).micro_habit && (
+                        <p className="text-emerald-500 font-semibold mt-1">💡 Habit: {String((coaching as any).micro_habit)}</p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -898,14 +912,14 @@ export default function ResultsPage() {
             </span>
             <h3 className="text-[24px] font-bold mt-3 mb-2 text-[var(--text-primary)]">Ready for your next AI practice session?</h3>
             <p className="text-[14px] text-[var(--text-secondary)] font-medium max-w-[500px]">
-              Spend just 2 minutes practicing transition structures to boost your speech clarity score by up to 15%.
+              {(coaching as any).next_session_focus
+                ? `Your AI coach recommends focusing on: ${String((coaching as any).next_session_focus).replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} in your next session.`
+                : 'Keep the momentum going with your next speaking session.'}
             </p>
             <div className="flex items-center gap-4 mt-4 text-[12px] font-semibold text-[var(--text-tertiary)]">
-              <span>⏱ Est. Time: 2 mins</span>
+              <span>⏱ Est. Time: 1–2 mins</span>
               <span>•</span>
-              <span>🔥 Difficulty: Medium</span>
-              <span>•</span>
-              <span>🎯 Skills: Structure & Vocab</span>
+              <span>🎯 Next Focus: {String((coaching as any).next_session_focus || 'balanced practice').replace(/_/g, ' ')}</span>
             </div>
           </div>
 

@@ -11,29 +11,33 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings
 from supabase import Client, create_client
-from dotenv import dotenv_values
 
 logger = logging.getLogger(__name__)
 BASE_DIR = Path(__file__).resolve().parent
 
-# Fallback: load from frontend/.env if backend/.env is missing
-frontend_env = {}
-try:
-    frontend_env_path = BASE_DIR / "frontend" / ".env"
-    if frontend_env_path.exists():
-        frontend_env = dotenv_values(frontend_env_path)
-except Exception as e:
-    logger.warning(f"Could not load frontend .env: {e}")
-
 
 class Settings(BaseSettings):
+    # ── Authentication ─────────────────────────────────────────────────────────
+    # REQUIRED: Get this from Supabase Dashboard → Settings → API → JWT Secret
     supabase_jwt_secret: str = "super-secret-jwt-token-with-at-least-32-characters-long"
-    supabase_url: str = os.getenv("SUPABASE_URL") or frontend_env.get("VITE_SUPABASE_URL") or ""
-    supabase_service_key: str = os.getenv("SUPABASE_SERVICE_KEY") or frontend_env.get("VITE_SUPABASE_ANON_KEY") or ""
-    openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
-    anthropic_api_key: str = os.getenv("ANTHROPIC_API_KEY", "")
-    groq_api_key: str = os.getenv("GROQ_API_KEY", "")
-    environment: str = os.getenv("ENVIRONMENT", "development")
+
+    # ── Supabase ────────────────────────────────────────────────────────────────
+    supabase_url: str = ""
+    supabase_service_key: str = ""
+
+    # ── AI APIs ─────────────────────────────────────────────────────────────────
+    openai_api_key: str = ""
+    anthropic_api_key: str = ""
+    groq_api_key: str = ""
+
+    # ── Notifications ───────────────────────────────────────────────────────────
+    resend_api_key: str = ""
+    vapid_public_key: str = ""
+    vapid_private_key: str = ""
+    vapid_subject: str = "mailto:admin@speakiq.com"
+
+    # ── App ─────────────────────────────────────────────────────────────────────
+    environment: str = "development"
 
     class Config:
         env_file = ".env"
@@ -48,7 +52,9 @@ def get_settings() -> Settings:
 
 
 def get_db() -> Client:
-    """Returns a Supabase client using the service role key. Created per request to avoid stale httpx connection pools."""
+    """Returns a Supabase client using the service role key.
+    Created per request to avoid stale httpx connection pools.
+    The service key bypasses RLS — use only for server-side operations."""
     s = get_settings()
     if not s.supabase_url or not s.supabase_service_key:
         logger.warning("Supabase URL or Key is empty. Database queries will fail.")

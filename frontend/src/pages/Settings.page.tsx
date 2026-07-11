@@ -1,152 +1,390 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../services/supabase';
 import { API_URL } from '../constants';
-import { 
-  User, Sparkles, Monitor, Bell, Mic, Shield, Brain, HelpCircle, Info, 
-  Check, Download, Trash2, ChevronRight, Moon, Sun, 
-  RefreshCw, Laptop, ExternalLink, Edit3, X
+import {
+  User, Sparkles, Monitor, Bell, Mic, Shield, Brain, HelpCircle, Info,
+  Check, Download, Trash2, ChevronRight, Moon, Sun,
+  RefreshCw, Laptop, ExternalLink, Edit3, X, Save, AlertTriangle
 } from 'lucide-react';
 
+// ── Types ────────────────────────────────────────────────────────────────────
+interface ProfileStatus {
+  onboarding_complete: boolean;
+  speaking_goal: string;
+  display_name: string | null;
+  difficulty_tier: string;
+  recording_duration_secs: number;
+  coaching_style: string;
+  feedback_detail: string;
+  appearance_preferences: AppearancePrefs;
+  notification_preferences: NotificationPrefs;
+  audio_preferences: AudioPrefs;
+  preferred_pace_label: string;
+  preferred_feedback_label: string;
+}
+
+interface AppearancePrefs {
+  accentColor: string;
+  uiDensity: string;
+  roundedCorners: number;
+}
+
+interface NotificationPrefs {
+  dailyReminder: boolean;
+  weeklyReport: boolean;
+  achievements: boolean;
+  sessionCompletion: boolean;
+  streakAlerts: boolean;
+  email: boolean;
+  push: boolean;
+}
+
+interface AudioPrefs {
+  noiseCancellation: boolean;
+  sensitivity: number;
+  autoGain: boolean;
+  voiceEnhancement: boolean;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+async function getToken(): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ?? null;
+}
+
+async function patchPreferences(token: string, payload: Record<string, unknown>) {
+  const res = await fetch(`${API_URL}/dashboard/preferences`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error('Failed to save preferences');
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'aicoach' | 'appearance' | 'notifications' | 'audio' | 'privacy' | 'personalization' | 'help' | 'about'>('profile');
+  type TabId = 'profile' | 'aicoach' | 'appearance' | 'notifications' | 'audio' | 'privacy' | 'personalization' | 'help' | 'about';
+  const [activeTab, setActiveTab] = useState<TabId>('profile');
 
-  // Backend Profile State
-  const [displayName, setDisplayName] = useState<string>('');
+  // ── Loaded from backend ────────────────────────────────────────────────────
+  const [profile, setProfile] = useState<ProfileStatus | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+
+  // ── Profile tab ───────────────────────────────────────────────────────────
+  const [displayName, setDisplayName] = useState('');
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
+  const [profileSaveMsg, setProfileSaveMsg] = useState('');
 
-  // Interactive Settings State
+  // ── AI Coach tab ──────────────────────────────────────────────────────────
   const [coachingStyle, setCoachingStyle] = useState('Balanced');
   const [feedbackDetail, setFeedbackDetail] = useState('Detailed');
-  const [speakingGoal, setSpeakingGoal] = useState('Interviews');
-  const [difficulty, setDifficulty] = useState('Intermediate');
+  const [speakingGoal, setSpeakingGoal] = useState('general');
+  const [difficulty, setDifficulty] = useState('beginner');
+  const [savingAI, setSavingAI] = useState(false);
+  const [aiSaveMsg, setAiSaveMsg] = useState('');
 
+  // ── Appearance tab ────────────────────────────────────────────────────────
   const [accentColor, setAccentColor] = useState('green');
   const [uiDensity, setUiDensity] = useState('Comfortable');
   const [roundedCorners, setRoundedCorners] = useState(24);
+  const [savingAppearance, setSavingAppearance] = useState(false);
+  const [appearanceSaveMsg, setAppearanceSaveMsg] = useState('');
 
-  const [notifications, setNotifications] = useState({
-    dailyReminder: true,
-    weeklyReport: true,
-    achievements: true,
-    sessionCompletion: true,
-    streakAlerts: true,
-    email: false,
-    push: true,
+  // ── Notifications tab ─────────────────────────────────────────────────────
+  const [notifications, setNotifications] = useState<NotificationPrefs>({
+    dailyReminder: true, weeklyReport: true, achievements: true,
+    sessionCompletion: true, streakAlerts: true, email: false, push: true,
   });
+  const [savingNotif, setSavingNotif] = useState(false);
+  const [notifSaveMsg, setNotifSaveMsg] = useState('');
 
-  const [audioSettings, setAudioSettings] = useState({
-    mic: 'Default Microphone (Built-in Audio)',
-    noiseCancellation: true,
-    sensitivity: 75,
-    autoGain: true,
-    quality: 'HD 256kbps Studio',
-    voiceEnhancement: true,
-    livePreview: false,
+  // ── Audio tab ─────────────────────────────────────────────────────────────
+  const [audioSettings, setAudioSettings] = useState<AudioPrefs>({
+    noiseCancellation: true, sensitivity: 75, autoGain: true, voiceEnhancement: true,
   });
-
+  const [savingAudio, setSavingAudio] = useState(false);
+  const [audioSaveMsg, setAudioSaveMsg] = useState('');
   const [micTesting, setMicTesting] = useState(false);
   const [micLevel, setMicLevel] = useState(0);
+  const micStreamRef = useRef<MediaStream | null>(null);
+  const micAnalyzerRef = useRef<AnalyserNode | null>(null);
+  const micAnimRef = useRef<number>(0);
 
+  // ── Privacy tab ───────────────────────────────────────────────────────────
+  const [purgeConfirm, setPurgeConfirm] = useState(false);
+  const [purging, setPurging] = useState(false);
+  const [purgeMsg, setPurgeMsg] = useState('');
+  const [downloading, setDownloading] = useState(false);
+  const [resetConfirm, setResetConfirm] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [resetMsg, setResetMsg] = useState('');
 
-
-  // Fetch backend profile status
+  // ── Fetch profile from backend ────────────────────────────────────────────
   useEffect(() => {
-    async function fetchProfileData() {
+    async function fetchProfile() {
+      setLoadingProfile(true);
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        if (token) {
-          const res = await fetch(`${API_URL}/dashboard/profile-status`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+        const token = await getToken();
+        if (!token) return;
+        const res = await fetch(`${API_URL}/dashboard/profile-status`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data: ProfileStatus = await res.json();
+        setProfile(data);
+        // Hydrate local state from backend values
+        if (data.display_name) setDisplayName(data.display_name);
+        if (data.speaking_goal) setSpeakingGoal(data.speaking_goal);
+        if (data.difficulty_tier) setDifficulty(data.difficulty_tier);
+        if (data.coaching_style) setCoachingStyle(data.coaching_style);
+        if (data.feedback_detail) setFeedbackDetail(data.feedback_detail);
+        if (data.appearance_preferences) {
+          setAccentColor(data.appearance_preferences.accentColor ?? 'green');
+          setUiDensity(data.appearance_preferences.uiDensity ?? 'Comfortable');
+          setRoundedCorners(data.appearance_preferences.roundedCorners ?? 24);
+        }
+        if (data.notification_preferences) {
+          setNotifications(data.notification_preferences);
+        }
+        if (data.audio_preferences) {
+          setAudioSettings({
+            noiseCancellation: data.audio_preferences.noiseCancellation ?? true,
+            sensitivity: data.audio_preferences.sensitivity ?? 75,
+            autoGain: data.audio_preferences.autoGain ?? true,
+            voiceEnhancement: data.audio_preferences.voiceEnhancement ?? true,
           });
-          if (res.ok) {
-            const data = await res.json();
-            if (data.display_name) {
-              setDisplayName(data.display_name);
-            }
-            if (data.speaking_goal) {
-              setSpeakingGoal(data.speaking_goal);
-            }
-            if (data.difficulty_tier) {
-              setDifficulty(data.difficulty_tier);
-            }
-          }
         }
       } catch (e) {
-        console.error("Error fetching profile status:", e);
+        console.error('Error fetching profile:', e);
+      } finally {
+        setLoadingProfile(false);
       }
     }
-    fetchProfileData();
+    fetchProfile();
   }, []);
 
-  const saveProfileBackend = async (newName: string) => {
+  // ── Save helpers ──────────────────────────────────────────────────────────
+  const showMsg = (setter: (m: string) => void, msg: string) => {
+    setter(msg);
+    setTimeout(() => setter(''), 3000);
+  };
+
+  const saveDisplayName = async () => {
+    if (!tempName.trim()) return;
     setSavingProfile(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (token) {
-        await fetch(`${API_URL}/dashboard/onboarding`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            display_name: newName,
-            speaking_goal: speakingGoal,
-            difficulty_tier: difficulty.toLowerCase(),
-            recording_duration_secs: 60
-          })
-        });
-        setDisplayName(newName);
-      }
+      const token = await getToken();
+      if (!token) throw new Error('Not authenticated');
+      await patchPreferences(token, { display_name: tempName.trim() });
+      setDisplayName(tempName.trim());
+      setIsEditingName(false);
+      showMsg(setProfileSaveMsg, '✓ Name saved');
     } catch (e) {
-      console.error("Error updating profile:", e);
+      showMsg(setProfileSaveMsg, '✗ Failed to save');
     } finally {
       setSavingProfile(false);
-      setIsEditingName(false);
     }
   };
 
-  const toggleNotif = (key: keyof typeof notifications) => {
-    setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
+  const saveAICoach = async () => {
+    setSavingAI(true);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error('Not authenticated');
+      await patchPreferences(token, {
+        coaching_style: coachingStyle,
+        feedback_detail: feedbackDetail,
+        speaking_goal: speakingGoal,
+        difficulty_tier: difficulty,
+      });
+      showMsg(setAiSaveMsg, '✓ AI Coach preferences saved');
+    } catch (e) {
+      showMsg(setAiSaveMsg, '✗ Failed to save');
+    } finally {
+      setSavingAI(false);
+    }
   };
 
-  const toggleAudio = (key: keyof typeof audioSettings) => {
-    setAudioSettings(prev => ({ ...prev, [key]: !prev[key] }));
+  const saveAppearance = async () => {
+    setSavingAppearance(true);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error('Not authenticated');
+      await patchPreferences(token, {
+        appearance_preferences: { accentColor, uiDensity, roundedCorners },
+      });
+      showMsg(setAppearanceSaveMsg, '✓ Appearance saved');
+    } catch (e) {
+      showMsg(setAppearanceSaveMsg, '✗ Failed to save');
+    } finally {
+      setSavingAppearance(false);
+    }
   };
 
+  const saveNotifications = async () => {
+    setSavingNotif(true);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error('Not authenticated');
+      await patchPreferences(token, { notification_preferences: notifications });
+      showMsg(setNotifSaveMsg, '✓ Notifications saved');
+    } catch (e) {
+      showMsg(setNotifSaveMsg, '✗ Failed to save');
+    } finally {
+      setSavingNotif(false);
+    }
+  };
 
+  const saveAudioSettings = async () => {
+    setSavingAudio(true);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error('Not authenticated');
+      await patchPreferences(token, { audio_preferences: audioSettings });
+      showMsg(setAudioSaveMsg, '✓ Audio settings saved');
+    } catch (e) {
+      showMsg(setAudioSaveMsg, '✗ Failed to save');
+    } finally {
+      setSavingAudio(false);
+    }
+  };
 
-  const handleMicTest = () => {
-    setMicTesting(true);
-    let count = 0;
-    const interval = setInterval(() => {
-      setMicLevel(Math.floor(Math.random() * 80) + 20);
-      count++;
-      if (count > 15) {
-        clearInterval(interval);
+  // ── Real microphone test ───────────────────────────────────────────────────
+  const startMicTest = useCallback(async () => {
+    if (micTesting) {
+      // Stop the test
+      if (micStreamRef.current) {
+        micStreamRef.current.getTracks().forEach(t => t.stop());
+        micStreamRef.current = null;
+      }
+      cancelAnimationFrame(micAnimRef.current);
+      setMicTesting(false);
+      setMicLevel(0);
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      micStreamRef.current = stream;
+      const audioCtx = new AudioContext();
+      const source = audioCtx.createMediaStreamSource(stream);
+      const analyzer = audioCtx.createAnalyser();
+      analyzer.fftSize = 256;
+      source.connect(analyzer);
+      micAnalyzerRef.current = analyzer;
+      setMicTesting(true);
+
+      const data = new Uint8Array(analyzer.frequencyBinCount);
+      const tick = () => {
+        analyzer.getByteFrequencyData(data);
+        const avg = data.reduce((s, v) => s + v, 0) / data.length;
+        setMicLevel(Math.min(100, Math.round(avg * 2)));
+        micAnimRef.current = requestAnimationFrame(tick);
+      };
+      tick();
+
+      // Auto-stop after 10 seconds
+      setTimeout(() => {
+        stream.getTracks().forEach(t => t.stop());
+        cancelAnimationFrame(micAnimRef.current);
         setMicTesting(false);
         setMicLevel(0);
-      }
-    }, 150);
+      }, 10000);
+    } catch (e) {
+      alert('Could not access microphone. Please allow microphone permission in your browser.');
+      setMicTesting(false);
+    }
+  }, [micTesting]);
+
+  // ── Privacy actions ────────────────────────────────────────────────────────
+  const handleDownloadData = async () => {
+    setDownloading(true);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error('Not authenticated');
+      const res = await fetch(`${API_URL}/dashboard/export`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Export failed');
+      const data = await res.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `speakiq-export-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert('Failed to export data. Please try again.');
+    } finally {
+      setDownloading(false);
+    }
   };
 
-  // Derive dynamic user details
-  const userEmail = user?.email || 'shaurya@example.com';
-  const emailName = user?.email ? user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1) : '';
-  const resolvedName = displayName || user?.user_metadata?.full_name || user?.user_metadata?.display_name || emailName || 'Shaurya';
-  const userInitials = resolvedName.charAt(0).toUpperCase() || 'S';
-  const joinDate = user?.created_at 
+  const handlePurgeAudio = async () => {
+    if (!purgeConfirm) { setPurgeConfirm(true); return; }
+    setPurging(true);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error('Not authenticated');
+      const res = await fetch(`${API_URL}/dashboard/purge-audio`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Purge failed');
+      showMsg(setPurgeMsg, '✓ Audio recordings purged');
+      setPurgeConfirm(false);
+    } catch (e) {
+      showMsg(setPurgeMsg, '✗ Failed to purge');
+    } finally {
+      setPurging(false);
+    }
+  };
+
+  const handleResetPersonalization = async () => {
+    if (!resetConfirm) { setResetConfirm(true); return; }
+    setResetting(true);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error('Not authenticated');
+      const res = await fetch(`${API_URL}/dashboard/reset-personalization`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Reset failed');
+      showMsg(setResetMsg, '✓ AI memory reset');
+      setResetConfirm(false);
+    } catch (e) {
+      showMsg(setResetMsg, '✗ Failed to reset');
+    } finally {
+      setResetting(false);
+    }
+  };
+
+  // ── Derived display values ─────────────────────────────────────────────────
+  const userEmail = user?.email || '';
+  const emailName = user?.email
+    ? user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1)
+    : '';
+  const resolvedName = displayName || user?.user_metadata?.full_name || emailName || 'Speaker';
+  const userInitials = resolvedName.charAt(0).toUpperCase();
+  const joinDate = user?.created_at
     ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-    : 'June 2026';
+    : '';
+
+  const goalLabels: Record<string, string> = {
+    general: 'General', orator: 'Public Speaking', presenter: 'Presentations',
+    interviewer: 'Interviews', debater: 'Debates',
+  };
+  const diffLabels: Record<string, string> = {
+    beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced',
+  };
 
   const navItems = [
     { id: 'profile', label: 'Profile & Account', icon: User },
@@ -157,19 +395,26 @@ export default function SettingsPage() {
     { id: 'privacy', label: 'Privacy & Security', icon: Shield },
     { id: 'personalization', label: 'AI Personalization', icon: Brain },
     { id: 'help', label: 'Help & Support', icon: HelpCircle },
-    { id: 'about', label: 'About Fluently', icon: Info },
+    { id: 'about', label: 'About SpeakIQ', icon: Info },
   ] as const;
+
+  if (loadingProfile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-base)' }}>
+        <div className="w-8 h-8 rounded-full border-[3px] border-[var(--border-md)] border-t-[var(--accent)] animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen pb-24 pt-8 px-4 sm:px-8 relative overflow-x-hidden animate-fadeSlideUp" style={{ background: 'var(--bg-base)' }}>
-      {/* Subtle green ambient light */}
-      <div 
+      <div
         className="fixed top-1/4 left-1/2 -translate-x-1/2 w-[900px] h-[700px] rounded-full pointer-events-none z-0 opacity-25"
         style={{ background: 'radial-gradient(circle, rgba(62,140,0,0.1) 0%, transparent 70%)', filter: 'blur(100px)' }}
       />
 
       <div className="max-w-[1200px] mx-auto relative z-10">
-        
+
         {/* Header */}
         <header className="mb-8 pb-4 border-b border-[var(--border)]">
           <h1 className="text-[32px] sm:text-[36px] font-[800] text-[var(--text-primary)] tracking-tight" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>
@@ -180,10 +425,9 @@ export default function SettingsPage() {
           </p>
         </header>
 
-        {/* ── 2-COLUMN SETTINGS LAYOUT ── */}
         <div className="flex flex-col lg:flex-row gap-8 items-start">
 
-          {/* Left Sidebar Navigation (280px) */}
+          {/* Sidebar */}
           <aside className="w-full lg:w-[280px] shrink-0 bg-[var(--bg-card)] border border-[var(--border)] rounded-[28px] p-3 shadow-xl sticky top-8">
             <nav className="space-y-1">
               {navItems.map((item) => {
@@ -194,8 +438,8 @@ export default function SettingsPage() {
                     key={item.id}
                     onClick={() => setActiveTab(item.id)}
                     className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-[14px] font-bold transition-all cursor-pointer ${
-                      isActive 
-                        ? 'bg-[var(--accent)] text-[var(--accent-text)] shadow-md' 
+                      isActive
+                        ? 'bg-[var(--accent)] text-[var(--accent-text)] shadow-md'
                         : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
                     }`}
                   >
@@ -212,24 +456,24 @@ export default function SettingsPage() {
             </nav>
           </aside>
 
-          {/* Right Content Panel */}
+          {/* Content Panel */}
           <div className="flex-1 w-full space-y-8">
 
-            {/* ── SECTION 1 — Profile ── */}
-            {(activeTab === 'profile' || activeTab as string === 'all') && (
+            {/* ── Profile & Account ── */}
+            {activeTab === 'profile' && (
               <section className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[28px] p-8 shadow-xl space-y-6">
                 <div className="flex items-center justify-between pb-4 border-b border-[var(--border)]">
                   <div>
                     <h2 className="text-[20px] font-bold text-[var(--text-primary)] tracking-tight">User Profile</h2>
-                    <p className="text-[13px] text-[var(--text-tertiary)] font-medium">Manage your verified account information and subscription tier.</p>
+                    <p className="text-[13px] text-[var(--text-tertiary)] font-medium">Manage your account information.</p>
                   </div>
-                  <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[12px] font-extrabold flex items-center gap-1">
-                    <Sparkles size={13} /> PRO Member
-                  </span>
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center gap-6">
-                  <div className="relative group cursor-pointer" onClick={() => { setTempName(resolvedName); setIsEditingName(true); }}>
+                  <div
+                    className="relative group cursor-pointer"
+                    onClick={() => { setTempName(resolvedName); setIsEditingName(true); }}
+                  >
                     <div className="w-20 h-20 rounded-full bg-[var(--accent)] text-[var(--accent-text)] font-extrabold text-[26px] flex items-center justify-center shadow-md border-4 border-[var(--bg-card)]">
                       {userInitials}
                     </div>
@@ -245,14 +489,17 @@ export default function SettingsPage() {
                           type="text"
                           value={tempName}
                           onChange={e => setTempName(e.target.value)}
+                          onKeyDown={e => e.key === 'Enter' && saveDisplayName()}
                           className="px-3 py-1.5 rounded-xl border border-emerald-500/40 bg-[var(--bg-hover)] text-[16px] font-bold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full"
                           placeholder="Enter your name"
+                          maxLength={80}
                         />
                         <button
-                          onClick={() => saveProfileBackend(tempName)}
+                          onClick={saveDisplayName}
                           disabled={savingProfile}
-                          className="px-3 py-1.5 rounded-xl bg-emerald-500 text-black text-[12px] font-bold shrink-0 cursor-pointer"
+                          className="px-3 py-1.5 rounded-xl bg-emerald-500 text-black text-[12px] font-bold shrink-0 cursor-pointer flex items-center gap-1"
                         >
+                          <Save size={12} />
                           {savingProfile ? '...' : 'Save'}
                         </button>
                         <button
@@ -270,30 +517,22 @@ export default function SettingsPage() {
                         </button>
                       </h3>
                     )}
-                    
-                    {/* Live Auth Email */}
+                    {profileSaveMsg && (
+                      <p className={`text-[13px] font-bold ${profileSaveMsg.startsWith('✓') ? 'text-emerald-400' : 'text-red-400'}`}>{profileSaveMsg}</p>
+                    )}
                     <p className="text-[14px] text-[var(--text-secondary)] font-semibold flex items-center gap-1.5">
                       <span>{userEmail}</span>
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" title="Verified Auth Session" />
                     </p>
-
-                    <p className="text-[12px] text-[var(--text-tertiary)] font-medium pt-1">
-                      Joined {joinDate} • Premium Coach Access Active
-                    </p>
+                    {joinDate && (
+                      <p className="text-[12px] text-[var(--text-tertiary)] font-medium pt-1">Joined {joinDate}</p>
+                    )}
                   </div>
-
-                  <button 
-                    onClick={() => { setTempName(resolvedName); setIsEditingName(true); }}
-                    className="px-5 py-2.5 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] font-bold text-[13px] transition-all cursor-pointer shadow-2xs"
-                  >
-                    Edit Profile
-                  </button>
                 </div>
               </section>
             )}
 
-
-            {/* ── SECTION 2 — AI Coach Preferences ── */}
+            {/* ── AI Coach Preferences ── */}
             {activeTab === 'aicoach' && (
               <section className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[28px] p-8 shadow-xl space-y-6">
                 <div>
@@ -318,6 +557,11 @@ export default function SettingsPage() {
                         </button>
                       ))}
                     </div>
+                    <p className="text-[11px] text-[var(--text-tertiary)] mt-1.5 font-medium">
+                      {coachingStyle === 'Encouraging' && 'Positive reinforcement focus — ideal for building confidence.'}
+                      {coachingStyle === 'Balanced' && 'Mix of praise and critique — the default for most speakers.'}
+                      {coachingStyle === 'Strict' && 'Detailed critiques with high standards — for advanced improvement.'}
+                    </p>
                   </div>
 
                   {/* Feedback Detail */}
@@ -334,45 +578,74 @@ export default function SettingsPage() {
                         </button>
                       ))}
                     </div>
+                    <p className="text-[11px] text-[var(--text-tertiary)] mt-1.5 font-medium">
+                      {feedbackDetail === 'Basic' && 'Key scores and a single top tip.'}
+                      {feedbackDetail === 'Detailed' && 'Full breakdown with specific examples and exercises.'}
+                      {feedbackDetail === 'Expert' && 'In-depth linguistic and acoustic analysis with advanced coaching.'}
+                    </p>
                   </div>
 
                   {/* Speaking Goal */}
                   <div>
                     <label className="block text-[13px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Primary Speaking Goal</label>
                     <div className="flex flex-wrap gap-2">
-                      {['Interviews', 'Public Speaking', 'Presentations', 'Debates'].map(goal => (
+                      {[
+                        { value: 'general', label: 'General' },
+                        { value: 'interviewer', label: 'Interviews' },
+                        { value: 'orator', label: 'Public Speaking' },
+                        { value: 'presenter', label: 'Presentations' },
+                        { value: 'debater', label: 'Debates' },
+                      ].map(g => (
                         <button
-                          key={goal}
-                          onClick={() => { setSpeakingGoal(goal); saveProfileBackend(resolvedName); }}
-                          className={`px-4 py-2 rounded-xl font-bold text-[13px] border transition-all cursor-pointer ${speakingGoal === goal ? 'bg-[var(--accent)] text-[var(--accent-text)] border-transparent' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border)] hover:bg-[var(--bg-card-hover)]'}`}
+                          key={g.value}
+                          onClick={() => setSpeakingGoal(g.value)}
+                          className={`px-4 py-2 rounded-xl font-bold text-[13px] border transition-all cursor-pointer ${speakingGoal === g.value ? 'bg-[var(--accent)] text-[var(--accent-text)] border-transparent' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border)] hover:bg-[var(--bg-card-hover)]'}`}
                         >
-                          {goal}
+                          {g.label}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Preferred Difficulty */}
+                  {/* Difficulty */}
                   <div>
                     <label className="block text-[13px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Preferred Difficulty</label>
                     <div className="flex flex-wrap gap-2">
-                      {['Beginner', 'Intermediate', 'Advanced'].map(diff => (
+                      {[
+                        { value: 'beginner', label: 'Beginner' },
+                        { value: 'intermediate', label: 'Intermediate' },
+                        { value: 'advanced', label: 'Advanced' },
+                      ].map(d => (
                         <button
-                          key={diff}
-                          onClick={() => { setDifficulty(diff); saveProfileBackend(resolvedName); }}
-                          className={`px-4 py-2 rounded-xl font-bold text-[13px] border transition-all cursor-pointer ${difficulty === diff ? 'bg-[var(--accent)] text-[var(--accent-text)] border-transparent' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border)] hover:bg-[var(--bg-card-hover)]'}`}
+                          key={d.value}
+                          onClick={() => setDifficulty(d.value)}
+                          className={`px-4 py-2 rounded-xl font-bold text-[13px] border transition-all cursor-pointer ${difficulty === d.value ? 'bg-[var(--accent)] text-[var(--accent-text)] border-transparent' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border)] hover:bg-[var(--bg-card-hover)]'}`}
                         >
-                          {diff}
+                          {d.label}
                         </button>
                       ))}
                     </div>
                   </div>
                 </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-[var(--border)]">
+                  {aiSaveMsg && (
+                    <p className={`text-[13px] font-bold ${aiSaveMsg.startsWith('✓') ? 'text-emerald-400' : 'text-red-400'}`}>{aiSaveMsg}</p>
+                  )}
+                  <button
+                    onClick={saveAICoach}
+                    disabled={savingAI}
+                    className="ml-auto px-5 py-2.5 rounded-xl font-bold text-[13px] cursor-pointer flex items-center gap-2 transition-all"
+                    style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}
+                  >
+                    <Save size={14} />
+                    {savingAI ? 'Saving...' : 'Save AI Preferences'}
+                  </button>
+                </div>
               </section>
             )}
 
-
-            {/* ── SECTION 3 — Appearance ── */}
+            {/* ── Appearance & UI ── */}
             {activeTab === 'appearance' && (
               <section className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[28px] p-8 shadow-xl space-y-6">
                 <div>
@@ -383,7 +656,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="space-y-6">
-                  {/* Theme Selector */}
+                  {/* Theme */}
                   <div className="flex items-center justify-between p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)]">
                     <div>
                       <p className="text-[15px] font-bold text-[var(--text-primary)]">Color Theme</p>
@@ -401,8 +674,8 @@ export default function SettingsPage() {
                   {/* Accent Color */}
                   <div className="flex items-center justify-between p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)]">
                     <div>
-                      <p className="text-[15px] font-bold text-[var(--text-primary)]">Accent Color Highlight</p>
-                      <p className="text-[12px] text-[var(--text-tertiary)] font-medium">Choose primary branding accent color</p>
+                      <p className="text-[15px] font-bold text-[var(--text-primary)]">Accent Color</p>
+                      <p className="text-[12px] text-[var(--text-tertiary)] font-medium">Choose primary branding highlight color (saved to profile)</p>
                     </div>
                     <div className="flex items-center gap-2">
                       {[
@@ -440,15 +713,15 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  {/* Rounded Corners Slider */}
+                  {/* Rounded Corners */}
                   <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] space-y-3">
                     <div className="flex justify-between items-center">
-                      <p className="text-[15px] font-bold text-[var(--text-primary)]">Rounded Corners Radius</p>
+                      <p className="text-[15px] font-bold text-[var(--text-primary)]">Border Radius</p>
                       <span className="text-[13px] font-extrabold text-[var(--text-primary)] bg-[var(--bg-card)] px-2.5 py-0.5 rounded-md border border-[var(--border)]">{roundedCorners}px</span>
                     </div>
                     <input
                       type="range"
-                      min="16"
+                      min="8"
                       max="32"
                       value={roundedCorners}
                       onChange={e => setRoundedCorners(Number(e.target.value))}
@@ -456,11 +729,25 @@ export default function SettingsPage() {
                     />
                   </div>
                 </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-[var(--border)]">
+                  {appearanceSaveMsg && (
+                    <p className={`text-[13px] font-bold ${appearanceSaveMsg.startsWith('✓') ? 'text-emerald-400' : 'text-red-400'}`}>{appearanceSaveMsg}</p>
+                  )}
+                  <button
+                    onClick={saveAppearance}
+                    disabled={savingAppearance}
+                    className="ml-auto px-5 py-2.5 rounded-xl font-bold text-[13px] cursor-pointer flex items-center gap-2"
+                    style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}
+                  >
+                    <Save size={14} />
+                    {savingAppearance ? 'Saving...' : 'Save Appearance'}
+                  </button>
+                </div>
               </section>
             )}
 
-
-            {/* ── SECTION 4 — Notifications ── */}
+            {/* ── Notifications ── */}
             {activeTab === 'notifications' && (
               <section className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[28px] p-8 shadow-xl space-y-6">
                 <div>
@@ -485,61 +772,90 @@ export default function SettingsPage() {
                         <p className="text-[15px] font-bold text-[var(--text-primary)]">{item.title}</p>
                         <p className="text-[12px] text-[var(--text-tertiary)] font-medium">{item.desc}</p>
                       </div>
-                      
                       <button
-                        onClick={() => toggleNotif(item.key as keyof typeof notifications)}
-                        className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${notifications[item.key as keyof typeof notifications] ? 'bg-emerald-500' : 'bg-[var(--bg-hover)] border border-[var(--border)]'}`}
+                        onClick={() => setNotifications(prev => ({ ...prev, [item.key]: !prev[item.key as keyof NotificationPrefs] }))}
+                        className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${notifications[item.key as keyof NotificationPrefs] ? 'bg-emerald-500' : 'bg-[var(--bg-hover)] border border-[var(--border)]'}`}
                       >
-                        <div className={`w-4 h-4 rounded-full bg-black absolute top-1 transition-transform ${notifications[item.key as keyof typeof notifications] ? 'left-7' : 'left-1'}`} />
+                        <div className={`w-4 h-4 rounded-full bg-black absolute top-1 transition-transform ${notifications[item.key as keyof NotificationPrefs] ? 'left-7' : 'left-1'}`} />
                       </button>
                     </div>
                   ))}
                 </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-[var(--border)]">
+                  {notifSaveMsg && (
+                    <p className={`text-[13px] font-bold ${notifSaveMsg.startsWith('✓') ? 'text-emerald-400' : 'text-red-400'}`}>{notifSaveMsg}</p>
+                  )}
+                  <button
+                    onClick={saveNotifications}
+                    disabled={savingNotif}
+                    className="ml-auto px-5 py-2.5 rounded-xl font-bold text-[13px] cursor-pointer flex items-center gap-2"
+                    style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}
+                  >
+                    <Save size={14} />
+                    {savingNotif ? 'Saving...' : 'Save Notifications'}
+                  </button>
+                </div>
               </section>
             )}
 
-
-            {/* ── SECTION 5 — Audio & Recording ── */}
+            {/* ── Audio & Recording ── */}
             {activeTab === 'audio' && (
               <section className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[28px] p-8 shadow-xl space-y-6">
                 <div>
                   <h2 className="text-[20px] font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
-                    <Mic size={20} className="text-purple-400" /> Audio & Microphone Hardware
+                    <Mic size={20} className="text-purple-400" /> Audio & Microphone
                   </h2>
-                  <p className="text-[13px] text-[var(--text-tertiary)] font-medium">Configure microphone input sensitivity and active AI noise cancellation.</p>
+                  <p className="text-[13px] text-[var(--text-tertiary)] font-medium">Configure microphone input and audio processing preferences.</p>
                 </div>
 
                 <div className="space-y-6">
-                  {/* Microphone Test Panel */}
+                  {/* Real Microphone Test */}
                   <div className="p-5 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div>
-                      <p className="text-[15px] font-bold text-purple-300">Microphone Input Check</p>
-                      <p className="text-[12px] text-purple-400 font-medium">Verify live audio levels before starting sessions</p>
+                      <p className="text-[15px] font-bold text-purple-300">Live Microphone Test</p>
+                      <p className="text-[12px] text-purple-400 font-medium">Verify real audio input levels before starting sessions</p>
                     </div>
-
                     <div className="flex items-center gap-4 w-full sm:w-auto">
                       {micTesting && (
                         <div className="flex-1 sm:w-32 h-3 bg-purple-950 rounded-full overflow-hidden border border-purple-500/30">
-                          <div className="h-full bg-purple-400 transition-all duration-100" style={{ width: `${micLevel}%` }} />
+                          <div
+                            className="h-full bg-purple-400 transition-all duration-75 rounded-full"
+                            style={{ width: `${micLevel}%` }}
+                          />
                         </div>
                       )}
                       <button
-                        onClick={handleMicTest}
-                        disabled={micTesting}
-                        className="px-4 py-2 rounded-xl bg-purple-500 text-black font-bold text-[13px] hover:bg-purple-400 transition-all cursor-pointer shadow-2xs shrink-0"
+                        onClick={startMicTest}
+                        className={`px-4 py-2 rounded-xl font-bold text-[13px] transition-all cursor-pointer shadow-2xs shrink-0 ${micTesting ? 'bg-red-500 text-white' : 'bg-purple-500 text-black hover:bg-purple-400'}`}
                       >
-                        {micTesting ? 'Testing…' : 'Test Microphone 🎙️'}
+                        {micTesting ? '⏹ Stop Test' : '🎙️ Test Microphone'}
                       </button>
                     </div>
+                  </div>
+
+                  {/* Sensitivity Slider */}
+                  <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] space-y-3">
+                    <div className="flex justify-between items-center">
+                      <p className="text-[15px] font-bold text-[var(--text-primary)]">Microphone Sensitivity</p>
+                      <span className="text-[13px] font-extrabold text-[var(--text-primary)] bg-[var(--bg-card)] px-2.5 py-0.5 rounded-md border border-[var(--border)]">{audioSettings.sensitivity}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="10"
+                      max="100"
+                      value={audioSettings.sensitivity}
+                      onChange={e => setAudioSettings(prev => ({ ...prev, sensitivity: Number(e.target.value) }))}
+                      className="w-full accent-purple-500 cursor-pointer"
+                    />
                   </div>
 
                   {/* Audio Toggles */}
                   <div className="divide-y divide-[var(--border)]">
                     {[
-                      { key: 'noiseCancellation', title: 'Noise Cancellation', desc: 'Active AI suppression of background noise' },
+                      { key: 'noiseCancellation', title: 'Noise Cancellation', desc: 'Suppress background noise during recording' },
                       { key: 'autoGain', title: 'Auto Gain Control', desc: 'Normalize voice volume dynamically' },
-                      { key: 'voiceEnhancement', title: 'Voice Enhancement', desc: 'Spatial AI pitch & tone tuning' },
-                      { key: 'livePreview', title: 'Live Audio Preview', desc: 'Monitor microphone input in real time' },
+                      { key: 'voiceEnhancement', title: 'Voice Enhancement', desc: 'Boost vocal clarity and tone' },
                     ].map(item => (
                       <div key={item.key} className="py-4 flex items-center justify-between first:pt-0 last:pb-0">
                         <div>
@@ -547,129 +863,184 @@ export default function SettingsPage() {
                           <p className="text-[12px] text-[var(--text-tertiary)] font-medium">{item.desc}</p>
                         </div>
                         <button
-                          onClick={() => toggleAudio(item.key as keyof typeof audioSettings)}
-                          className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${audioSettings[item.key as keyof typeof audioSettings] ? 'bg-emerald-500' : 'bg-[var(--bg-hover)] border border-[var(--border)]'}`}
+                          onClick={() => setAudioSettings(prev => ({ ...prev, [item.key]: !prev[item.key as keyof AudioPrefs] }))}
+                          className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${audioSettings[item.key as keyof AudioPrefs] ? 'bg-emerald-500' : 'bg-[var(--bg-hover)] border border-[var(--border)]'}`}
                         >
-                          <div className={`w-4 h-4 rounded-full bg-black absolute top-1 transition-transform ${audioSettings[item.key as keyof typeof audioSettings] ? 'left-7' : 'left-1'}`} />
+                          <div className={`w-4 h-4 rounded-full bg-black absolute top-1 transition-transform ${audioSettings[item.key as keyof AudioPrefs] ? 'left-7' : 'left-1'}`} />
                         </button>
                       </div>
                     ))}
                   </div>
                 </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-[var(--border)]">
+                  {audioSaveMsg && (
+                    <p className={`text-[13px] font-bold ${audioSaveMsg.startsWith('✓') ? 'text-emerald-400' : 'text-red-400'}`}>{audioSaveMsg}</p>
+                  )}
+                  <button
+                    onClick={saveAudioSettings}
+                    disabled={savingAudio}
+                    className="ml-auto px-5 py-2.5 rounded-xl font-bold text-[13px] cursor-pointer flex items-center gap-2"
+                    style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}
+                  >
+                    <Save size={14} />
+                    {savingAudio ? 'Saving...' : 'Save Audio Settings'}
+                  </button>
+                </div>
               </section>
             )}
 
-
-            {/* ── SECTION 6 — Privacy & Security ── */}
+            {/* ── Privacy & Security ── */}
             {activeTab === 'privacy' && (
               <section className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[28px] p-8 shadow-xl space-y-6">
                 <div>
                   <h2 className="text-[20px] font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
                     <Shield size={20} className="text-emerald-400" /> Privacy & Security
                   </h2>
-                  <p className="text-[13px] text-[var(--text-tertiary)] font-medium">Manage security options, active sessions, and data exports.</p>
+                  <p className="text-[13px] text-[var(--text-tertiary)] font-medium">Manage your data, exports, and account security.</p>
                 </div>
 
                 <div className="space-y-4">
+                  {/* Download Data */}
                   <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] flex items-center justify-between">
                     <div>
                       <p className="text-[15px] font-bold text-[var(--text-primary)]">Download My Data</p>
-                      <p className="text-[12px] text-[var(--text-tertiary)] font-medium">Export all audio transcripts and performance scores in JSON format</p>
+                      <p className="text-[12px] text-[var(--text-tertiary)] font-medium">Export all transcripts and performance scores as JSON</p>
                     </div>
-                    <button className="px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] font-bold text-[13px] hover:bg-[var(--bg-card-hover)] cursor-pointer flex items-center gap-1.5">
-                      <Download size={15} /> Download Data
+                    <button
+                      onClick={handleDownloadData}
+                      disabled={downloading}
+                      className="px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] font-bold text-[13px] hover:bg-[var(--bg-card-hover)] cursor-pointer flex items-center gap-1.5 disabled:opacity-60"
+                    >
+                      <Download size={15} />
+                      {downloading ? 'Exporting...' : 'Download Data'}
                     </button>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-between">
-                    <div>
-                      <p className="text-[15px] font-bold text-red-400">Delete All Audio Recordings</p>
-                      <p className="text-[12px] text-red-300/80 font-medium">Permanently purge raw voice recordings from secure cloud storage</p>
-                    </div>
-                    <button className="px-4 py-2 rounded-xl bg-red-500 text-black font-bold text-[13px] hover:bg-red-400 cursor-pointer flex items-center gap-1.5">
-                      <Trash2 size={15} /> Purge Audio
-                    </button>
-                  </div>
-
-                  {/* Connected Devices */}
-                  <div className="p-5 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] space-y-3">
-                    <p className="text-[14px] font-bold text-[var(--text-primary)]">Connected Devices & Active Sessions</p>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-[13px] bg-[var(--bg-card)] p-3 rounded-xl border border-[var(--border)]">
-                        <div className="flex items-center gap-2">
-                          <Laptop size={16} className="text-emerald-400" />
-                          <span className="font-bold text-[var(--text-primary)]">Verified Web Workspace (Active Now)</span>
-                        </div>
-                        <span className="text-[11px] font-extrabold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">This Device</span>
+                  {/* Purge Audio */}
+                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[15px] font-bold text-amber-400">Delete Audio Recordings</p>
+                        <p className="text-[12px] text-amber-300/80 font-medium">Permanently remove your raw voice recordings from cloud storage</p>
                       </div>
+                      <button
+                        onClick={handlePurgeAudio}
+                        disabled={purging}
+                        className={`px-4 py-2 rounded-xl font-bold text-[13px] cursor-pointer flex items-center gap-1.5 transition-all ${purgeConfirm ? 'bg-red-500 text-white' : 'bg-amber-500 text-black hover:bg-amber-400'}`}
+                      >
+                        <Trash2 size={15} />
+                        {purging ? 'Purging...' : purgeConfirm ? 'Confirm Delete' : 'Purge Audio'}
+                      </button>
                     </div>
+                    {purgeConfirm && (
+                      <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
+                        <AlertTriangle size={14} className="text-red-400 shrink-0" />
+                        <p className="text-[12px] text-red-400 font-medium">This cannot be undone. Click "Confirm Delete" to proceed, or navigate away to cancel.</p>
+                      </div>
+                    )}
+                    {purgeMsg && <p className={`text-[13px] font-bold ${purgeMsg.startsWith('✓') ? 'text-emerald-400' : 'text-red-400'}`}>{purgeMsg}</p>}
+                  </div>
+
+                  {/* Active Session Info */}
+                  <div className="p-5 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] space-y-3">
+                    <p className="text-[14px] font-bold text-[var(--text-primary)]">Active Session</p>
+                    <div className="flex items-center justify-between text-[13px] bg-[var(--bg-card)] p-3 rounded-xl border border-[var(--border)]">
+                      <div className="flex items-center gap-2">
+                        <Laptop size={16} className="text-emerald-400" />
+                        <span className="font-bold text-[var(--text-primary)]">Web Browser Session</span>
+                      </div>
+                      <span className="text-[11px] font-extrabold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Active Now</span>
+                    </div>
+                    <p className="text-[11px] text-[var(--text-tertiary)] font-medium">Authenticated as: {userEmail}</p>
                   </div>
                 </div>
               </section>
             )}
 
-
-            {/* ── SECTION 7 — AI Personalization ── */}
+            {/* ── AI Personalization ── */}
             {activeTab === 'personalization' && (
               <section className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[28px] p-8 shadow-xl space-y-6">
                 <div>
                   <h2 className="text-[20px] font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
-                    <Brain size={20} className="text-emerald-400" /> AI Learning Personalization Profile
+                    <Brain size={20} className="text-emerald-400" /> AI Learning Profile
                   </h2>
-                  <p className="text-[13px] text-[var(--text-tertiary)] font-medium">Your synthesized AI memory and adaptive coaching preferences.</p>
+                  <p className="text-[13px] text-[var(--text-tertiary)] font-medium">Your synthesized AI memory and adaptive coaching profile — built from your session history.</p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)]">
                     <span className="text-[11px] font-bold uppercase text-[var(--text-tertiary)]">Preferred Speaking Pace</span>
-                    <p className="text-[16px] font-extrabold text-[var(--text-primary)] mt-1">Normal (130 – 150 WPM)</p>
+                    <p className="text-[16px] font-extrabold text-[var(--text-primary)] mt-1">
+                      {profile?.preferred_pace_label || 'Steady (115 – 145 WPM)'}
+                    </p>
                   </div>
                   <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)]">
-                    <span className="text-[11px] font-bold uppercase text-[var(--text-tertiary)]">Preferred Feedback Style</span>
-                    <p className="text-[16px] font-extrabold text-[var(--text-primary)] mt-1">Action-Oriented & Direct</p>
+                    <span className="text-[11px] font-bold uppercase text-[var(--text-tertiary)]">Feedback Style</span>
+                    <p className="text-[16px] font-extrabold text-[var(--text-primary)] mt-1">
+                      {profile?.preferred_feedback_label || `${feedbackDetail} / ${coachingStyle}`}
+                    </p>
                   </div>
                   <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)]">
-                    <span className="text-[11px] font-bold uppercase text-[var(--text-tertiary)]">Favorite Categories</span>
-                    <p className="text-[16px] font-extrabold text-emerald-400 mt-1">{speakingGoal} • Practice Drills</p>
+                    <span className="text-[11px] font-bold uppercase text-[var(--text-tertiary)]">Speaking Goal</span>
+                    <p className="text-[16px] font-extrabold text-emerald-400 mt-1">
+                      {goalLabels[speakingGoal] || speakingGoal}
+                    </p>
                   </div>
                   <div className="p-4 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)]">
-                    <span className="text-[11px] font-bold uppercase text-[var(--text-tertiary)]">Adaptive Progress Level</span>
-                    <p className="text-[16px] font-extrabold text-blue-400 mt-1">{difficulty} Tier Mastery</p>
+                    <span className="text-[11px] font-bold uppercase text-[var(--text-tertiary)]">Difficulty Level</span>
+                    <p className="text-[16px] font-extrabold text-blue-400 mt-1">
+                      {diffLabels[difficulty] || difficulty} Tier
+                    </p>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-[var(--border)] flex justify-end">
-                  <button className="px-5 py-2.5 rounded-xl bg-[var(--bg-hover)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] font-bold text-[13px] transition-all cursor-pointer flex items-center gap-2 border border-[var(--border)]">
-                    <RefreshCw size={14} /> Reset Personalization Memory
-                  </button>
+                <div className="pt-4 border-t border-[var(--border)] space-y-3">
+                  {resetMsg && <p className={`text-[13px] font-bold ${resetMsg.startsWith('✓') ? 'text-emerald-400' : 'text-red-400'}`}>{resetMsg}</p>}
+                  {resetConfirm && (
+                    <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                      <AlertTriangle size={14} className="text-amber-400 shrink-0" />
+                      <p className="text-[12px] text-amber-400 font-medium">This will clear your AI coaching history and skill scores. Your session recordings are kept. Click again to confirm.</p>
+                    </div>
+                  )}
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleResetPersonalization}
+                      disabled={resetting}
+                      className={`px-5 py-2.5 rounded-xl font-bold text-[13px] transition-all cursor-pointer flex items-center gap-2 border ${resetConfirm ? 'bg-amber-500 text-black border-transparent' : 'bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border)] hover:bg-[var(--bg-card-hover)]'}`}
+                    >
+                      <RefreshCw size={14} />
+                      {resetting ? 'Resetting...' : resetConfirm ? 'Confirm Reset' : 'Reset AI Memory'}
+                    </button>
+                  </div>
                 </div>
               </section>
             )}
 
-
-
-
-
-            {/* ── SECTION 9 — Help & Support ── */}
+            {/* ── Help & Support ── */}
             {activeTab === 'help' && (
               <section className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[28px] p-8 shadow-xl space-y-6">
                 <div>
                   <h2 className="text-[20px] font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
-                    <HelpCircle size={20} className="text-emerald-400" /> Help & Customer Support
+                    <HelpCircle size={20} className="text-emerald-400" /> Help & Support
                   </h2>
-                  <p className="text-[13px] text-[var(--text-tertiary)] font-medium">Get assistance, request features, or view troubleshooting guides.</p>
+                  <p className="text-[13px] text-[var(--text-tertiary)] font-medium">Get assistance or report issues with SpeakIQ.</p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[
-                    { title: 'Help Center & Documentation', desc: 'Browse guides and microphone setup tutorials', icon: '📖' },
-                    { title: 'Contact Support Team', desc: '24/7 priority response for PRO members', icon: '💬' },
-                    { title: 'Report a Bug', desc: 'Submit audio processing issues', icon: '🐛' },
-                    { title: 'Feature Requests', desc: 'Vote on upcoming AI coach features', icon: '💡' },
-                    { title: 'Community Discord', desc: 'Join 10k+ speakers practicing together', icon: '👾' },
-                    { title: 'Keyboard Shortcuts', desc: 'View quick commands for fast drills', icon: '⌨️' },
+                    { title: 'GitHub Repository', desc: 'View source code and open issues', icon: '📦', href: 'https://github.com/coder-jane06/Speakiq' },
+                    { title: 'Report a Bug', desc: 'Submit audio processing or UI issues', icon: '🐛', href: 'https://github.com/coder-jane06/Speakiq/issues/new' },
+                    { title: 'Feature Requests', desc: 'Suggest new AI coach features', icon: '💡', href: 'https://github.com/coder-jane06/Speakiq/issues/new' },
+                    { title: 'Contact via Email', desc: 'Reach the team directly', icon: '📧', href: 'mailto:admin@speakiq.com' },
                   ].map((h, i) => (
-                    <div key={i} className="p-5 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] hover:bg-[var(--bg-card-hover)] hover:shadow-sm transition-all cursor-pointer flex items-start gap-4 group">
+                    <a
+                      key={i}
+                      href={h.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-5 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] hover:bg-[var(--bg-card-hover)] hover:shadow-sm transition-all cursor-pointer flex items-start gap-4 group no-underline"
+                    >
                       <span className="text-[26px] shrink-0">{h.icon}</span>
                       <div className="flex-1">
                         <h4 className="text-[15px] font-bold text-[var(--text-primary)] group-hover:text-emerald-400 transition-colors flex items-center justify-between">
@@ -678,14 +1049,13 @@ export default function SettingsPage() {
                         </h4>
                         <p className="text-[12px] text-[var(--text-tertiary)] font-medium mt-1">{h.desc}</p>
                       </div>
-                    </div>
+                    </a>
                   ))}
                 </div>
               </section>
             )}
 
-
-            {/* ── SECTION 10 — About ── */}
+            {/* ── About SpeakIQ ── */}
             {activeTab === 'about' && (
               <section className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[28px] p-8 shadow-xl space-y-6">
                 <div className="flex items-center gap-4 pb-4 border-b border-[var(--border)]">
@@ -694,30 +1064,35 @@ export default function SettingsPage() {
                   </div>
                   <div>
                     <h2 className="text-[22px] font-extrabold text-[var(--text-primary)] tracking-tight" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>
-                      Fluently AI Coach
+                      SpeakIQ
                     </h2>
-                    <p className="text-[13px] text-[var(--text-tertiary)] font-semibold">Version 2.4.0-pro • Build 8920</p>
+                    <p className="text-[13px] text-[var(--text-tertiary)] font-semibold">AI-Powered Speech Coach</p>
                   </div>
                 </div>
 
                 <div className="space-y-3 text-[14px]">
                   <div className="flex justify-between items-center py-2 border-b border-[var(--border)]">
-                    <span className="font-bold text-[var(--text-secondary)]">Release Notes</span>
-                    <button className="text-emerald-400 font-bold text-[13px] hover:underline flex items-center gap-1 cursor-pointer">
-                      View Version 2.4 Changelog <ExternalLink size={13} />
-                    </button>
+                    <span className="font-bold text-[var(--text-secondary)]">Backend</span>
+                    <span className="text-[var(--text-tertiary)] font-medium">FastAPI + Supabase</span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-[var(--border)]">
-                    <span className="font-bold text-[var(--text-secondary)]">Terms of Service</span>
-                    <button className="text-[var(--text-tertiary)] font-medium text-[13px] hover:underline cursor-pointer">Read Terms</button>
+                    <span className="font-bold text-[var(--text-secondary)]">AI Models</span>
+                    <span className="text-[var(--text-tertiary)] font-medium">Whisper + Claude + Groq</span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-[var(--border)]">
-                    <span className="font-bold text-[var(--text-secondary)]">Privacy Policy</span>
-                    <button className="text-[var(--text-tertiary)] font-medium text-[13px] hover:underline cursor-pointer">Read Policy</button>
+                    <span className="font-bold text-[var(--text-secondary)]">Frontend</span>
+                    <span className="text-[var(--text-tertiary)] font-medium">React 19 + Vite + TypeScript</span>
                   </div>
                   <div className="flex justify-between items-center py-2">
-                    <span className="font-bold text-[var(--text-secondary)]">Open Source Licenses</span>
-                    <button className="text-[var(--text-tertiary)] font-medium text-[13px] hover:underline cursor-pointer">View Licenses</button>
+                    <span className="font-bold text-[var(--text-secondary)]">Source Code</span>
+                    <a
+                      href="https://github.com/coder-jane06/Speakiq"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-emerald-400 font-bold text-[13px] hover:underline flex items-center gap-1"
+                    >
+                      GitHub <ExternalLink size={13} />
+                    </a>
                   </div>
                 </div>
               </section>

@@ -1,14 +1,22 @@
-"""Sessions router — Phase 3 (with analysis pipeline)"""
-import logging, random, uuid, asyncio
+"""Sessions router — with security fixes and rate limiting."""
+import logging
+import random
+import uuid
+import asyncio
 from typing import Optional
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form, BackgroundTasks, Header, Depends
+
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, BackgroundTasks, Header, Depends, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
 from auth import get_current_user
-import jwt
 from config import get_db
 from routers.dashboard import normalize_difficulty, normalize_goal
+from routers.utils import get_user_id_from_token
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 FALLBACK_TOPICS = [
     {"id": "fallback", "text": "Should social media have an age limit?"},
@@ -23,34 +31,23 @@ FALLBACK_TOPICS = [
     {"id": "fallback", "text": "Is social media doing more harm than good?"},
 ]
 ALLOWED_AUDIO_TYPES = {
-    "audio/webm","audio/webm;codecs=opus","audio/webm;codecs=vp8",
-    "audio/mp4","audio/wav","audio/mpeg","audio/ogg","application/octet-stream"
+    "audio/webm", "audio/webm;codecs=opus", "audio/webm;codecs=vp8",
+    "audio/mp4", "audio/wav", "audio/mpeg", "audio/ogg", "application/octet-stream"
 }
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 
 
-def get_user_id(authorization: Optional[str]) -> Optional[str]:
-    if not authorization or not authorization.startswith("Bearer "):
-        return None
-    try:
-        token = authorization.replace("Bearer ", "")
-        decoded = jwt.decode(token, options={"verify_signature": False})
-        return decoded.get("sub")
-    except Exception:
-        return None
-
-
 @router.get("/topic")
+@limiter.limit("30/minute")
 async def get_topic(
+    request: Request,
     authorization: Optional[str] = Header(None),
     exclude: Optional[str] = None,
     goal: Optional[str] = None,
-    difficulty: Optional[str] = None
+    difficulty: Optional[str] = None,
 ):
-    from config import get_db
-
     db = get_db()
-    user_id = get_user_id(authorization)
+    user_id = get_user_id_from_token(authorization)
     speaking_goal = normalize_goal(goal) if goal else "general"
     weakest_skill = "general"
     diff_tier = difficulty if difficulty else "medium"
@@ -69,7 +66,7 @@ async def get_topic(
                 p = profile.data[0]
                 if not goal:
                     speaking_goal = normalize_goal(p.get("speaking_goal")) or "general"
-                
+
                 if not difficulty:
                     tier = normalize_difficulty(p.get("difficulty_tier")) or "beginner"
                     diff_tier = {"beginner": "easy", "advanced": "hard"}.get(tier, "medium")
@@ -99,7 +96,6 @@ async def get_topic(
             logger.warning(f"[sessions] Topic personalization skipped: {e}")
 
     try:
-        # DB column is 'tier' (not 'difficulty') — select it correctly
         query = db.table("topics").select("id, text, tier, target_skill, category, goal_type")
         if speaking_goal != "general":
             query = query.in_("goal_type", [speaking_goal, "general"])
@@ -107,23 +103,20 @@ async def get_topic(
 
         if result.data:
             candidates = [t for t in result.data if t.get("text")]
-            
+
             if exclude:
                 filtered_candidates = [t for t in candidates if str(t.get("id")) != exclude]
                 if filtered_candidates:
                     candidates = filtered_candidates
-            
-            # Prefer unseen topics; fall back to full list if all seen
+
             unseen = [t for t in candidates if t["text"] not in recent_topic_texts]
             if unseen:
                 candidates = unseen
 
-            # Prefer topics targeting the user's weakest skill
             skill_matched = [t for t in candidates if t.get("target_skill") == weakest_skill]
             if skill_matched:
                 candidates = skill_matched
 
-            # Prefer topics matching the user's difficulty tier
             tier_matched = [t for t in candidates if t.get("tier") == diff_tier]
             if tier_matched:
                 candidates = tier_matched
@@ -134,7 +127,7 @@ async def get_topic(
                 "id": chosen.get("id", "topic"),
                 "text": chosen["text"],
                 "tier": topic_tier,
-                "difficulty": topic_tier,          # alias for frontend
+                "difficulty": topic_tier,
                 "target_skill": chosen.get("target_skill", "general"),
                 "category": chosen.get("category", "opinion"),
                 "goal_type": chosen.get("goal_type", "general"),
@@ -154,14 +147,16 @@ async def get_topic(
 
 
 @router.post("/upload", status_code=201)
+@limiter.limit("10/minute")
 async def upload_session(
+    request: Request,
     background_tasks: BackgroundTasks,
     audio: UploadFile = File(...),
     topic_id: str = Form(...),
     topic_text: str = Form(...),
     speaking_goal: Optional[str] = Form(None),
     difficulty_tier: Optional[str] = Form(None),
-    authorization: Optional[str] = Header(None)
+    authorization: Optional[str] = Header(None),
 ):
     content_type = audio.content_type or ""
     if content_type not in ALLOWED_AUDIO_TYPES:
@@ -176,12 +171,11 @@ async def upload_session(
     session_id = str(uuid.uuid4())
     audio_url = None
 
-    user_id = get_user_id(authorization)
+    user_id = get_user_id_from_token(authorization)
     normalized_goal = normalize_goal(speaking_goal)
     normalized_difficulty = normalize_difficulty(difficulty_tier)
 
     try:
-        from config import get_db
         db = get_db()
         storage_path = f"sessions/{session_id}/recording.webm"
         db.storage.from_("audio-recordings").upload(
@@ -189,7 +183,7 @@ async def upload_session(
             file_options={"content-type": "audio/webm"},
         )
         audio_url = storage_path
-        
+
         db.table("sessions").insert({
             "id": session_id,
             "topic_id": None,
@@ -222,12 +216,9 @@ async def upload_session(
         logger.info(f"[sessions] Created session {session_id}")
     except Exception as e:
         logger.error(f"[sessions] Upload failed {session_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Database or storage error: {e}")
+        # Return generic error — never leak internal details
+        raise HTTPException(status_code=500, detail="Session upload failed. Please try again.")
 
-    # Trigger analysis pipeline in the background
-    # BackgroundTasks runs AFTER the response is sent to the user.
-    # The user gets their session_id immediately (fast response),
-    # while the heavy AI analysis runs in the background.
     background_tasks.add_task(
         trigger_analysis,
         session_id=session_id,
@@ -253,13 +244,12 @@ async def trigger_analysis(
 ):
     """Background task — runs after the HTTP response is sent."""
     try:
-        from config import get_db
         if user_id:
             profile_result = get_db().table("user_profiles").select("*").eq("user_id", user_id).limit(1).execute()
             user_profile = profile_result.data[0] if profile_result.data else None
         else:
             user_profile = None
-    except:
+    except Exception:
         user_profile = None
 
     try:
@@ -281,20 +271,19 @@ async def trigger_analysis(
         logger.error(f"[sessions] Pipeline failed for {session_id}: {e}")
         traceback.print_exc()
         try:
-            from config import get_db
             get_db().table("sessions").update({"status": "failed"}).eq("id", session_id).execute()
         except Exception as inner_e:
             logger.error(f"[sessions] Failed to update session status to failed: {inner_e}")
 
 
 @router.get("/")
-async def list_sessions(authorization: Optional[str] = Header(None)):
+@limiter.limit("60/minute")
+async def list_sessions(request: Request, authorization: Optional[str] = Header(None)):
     """Return only the authenticated user's sessions."""
-    user_id = get_user_id(authorization)
+    user_id = get_user_id_from_token(authorization)
     if not user_id:
         raise HTTPException(status_code=401, detail="Authentication required")
     try:
-        from config import get_db
         result = (
             get_db()
             .table("sessions")
@@ -311,15 +300,17 @@ async def list_sessions(authorization: Optional[str] = Header(None)):
 
 
 @router.get("/{session_id}")
-async def get_session(session_id: str, authorization: Optional[str] = Header(None)):
+@limiter.limit("60/minute")
+async def get_session(request: Request, session_id: str, authorization: Optional[str] = Header(None)):
+    # Require authentication for session access
+    user_id = get_user_id_from_token(authorization)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
     try:
-        from config import get_db
         db = get_db()
-        
+
         if session_id == "latest":
-            # fetch the actual latest completed session for this user
-            from routers.dashboard import get_user_id
-            user_id = get_user_id(authorization) or "00000000-0000-0000-0000-000000000000"
             result = (
                 db.table("sessions")
                 .select("*, session_metrics(*)")
@@ -330,76 +321,85 @@ async def get_session(session_id: str, authorization: Optional[str] = Header(Non
                 .execute()
             )
         else:
+            # SECURITY FIX: filter by user_id to prevent IDOR attacks
             result = (
                 db.table("sessions")
                 .select("*, session_metrics(*)")
                 .eq("id", session_id)
+                .eq("user_id", user_id)   # ← prevents accessing other users' sessions
                 .execute()
             )
-        
+
         logger.info(f"[sessions] get {session_id}: {len(result.data)} rows found")
-        
+
         if not result.data or len(result.data) == 0:
             raise HTTPException(status_code=404, detail="Session not found")
-        
+
         session = result.data[0]
-        
-        # If session exists but has no metrics yet, return analyzing status
-        # so frontend keeps polling or shows analyzing
+
         metrics = session.get("session_metrics", [])
         if not metrics or len(metrics) == 0:
             if session.get("status") != "failed":
                 session["status"] = "analyzing"
             session["session_metrics"] = []
             return session
-        
+
         return session
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"[sessions] get failed {session_id}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Failed to retrieve session.")
 
 
 @router.get("/{session_id}/transcript")
-async def get_transcript(session_id: str, user=Depends(get_current_user)):
+@limiter.limit("30/minute")
+async def get_transcript(request: Request, session_id: str, user=Depends(get_current_user)):
     db = get_db()
+    user_id = user.get("sub")
+
+    # SECURITY FIX: Verify this session belongs to the requesting user
+    session_check = db.table("sessions").select("id").eq("id", session_id).eq("user_id", user_id).execute()
+    if not session_check.data:
+        raise HTTPException(status_code=404, detail="Session not found")
+
     result = db.table("session_metrics").select("*").eq("session_id", session_id).execute()
     if not result.data:
-        raise HTTPException(status_code=404, detail="Session not found")
+        raise HTTPException(status_code=404, detail="Session metrics not found")
     metrics = result.data[0]
-    
+
     import json
-    
+
     words_raw = metrics.get("words", "[]")
     if isinstance(words_raw, str):
         try:
             words = json.loads(words_raw)
-        except:
+        except Exception:
             words = []
     else:
         words = words_raw or []
-        
+
     filler_positions_raw = metrics.get("filler_positions", "[]")
     if isinstance(filler_positions_raw, str):
         try:
             fillers = json.loads(filler_positions_raw)
-        except:
+        except Exception:
             fillers = []
     else:
         fillers = filler_positions_raw or []
-        
+
     filler_set = {f["word"] for f in fillers if "word" in f}
-    
+
     transcript_words = []
     for w in words:
         w_type = "normal"
-        if "word" not in w: continue
+        if "word" not in w:
+            continue
         clean_word = w["word"].strip(".,!?").lower()
         if clean_word in filler_set:
             w_type = "filler"
-            
+
         transcript_words.append({
             "word": w["word"],
             "start": w.get("start", 0),
@@ -408,13 +408,17 @@ async def get_transcript(session_id: str, user=Depends(get_current_user)):
         })
     return transcript_words
 
+
 @router.get("/{session_id}/audio-url")
-async def get_audio_url(session_id: str, user=Depends(get_current_user)):
+@limiter.limit("30/minute")
+async def get_audio_url(request: Request, session_id: str, user=Depends(get_current_user)):
     db = get_db()
-    result = db.table("sessions").select("id").eq("id", session_id).eq("user_id", user["sub"]).execute()
+    user_id = user.get("sub")
+
+    result = db.table("sessions").select("id").eq("id", session_id).eq("user_id", user_id).execute()
     if not result.data:
         raise HTTPException(status_code=404, detail="Session not found")
-        
+
     url = db.storage.from_("audio-recordings").create_signed_url(
         path=f"sessions/{session_id}/recording.webm",
         expires_in=3600

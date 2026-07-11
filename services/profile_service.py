@@ -1,7 +1,6 @@
 import json
 import logging
-from datetime import datetime, timedelta
-import json
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -31,19 +30,11 @@ async def update_user_profile(
         except Exception:
             session_date = datetime.utcnow().date()
             
-        # Get user_id from session, fallback to first user in system if None
+        # Get user_id from session — if missing, skip profile update
         user_id = session_data.get("user_id")
         if not user_id:
-            try:
-                users = db.auth.admin.list_users()
-                if users:
-                    user_id = users[0].id
-                else:
-                    logger.error("[Profile] No users in auth.users to use for profile.")
-                    return
-            except Exception as e:
-                logger.error(f"[Profile] Failed to fetch users: {e}")
-                return
+            logger.warning(f"[Profile] Session {session_id} has no user_id — skipping profile update")
+            return
             
         # Score calculations must match the session report. The pipeline owns
         # scoring; this service only smooths those scores into the profile.

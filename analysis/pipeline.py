@@ -469,13 +469,13 @@ def compute_scores_from_data(
 
     # --- STRUCTURE ---
     if word_count <= 0:
-        structure_score = 35 # Should not happen due to early return
+        structure_score = 35
     else:
         length_target = {
-            "beginner": (45, 110),
-            "intermediate": (60, 145),
-            "advanced": (80, 190),
-        }.get(difficulty_tier, (45, 120))
+            "beginner":     (45,  110),
+            "intermediate": (65,  150),
+            "advanced":     (90,  200),
+        }.get(difficulty_tier, (55, 130))
         length_score = range_score(word_count, length_target[0], length_target[1], 25, length_target[1] + 90)
         sentence_score = range_score(avg_sentence_length, 9, 22, 4, 35)
         transition_score = clamp(min(transition_count, 5) * 18 + min(evidence_count, 4) * 4)
@@ -501,14 +501,18 @@ def compute_scores_from_data(
         ttr = getattr(nlp, "ttr_score", 0.0)
         unique_words = getattr(nlp, "unique_word_count", 0)
         total_content = getattr(nlp, "total_word_count", 0)
+        power_words = getattr(nlp, "power_word_count", 0)
         diversity_score = range_score(ttr, 0.42, 0.68, 0.25, 0.85)
         specificity_score = clamp(min(evidence_count, 5) * 12 + min(unique_words, 55) * 0.65)
         repetition_penalty = 0
         if total_content > 0 and unique_words / max(total_content, 1) < 0.32:
             repetition_penalty = 12
-        vocab_score = clamp(diversity_score * 0.62 + specificity_score * 0.38 - hedge_penalty * 0.5 - repetition_penalty)
+        # Power words boost: assertive authoritative language rewards vocabulary score
+        power_boost = min(15, power_words * 3)
+        vocab_score = clamp(diversity_score * 0.60 + specificity_score * 0.36 - hedge_penalty * 0.5 - repetition_penalty + power_boost)
     else:
         vocab_score = 50
+        power_words = 0
 
     # --- CONFIDENCE ---
     # Weightings shift based on mode
@@ -541,6 +545,14 @@ def compute_scores_from_data(
         confidence_score = clamp(confidence_score - min(15, hedge_count * 3))
     if acoustic and getattr(acoustic, "jitter", 0.0) > 2.5:
         confidence_score = clamp(confidence_score - 7)
+    # Power word bonus: assertive language = confident speaker
+    if nlp:
+        pw = getattr(nlp, "power_word_count", 0)
+        if pw > 0:
+            power_conf_boost = min(10, pw * 2)
+            if speaking_goal in ("debater", "orator"):
+                power_conf_boost = min(15, pw * 3)
+            confidence_score = clamp(confidence_score + power_conf_boost)
 
     scores = {
         "filler": clamp(filler_score),

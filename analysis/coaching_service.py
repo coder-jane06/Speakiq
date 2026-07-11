@@ -157,6 +157,68 @@ def build_coaching_prompt(
     else:
         memory_section = ""
 
+    # ── User Personality Profile (trajectory analysis from history) ───────
+    personality_section = ""
+    if session_history and len(session_history) >= 2:
+        skill_trajectories: dict = {"filler": [], "delivery": [], "structure": [], "vocab": [], "confidence": []}
+        recurring_fillers: dict = {}
+        all_avgs = []
+        for s in session_history[-8:]:
+            sc = s.get("scores", {})
+            if isinstance(sc, str):
+                try:
+                    import json as _j; sc = _j.loads(sc)
+                except Exception:
+                    sc = {}
+            if sc:
+                avgscore = sum(sc.values()) / max(len(sc), 1)
+                all_avgs.append(avgscore)
+                for skill in skill_trajectories:
+                    if skill in sc:
+                        skill_trajectories[skill].append(sc[skill])
+            for issue in (s.get("top_issues") or []):
+                recurring_fillers[issue] = recurring_fillers.get(issue, 0) + 1
+
+        trends = {}
+        for skill, vals in skill_trajectories.items():
+            if len(vals) >= 2:
+                delta = vals[-1] - vals[0]
+                trends[skill] = (
+                    "rapidly_improving" if delta > 12 else
+                    "improving"         if delta > 4  else
+                    "stable"            if abs(delta) <= 4 else
+                    "regressing"        if delta > -12 else
+                    "needs_urgent_work"
+                )
+
+        persistent_weak = [s for s, vals in skill_trajectories.items() if vals and sum(vals)/len(vals) < 65]
+        natural_strengths = [s for s, vals in skill_trajectories.items() if vals and sum(vals)/len(vals) > 75]
+        chronic_issues = [k for k, v in recurring_fillers.items() if v >= 2]
+        overall = (
+            "dramatically_improving" if len(all_avgs) >= 3 and all_avgs[-1] - all_avgs[0] > 12 else
+            "steadily_improving"     if len(all_avgs) >= 2 and all_avgs[-1] - all_avgs[0] > 4  else
+            "plateauing"             if len(all_avgs) >= 2 and abs(all_avgs[-1] - all_avgs[0]) <= 4 else
+            "declining"              if len(all_avgs) >= 2 and all_avgs[-1] - all_avgs[0] < -4 else
+            "early_stage"
+        )
+
+        personality_section = f"""
+## USER PERSONALITY PROFILE (from {len(session_history)} sessions of data)
+Overall trajectory: {overall}
+Natural strengths (avg >75): {', '.join(natural_strengths) if natural_strengths else 'still developing'}
+Persistent weaknesses (avg <65): {', '.join(persistent_weak) if persistent_weak else 'none yet'}
+Chronic issues (recurring 2+ sessions): {', '.join(chronic_issues) if chronic_issues else 'none'}
+Skill trends: {', '.join(f'{k}={v}' for k,v in trends.items())}
+
+PERSONALISATION RULES:
+- Reference the user's TRAJECTORY explicitly. If plateauing, say so directly.
+- If a CHRONIC issue appears today too, escalate urgency — it's now a pattern.
+- If a PERSISTENT WEAKNESS showed up today, make it the absolute top priority.
+- If a NATURAL STRENGTH performed well today, briefly acknowledge and move on.
+- NEVER give the same advice as the previous session.
+"""
+
+
     # ── User profile history ───────────────────────────────────────────
     if user_profile and user_profile.get("total_sessions", 0) > 1:
         history = f"""
@@ -196,15 +258,37 @@ This is session #{session_num}. Be encouraging and welcoming.
     else:
         acoustic = "Acoustic data unavailable."
 
-    # NLP data
+    # NLP data (human-readable, not raw numbers in coaching text)
     if nlp_result:
-        nlp = f"""- Filler words: {nlp_result.filler_count} total ({nlp_result.fillers_per_minute}/min)
-- Filler breakdown: {dict(list(nlp_result.filler_detail.items())[:5])}
-- Vocabulary diversity (TTR): {nlp_result.ttr_score:.2f}
-- Hedge words: {nlp_result.hedge_word_count} ({nlp_result.hedge_words_found[:4]})
-- Sentences: {nlp_result.sentence_count}, avg length {nlp_result.avg_sentence_length:.0f} words"""
+        filler_rate = nlp_result.fillers_per_minute
+        filler_label = (
+            "excellent (very few fillers)"   if filler_rate < 0.8 else
+            "good (minor habit)"             if filler_rate < 2.0 else
+            "moderate (noticeable pattern)"  if filler_rate < 4.0 else
+            "high (fillers dominate speech)"
+        )
+        ttr = nlp_result.ttr_score
+        vocab_label = (
+            "very repetitive"  if ttr < 0.30 else
+            "limited range"    if ttr < 0.42 else
+            "good diversity"   if ttr < 0.60 else
+            "excellent range"
+        )
+        power_count = getattr(nlp_result, "power_word_count", 0)
+        power_label = (
+            "no assertive language detected" if power_count == 0 else
+            f"{power_count} power phrase(s) — confident, authoritative language"
+        )
+        nlp = f"""- Filler words: {nlp_result.filler_count} total — {filler_label}
+- Top fillers used: {dict(list(nlp_result.filler_detail.items())[:5])}
+- Vocabulary: {vocab_label} (TTR={ttr:.2f})
+- Hedge words: {nlp_result.hedge_word_count} found ({nlp_result.hedge_words_found[:4]})
+- Authority language: {power_label}
+- Sentences: {nlp_result.sentence_count}, avg {nlp_result.avg_sentence_length:.0f} words each
+- Incomplete sentences: {nlp_result.incomplete_sentence_count}"""
     else:
-        nlp = "NLP data unavailable."
+        nlp = "Language data unavailable."
+
 
     focus_map = {
         "filler_words":      "Focus ONLY on filler word usage. Reference specific fillers from the data.",
@@ -219,8 +303,9 @@ This is session #{session_num}. Be encouraging and welcoming.
     if pre_scores is None:
         pre_scores = {"filler": 50, "delivery": 50, "structure": 50, "vocab": 50, "confidence": 50}
 
-    return f"""You are an expert speech coach. Analyze this speaking session and return ONLY a JSON object.
+    return f"""You are an elite AI speech coach with deep memory of this user's journey. Return ONLY valid JSON — no extra text.
 {goal_section}
+{personality_section}
 {memory_section}
 Topic: "{topic}"
 Session: #{session_number}

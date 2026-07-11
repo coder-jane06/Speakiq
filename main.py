@@ -36,6 +36,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger("speakiq")
 
+# ── Rate Limiter (applied per-route with @limiter.limit decorator) ─────────────
+limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
+
 
 def check_supabase() -> dict[str, Any]:
     """Check that Supabase is reachable and the seeded topics table exists."""
@@ -90,18 +93,31 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="SpeakIQ API",
     description="AI-powered speech coaching backend",
-    version="0.1.0",
+    version="1.0.0",
     lifespan=lifespan,
-    docs_url="/docs",
-    redoc_url="/redoc",
+    # Disable docs in production for security
+    docs_url="/docs" if os.getenv("ENVIRONMENT", "development") != "production" else None,
+    redoc_url="/redoc" if os.getenv("ENVIRONMENT", "development") != "production" else None,
 )
+
+# ── Rate limiter state ─────────────────────────────────────────────────────────
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# ── CORS — whitelist only the actual frontend origins ──────────────────────────
+ALLOWED_ORIGINS = [
+    "https://coder-jane06.github.io",   # GitHub Pages production frontend
+    "http://localhost:5173",             # Local Vite dev server
+    "http://localhost:4173",             # Local Vite preview
+    "http://127.0.0.1:5173",
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=".*",
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
 
@@ -114,6 +130,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         type(exc).__name__,
         exc,
     )
+    # Never leak internal error details to clients
     return JSONResponse(
         status_code=500,
         content={"detail": "An unexpected error occurred. Please try again."},
@@ -140,7 +157,7 @@ async def system_status():
 
 @app.get("/api", tags=["system"])
 async def root():
-    return {"message": "SpeakIQ API - see /docs for endpoints"}
+    return {"message": "SpeakIQ API — see /docs for endpoints"}
 
 
 # ── Serve built frontend (React SPA) ─────────────────────────────────────────
@@ -148,7 +165,7 @@ async def root():
 # Vite outputs to frontend/dist — we serve that here so everything
 # runs on ONE server with no CORS issues.
 
-_FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
+_FRONTEND_DIST = Path(__file__).parent / "frontend" / "dist"
 
 if _FRONTEND_DIST.exists():
     # Mount assets (JS/CSS/images) at their exact paths

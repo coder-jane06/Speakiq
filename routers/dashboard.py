@@ -1,27 +1,19 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi import Header, HTTPException
 from auth import get_current_user
 from pydantic import BaseModel
 from typing import Any, Optional
-import jwt
 import json
 import logging
 from datetime import date, datetime, timedelta
 from config import get_db
+from routers.utils import get_user_id_from_token as get_user_id
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-
-def get_user_id(authorization: Optional[str]) -> Optional[str]:
-    if not authorization or not authorization.startswith("Bearer "):
-        return None
-    try:
-        token = authorization.replace("Bearer ", "")
-        decoded = jwt.decode(token, options={"verify_signature": False})
-        return decoded.get("sub")
-    except Exception:
-        return None
+limiter = Limiter(key_func=get_remote_address)
 
 
 GOAL_ALIASES = {
@@ -196,8 +188,23 @@ def build_dashboard_recommendations(
 ) -> dict[str, Any]:
     goal = normalize_goal(profile.get("speaking_goal"))
     difficulty = normalize_difficulty(profile.get("difficulty_tier"))
+    total_sessions = len(sessions_data)
     latest_scores = sessions_data[-1]["scores"] if sessions_data else {}
+    first_scores = sessions_data[0]["scores"] if sessions_data else {}
     weak_skill = focus_from_scores(latest_scores) if latest_scores else "structure"
+    current_streak = profile.get("current_streak", 0)
+
+    # Compute best scores across all sessions
+    best_scores: dict[str, int] = {}
+    for dim in ("filler", "delivery", "structure", "vocab", "confidence"):
+        vals = [s["scores"].get(dim, 0) for s in sessions_data if s.get("scores")]
+        best_scores[dim] = max(vals) if vals else 0
+
+    # Average of latest session
+    avg_latest = (
+        sum(latest_scores.values()) / len(latest_scores)
+        if latest_scores else 0
+    )
 
     focus_titles = {
         "filler": "Filler Control",
@@ -207,20 +214,132 @@ def build_dashboard_recommendations(
         "confidence": "Confidence",
     }
     focus_actions = {
-        "filler": "Record one answer and replace every filler with a silent one-count pause.",
-        "delivery": "Practice the same answer three times: calm, energetic, then authoritative.",
-        "structure": "Use a clear beginning, two proof points, and a one-sentence close.",
-        "vocab": "Replace vague words with concrete verbs and specific examples.",
+        "filler":     "Record one answer and replace every filler with a silent one-count pause.",
+        "delivery":   "Practice the same answer three times: calm, energetic, then authoritative.",
+        "structure":  "Use a clear beginning, two proof points, and a one-sentence close.",
+        "vocab":      "Replace vague words with concrete verbs and specific examples.",
         "confidence": "Start with your conclusion first, then explain why in two concise points.",
     }
 
     goal_tags = {
-        "orator": ["Storytelling", "Presence", "Audience Impact"],
-        "presenter": ["Clear Takeaway", "Evidence", "Transitions"],
+        "orator":      ["Storytelling", "Presence", "Audience Impact"],
+        "presenter":   ["Clear Takeaway", "Evidence", "Transitions"],
         "interviewer": ["STAR Structure", "Ownership", "Concise Impact"],
-        "debater": ["Claim-Evidence-Impact", "Rebuttal", "Logical Clarity"],
-        "general": ["Clarity", "Pacing", "Structure"],
+        "debater":     ["Claim-Evidence-Impact", "Rebuttal", "Logical Clarity"],
+        "general":     ["Clarity", "Pacing", "Structure"],
     }
+
+    # Goal-specific tailored suggestions
+    goal_suggestions = {
+        "orator": [
+            {"title": "Dramatic Pause Drill", "desc": "Practice placing a 2-second pause before your most important point for maximum rhetorical impact.", "tag": "Orator Skill"},
+            {"title": "Rule of Three Exercise", "desc": "Restate your key argument three times using different words. Lock it into your audience's memory.", "tag": "Storytelling"},
+        ],
+        "debater": [
+            {"title": "Claim-Evidence-Impact", "desc": "State your claim, back it with a fact or example, then explain the impact. Repeat 3 times.", "tag": "Debate Method"},
+            {"title": "Rebuttal Speed Drill", "desc": "Give a 30-second counter-argument to any position you disagree with. Time yourself.", "tag": "Quick Thinking"},
+        ],
+        "presenter": [
+            {"title": "Slide Transition Script", "desc": "Write out your exact words for each slide transition. Smooth transitions define elite presenters.", "tag": "Presenter Pro"},
+            {"title": "One-Sentence Takeaway", "desc": "Distill your entire presentation into a single memorable sentence. Practice saying it naturally.", "tag": "Clarity"},
+        ],
+        "interviewer": [
+            {"title": "STAR Answer Builder", "desc": "Pick a recent win and structure it: Situation → Task → Action → Result. Keep it under 90 seconds.", "tag": "STAR Method"},
+            {"title": "Ownership Language", "desc": "Replace every 'we' with 'I' when describing your contributions. Own your impact clearly.", "tag": "Confidence"},
+        ],
+        "general": [
+            {"title": "Consistency Builder", "desc": "Complete one short session today to keep your learning loop active.", "tag": "Habit"},
+            {"title": "Progress Review", "desc": "Compare your latest session against your previous attempt.", "tag": "Insight"},
+        ],
+    }
+
+    base_suggestions = [
+        {"title": "Targeted Drill", "desc": focus_actions.get(weak_skill, focus_actions["structure"]), "tag": "Recommended"},
+        {"title": f"{friendly_goal(goal)} Mode", "desc": "Practice with scoring calibrated to your speaking goal.", "tag": "Mode"},
+    ]
+    extra_suggestions = goal_suggestions.get(goal, goal_suggestions["general"])
+    all_suggestions = (base_suggestions + extra_suggestions)[:4]
+
+    # ── Achievement System (fully data-driven) ──────────────────────────
+    # Each achievement: id, icon, title, desc, unlocked (bool), progress (0-100), text_progress
+    filler_improvement = (
+        first_scores.get("filler", 0) - latest_scores.get("filler", 0)
+        if total_sessions >= 2 else 0
+    )
+    achievements = [
+        {
+            "id": "first_session",
+            "icon": "🎤",
+            "title": "First Step",
+            "desc": "Completed your very first session",
+            "unlocked": total_sessions >= 1,
+            "progress": 100 if total_sessions >= 1 else 0,
+            "text_progress": "1/1 session" if total_sessions >= 1 else "0/1 session",
+        },
+        {
+            "id": "streak_7",
+            "icon": "🔥",
+            "title": "7-Day Streak",
+            "desc": "Practice for 7 days in a row",
+            "unlocked": current_streak >= 7,
+            "progress": min(100, int((current_streak / 7) * 100)),
+            "text_progress": f"{min(current_streak, 7)}/7 days",
+        },
+        {
+            "id": "sessions_10",
+            "icon": "⭐",
+            "title": "Rising Speaker",
+            "desc": "Complete 10 sessions",
+            "unlocked": total_sessions >= 10,
+            "progress": min(100, int((total_sessions / 10) * 100)),
+            "text_progress": f"{min(total_sessions, 10)}/10 sessions",
+        },
+        {
+            "id": "high_score",
+            "icon": "🏆",
+            "title": "Excellence Award",
+            "desc": "Achieve an average score of 85+ in any session",
+            "unlocked": avg_latest >= 85,
+            "progress": min(100, int((avg_latest / 85) * 100)),
+            "text_progress": f"{int(avg_latest)}/85 avg score",
+        },
+        {
+            "id": "filler_master",
+            "icon": "🎯",
+            "title": "Filler Slayer",
+            "desc": "Filler control score above 80",
+            "unlocked": best_scores.get("filler", 0) >= 80,
+            "progress": min(100, int((best_scores.get("filler", 0) / 80) * 100)),
+            "text_progress": f"{best_scores.get('filler', 0)}/80 filler score",
+        },
+        {
+            "id": "sessions_30",
+            "icon": "🚀",
+            "title": "Transformation Champion",
+            "desc": "Complete the 30-day speaking challenge",
+            "unlocked": total_sessions >= 30,
+            "progress": min(100, int((total_sessions / 30) * 100)),
+            "text_progress": f"{min(total_sessions, 30)}/30 sessions",
+        },
+        {
+            "id": "streak_30",
+            "icon": "💎",
+            "title": "Unstoppable",
+            "desc": "30-day speaking streak",
+            "unlocked": current_streak >= 30,
+            "progress": min(100, int((current_streak / 30) * 100)),
+            "text_progress": f"{min(current_streak, 30)}/30 days",
+        },
+        {
+            "id": "goal_specific",
+            "icon": {"orator": "🎭", "debater": "⚔️", "presenter": "📊", "interviewer": "💼"}.get(goal, "✨"),
+            "title": {"orator": "Born Orator", "debater": "Master Debater", "presenter": "Pitch Perfect", "interviewer": "Interview Champion"}.get(goal, "Speaking Champion"),
+            "desc": f"Reach Advanced level in {friendly_goal(goal)} mode",
+            "unlocked": total_sessions >= 15 and avg_latest >= 80,
+            "progress": min(100, int(((total_sessions / 15) * 50 + (avg_latest / 80) * 50))),
+            "text_progress": f"{min(total_sessions, 15)}/15 sessions at 80+ score",
+        },
+    ]
 
     return {
         "today_focus": {
@@ -231,17 +350,14 @@ def build_dashboard_recommendations(
             "estimated_minutes": 1,
         },
         "profile_badge": f"{friendly_goal(goal)} Mastery • {difficulty.title()} Journey",
-        "suggestions": [
-            {"title": "Targeted Drill", "desc": focus_actions.get(weak_skill, focus_actions["structure"]), "tag": "Recommended"},
-            {"title": f"{friendly_goal(goal)} Mode", "desc": "Practice with scoring weighted to your selected speaking goal.", "tag": "Mode"},
-            {"title": "Progress Review", "desc": "Compare your latest session against your previous attempt.", "tag": "Insight"},
-            {"title": "Consistency Builder", "desc": "Complete one short session today to keep your learning loop active.", "tag": "Habit"},
-        ],
+        "suggestions": all_suggestions,
+        "achievements": achievements,
     }
 
 
 @router.get("/stats")
-async def get_dashboard_stats(authorization: Optional[str] = Header(None)):
+@limiter.limit("30/minute")
+async def get_dashboard_stats(request: Request, authorization: Optional[str] = Header(None)):
     user_id = get_user_id(authorization)
     if not user_id:
         # Return an empty dashboard state for unauthenticated requests
@@ -260,6 +376,7 @@ async def get_dashboard_stats(authorization: Optional[str] = Header(None)):
             "today_focus": build_dashboard_recommendations([], {})["today_focus"],
             "profile_badge": "Speaking Mastery • Beginner Journey",
             "suggestions": build_dashboard_recommendations([], {})["suggestions"],
+            "achievements": [],
         }
 
     db = get_db()
@@ -394,7 +511,10 @@ async def get_dashboard_stats(authorization: Optional[str] = Header(None)):
             "has_enough_data": True,
         }
 
-    dashboard_guidance = build_dashboard_recommendations(sessions_data, profile)
+    dashboard_guidance = build_dashboard_recommendations(
+        sessions_data,
+        {**profile, "current_streak": current_streak},
+    )
 
     return {
         "total_sessions": total_sessions,
@@ -421,7 +541,8 @@ async def get_dashboard_stats(authorization: Optional[str] = Header(None)):
 
 
 @router.get("/streak")
-async def get_dashboard_streak(authorization: Optional[str] = Header(None)):
+@limiter.limit("30/minute")
+async def get_dashboard_streak(request: Request, authorization: Optional[str] = Header(None)):
     user_id = get_user_id(authorization)
     if not user_id:
         return {
@@ -546,7 +667,9 @@ def resilient_profile_write(db, user_id: str, update_data: dict[str, Any]) -> No
 
 
 @router.post("/onboarding")
+@limiter.limit("20/minute")
 async def save_onboarding(
+    request: Request,
     data: OnboardingData,
     authorization: Optional[str] = Header(None),
 ):
@@ -571,7 +694,9 @@ async def save_onboarding(
 
 
 @router.patch("/preferences")
+@limiter.limit("20/minute")
 async def save_preferences(
+    request: Request,
     data: PreferencesData,
     authorization: Optional[str] = Header(None),
 ):
@@ -589,7 +714,8 @@ async def save_preferences(
 
 
 @router.get("/profile-status")
-async def get_profile_status(authorization: Optional[str] = Header(None)):
+@limiter.limit("30/minute")
+async def get_profile_status(request: Request, authorization: Optional[str] = Header(None)):
     user_id = get_user_id(authorization)
     if not user_id:
         return {
@@ -659,7 +785,8 @@ async def get_profile_status(authorization: Optional[str] = Header(None)):
 
 
 @router.get("/export")
-async def export_user_data(authorization: Optional[str] = Header(None)):
+@limiter.limit("5/minute")
+async def export_user_data(request: Request, authorization: Optional[str] = Header(None)):
     user_id = get_user_id(authorization)
     if not user_id:
         raise HTTPException(status_code=401, detail="Authentication required")
@@ -697,26 +824,38 @@ async def export_user_data(authorization: Optional[str] = Header(None)):
         }
     except Exception as e:
         logger.error("[dashboard] export failed: %s", e)
-        raise HTTPException(status_code=500, detail="Data export failed")
+        raise HTTPException(status_code=500, detail="Data export failed. Please try again.")
 
 
 @router.delete("/purge-audio")
-async def purge_audio_recordings(authorization: Optional[str] = Header(None)):
+@limiter.limit("5/minute")
+async def purge_audio_recordings(request: Request, authorization: Optional[str] = Header(None)):
     user_id = get_user_id(authorization)
     if not user_id:
         raise HTTPException(status_code=401, detail="Authentication required")
 
     db = get_db()
     try:
-        db.table("sessions").delete().eq("user_id", user_id).execute()
-        return {"status": "ok", "message": "All audio recordings and sessions purged"}
+        # Get all session IDs for this user to delete from storage
+        sessions_result = db.table("sessions").select("id").eq("user_id", user_id).execute()
+        session_ids = [s["id"] for s in (sessions_result.data or [])]
+
+        # Delete audio files from storage (not the session records themselves)
+        for sid in session_ids:
+            try:
+                db.storage.from_("audio-recordings").remove([f"sessions/{sid}/recording.webm"])
+            except Exception as storage_e:
+                logger.warning(f"[dashboard] Could not delete audio for session {sid}: {storage_e}")
+
+        return {"status": "ok", "message": f"Purged audio recordings for {len(session_ids)} sessions"}
     except Exception as e:
         logger.error("[dashboard] purge audio failed: %s", e)
-        raise HTTPException(status_code=500, detail="Audio purge failed")
+        raise HTTPException(status_code=500, detail="Audio purge failed. Please try again.")
 
 
 @router.post("/reset-personalization")
-async def reset_personalization(authorization: Optional[str] = Header(None)):
+@limiter.limit("5/minute")
+async def reset_personalization(request: Request, authorization: Optional[str] = Header(None)):
     user_id = get_user_id(authorization)
     if not user_id:
         raise HTTPException(status_code=401, detail="Authentication required")
@@ -739,7 +878,7 @@ async def reset_personalization(authorization: Optional[str] = Header(None)):
         return {"status": "ok"}
     except Exception as e:
         logger.error("[dashboard] reset personalization failed: %s", e)
-        raise HTTPException(status_code=500, detail="Unable to reset personalization memory")
+        raise HTTPException(status_code=500, detail="Unable to reset personalization memory. Please try again.")
 
 
 class PushSubscriptionData(BaseModel):
@@ -748,7 +887,8 @@ class PushSubscriptionData(BaseModel):
     auth: str
 
 @router.post("/push-subscribe")
-async def save_push_subscription(data: PushSubscriptionData, authorization: Optional[str] = Header(None)):
+@limiter.limit("10/minute")
+async def save_push_subscription(request: Request, data: PushSubscriptionData, authorization: Optional[str] = Header(None)):
     user_id = get_user_id(authorization)
     if not user_id:
         raise HTTPException(status_code=401, detail="Authentication required")
@@ -776,7 +916,9 @@ class DrillCompletionData(BaseModel):
 
 
 @router.post("/complete-drill")
+@limiter.limit("20/minute")
 async def complete_drill_endpoint(
+    request: Request,
     data: DrillCompletionData,
     authorization: Optional[str] = Header(None),
 ):
