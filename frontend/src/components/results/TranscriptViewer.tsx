@@ -117,8 +117,8 @@ export const TranscriptViewer = ({ words, currentTime, onWordClick }: Transcript
         </button>
       </div>
 
-      {/* Transcript words */}
-      <div className="space-y-2">
+      {/* Transcript words — natural inline flow */}
+      <div className="text-left leading-[2] tracking-normal">
         {words.map((word, index) => {
           const { className, style } = getWordStyle(word, index)
           const isActive = index === activeIndex

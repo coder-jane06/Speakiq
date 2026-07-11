@@ -38,8 +38,17 @@ export const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
       if (!audio) return
 
       const handleLoadedMetadata = () => {
-        setDuration(audio.duration)
+        // WebM blobs can report Infinity initially — wait for durationchange
+        if (isFinite(audio.duration)) {
+          setDuration(audio.duration)
+        }
         setIsLoading(false)
+      }
+
+      const handleDurationChange = () => {
+        if (isFinite(audio.duration) && audio.duration > 0) {
+          setDuration(audio.duration)
+        }
       }
 
       const handleTimeUpdate = () => {
@@ -59,12 +68,14 @@ export const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
       }
 
       audio.addEventListener('loadedmetadata', handleLoadedMetadata)
+      audio.addEventListener('durationchange', handleDurationChange)
       audio.addEventListener('timeupdate', handleTimeUpdate)
       audio.addEventListener('ended', handleEnded)
       audio.addEventListener('error', handleError)
 
       return () => {
         audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
+        audio.removeEventListener('durationchange', handleDurationChange)
         audio.removeEventListener('timeupdate', handleTimeUpdate)
         audio.removeEventListener('ended', handleEnded)
         audio.removeEventListener('error', handleError)
@@ -135,7 +146,14 @@ export const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
     }
 
     const formatTime = (time: number) => {
-      if (isNaN(time)) return '0:00'
+      if (!isFinite(time) || isNaN(time) || time === 0) return '0:00'
+      const minutes = Math.floor(time / 60)
+      const seconds = Math.floor(time % 60)
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`
+    }
+
+    const formatDuration = (time: number) => {
+      if (!isFinite(time) || isNaN(time) || time === 0) return '--:--'
       const minutes = Math.floor(time / 60)
       const seconds = Math.floor(time % 60)
       return `${minutes}:${seconds.toString().padStart(2, '0')}`
@@ -179,7 +197,7 @@ export const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
           />
           <div className="flex items-center justify-between mt-2 text-[12px] font-semibold text-[var(--text-secondary)]">
             <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
+            <span>{formatDuration(duration)}</span>
           </div>
         </div>
 
