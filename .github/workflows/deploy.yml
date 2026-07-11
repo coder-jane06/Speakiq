@@ -30,6 +30,8 @@ jobs:
       - name: Build
         run: npx vite build
         working-directory: frontend
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
       - name: Copy index.html to 404.html (SPA fallback)
         run: cp frontend/dist/index.html frontend/dist/404.html
