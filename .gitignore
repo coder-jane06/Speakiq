@@ -99,7 +99,11 @@ reset_password.py
 playwright_test.py
 
 # ── Analysis / Snapshot Files ──────────────────────────────────────────────────
-analysis/
+# Only ignore large data/cache files, NOT the Python source
+analysis/__pycache__/
+analysis/*.webm
+analysis/*.wav
+analysis/*.json.bak
 
 # ── Playwright ────────────────────────────────────────────────────────────────
 .playwright-mcp/
