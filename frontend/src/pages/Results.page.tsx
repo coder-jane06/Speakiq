@@ -5,8 +5,6 @@ import { useCoachingReport } from '../hooks/useCoachingReport'
 import { TranscriptViewer } from '../components/results/TranscriptViewer'
 import { AudioPlayer } from '../components/results/AudioPlayer'
 import type { AudioPlayerRef } from '../components/results/AudioPlayer'
-import { WorstMomentCard } from '../components/results/WorstMomentCard'
-import { SentenceRewriteCard } from '../components/results/SentenceRewriteCard'
 import { DeliveryDiagnosis } from '../components/results/DeliveryDiagnosis'
 import { FillerBreakdown } from '../components/results/FillerBreakdown'
 import { ScoreRing }         from '../components/results/ScoreRing'
@@ -423,18 +421,26 @@ export default function ResultsPage() {
               </div>
             </div>
 
-            {/* Right Column: Deep Insights */}
+            {/* Right Column: Example Moment (SAID → INSTEAD) */}
             <div className="flex flex-col gap-6 h-full">
-              {coaching?.worst_moment && (
-                <WorstMomentCard 
-                  quote={coaching.worst_moment.quote}
-                  timestamp_s={coaching.worst_moment.timestamp_s}
-                  what_went_wrong={coaching.worst_moment.what_went_wrong}
-                  onJumpToTime={(time) => audioPlayerRef.current?.seekTo(time)}
-                />
-              )}
-              {coaching?.rewritten_sentences && (
-                <SentenceRewriteCard rewrites={coaching.rewritten_sentences} />
+              {(coaching as any).example_moment && (
+                <div className="p-5 rounded-[22px] bg-gradient-to-br from-purple-500/10 via-[var(--bg-card)] to-pink-500/5 border border-purple-500/30 shadow-md">
+                  <h3 className="text-[12px] font-extrabold uppercase tracking-wider text-purple-700 dark:text-purple-300 mb-3 flex items-center gap-1.5">
+                    <Brain size={15} className="text-purple-500" /> Live Example From Your Speech
+                  </h3>
+                  <div className="space-y-2 text-[13px] font-medium leading-relaxed">
+                    {String((coaching as any).example_moment).split('->').map((part: string, i: number) => (
+                      <div key={i} className={`px-3 py-2 rounded-xl ${
+                        i === 0 
+                          ? 'bg-red-500/10 border border-red-500/20 text-red-800 dark:text-red-300'
+                          : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300'
+                      }`}>
+                        <span className="font-extrabold mr-1">{i === 0 ? 'SAID:' : 'INSTEAD:'}</span>
+                        {part.replace(/^(SAID:|INSTEAD:)/i, '').trim()}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
 
@@ -525,6 +531,64 @@ export default function ResultsPage() {
                   {String((coaching as any).focus_area || 'Balanced Practice').replace(/_/g, ' ')}
                 </span>
               </div>
+            </div>
+          </div>
+
+          {/* ── Second Row: Deeper AI Coaching Fields ── */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+            {/* Content Feedback — Ideas & Structure */}
+            {(coaching as any).content_feedback && (
+              <div className="p-5 rounded-[22px] bg-gradient-to-br from-indigo-500/10 via-[var(--bg-card)] to-blue-500/5 border border-indigo-500/30 shadow-md">
+                <h3 className="text-[12px] font-extrabold uppercase tracking-wider text-indigo-700 dark:text-indigo-300 mb-3 flex items-center gap-1.5">
+                  <Brain size={14} className="text-indigo-500" /> Ideas & Argument
+                </h3>
+                <p className="text-[13px] font-medium text-[var(--text-primary)] leading-relaxed">
+                  {String((coaching as any).content_feedback)}
+                </p>
+              </div>
+            )}
+
+            {/* Session Comparison / Improvement noted */}
+            <div className="p-5 rounded-[22px] bg-gradient-to-br from-teal-500/10 via-[var(--bg-card)] to-cyan-500/5 border border-teal-500/30 shadow-md">
+              <h3 className="text-[12px] font-extrabold uppercase tracking-wider text-teal-700 dark:text-teal-300 mb-3 flex items-center gap-1.5">
+                <TrendingUp size={14} className="text-teal-500" /> Progress vs Last Session
+              </h3>
+              {(coaching as any).session_comparison ? (
+                <p className="text-[13px] font-medium text-[var(--text-primary)] leading-relaxed">
+                  {String((coaching as any).session_comparison)}
+                </p>
+              ) : (
+                <p className="text-[13px] font-medium text-[var(--text-secondary)] leading-relaxed">
+                  This is your first session — complete more sessions to see your trend analysis here.
+                </p>
+              )}
+              {(coaching as any).improvement_noted && (
+                <p className="mt-3 text-[12px] font-semibold text-teal-400 border-t border-teal-500/20 pt-3">
+                  📈 {String((coaching as any).improvement_noted)}
+                </p>
+              )}
+            </div>
+
+            {/* Encouragement + Drill followup */}
+            <div className="p-5 rounded-[22px] bg-gradient-to-br from-amber-500/10 via-[var(--bg-card)] to-yellow-500/5 border border-amber-500/30 shadow-md">
+              <h3 className="text-[12px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-300 mb-3 flex items-center gap-1.5">
+                <Sparkles size={14} className="text-amber-500" /> From Your Coach
+              </h3>
+              {(coaching as any).encouragement && (
+                <p className="text-[13px] font-medium text-[var(--text-primary)] leading-relaxed italic">
+                  "{String((coaching as any).encouragement)}"
+                </p>
+              )}
+              {(coaching as any).drill_followup && (
+                <p className="mt-3 text-[12px] font-semibold text-amber-400 border-t border-amber-500/20 pt-3">
+                  🔄 Last Drill: {String((coaching as any).drill_followup)}
+                </p>
+              )}
+              {!(coaching as any).encouragement && !(coaching as any).drill_followup && (
+                <p className="text-[13px] font-medium text-[var(--text-secondary)]">
+                  Keep practicing consistently — improvement compounds with every session.
+                </p>
+              )}
             </div>
           </div>
         </div>

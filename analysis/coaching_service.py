@@ -370,32 +370,32 @@ SUMMARY QUALITY RULES:
 - If the transcript is short or thin, say that the main issue is low evidence/low elaboration and coach them to expand with one example.
 - Avoid vague compliments like "good job" unless followed by the specific behavior that made it good.
 
-Return ONLY this JSON, no other text:
+Return ONLY this JSON, no other text. MATCH the specificity shown in the GOOD examples — the AI will be evaluated on quality:
 {{
   "scores": {{
-    "filler": <0-100>,
-    "delivery": <0-100>,
-    "structure": <0-100>,
-    "vocab": <0-100>,
-    "confidence": <0-100>
+    "filler": <copy from pre-calculated>,
+    "delivery": <copy from pre-calculated>,
+    "structure": <copy from pre-calculated>,
+    "vocab": <copy from pre-calculated>,
+    "confidence": <copy from pre-calculated>
   }},
-  "what_went_well": "<Specific positive with real examples/analogies>",
-  "priority_fix": "<One specific fix using an analogy, NO technical numbers>",
-  "example_moment": "<Quote from transcript + what to do instead>",
-  "daily_drill": "<specific 2-5 minute physical exercise with exact instructions>",
-  "mechanical_tip": "<one physical tip about breathing, posture, or mouth movement>",
-  "micro_habit": "<one thing to watch for in casual conversation today>",
-  "encouragement": "<One warm, supportive sentence>",
-  "content_feedback": "<1-2 sentences on their IDEAS, structure, and use of examples>",
-  "transcript_highlights": [{{"text": "<exact quoted phrase>", "type": "filler_cluster|hedge_words|rushed", "suggestion": "<better alternative>"}}],
-  "session_comparison": "<1-2 sentences comparing THIS session to the previous one, or empty string if first session>",
-  "recurring_patterns": ["<pattern_name if it appeared in 3+ sessions>"],
-  "improvement_noted": "<specific improvement from past sessions, or empty string>",
-  "drill_followup": "<warm comment on last session's drill — did it help? or empty string if no history>",
-  "next_session_focus": "<recommended focus area: filler_words|delivery_monotony|idea_structure|vocabulary|confidence>"
+  "what_went_well": "<BAD example: 'You did great staying on topic.' GOOD example: 'When you opened with the contrast between X and Y, you gave the listener an immediate anchor — that rhetorical setup is exactly what top speakers use. Your closing sentence also had conviction: you stated your position without hedging.'>",
+  "priority_fix": "<BAD: 'Use fewer filler words.' GOOD: 'Your like-habit fires every time you shift between ideas — it showed up 8 times at topic transitions. Replace it with a deliberate pause: close your mouth, think the next word, then say it. Listeners never notice a half-second gap; they always notice the verbal tic.'>",
+  "example_moment": "<Quote one REAL phrase from the transcript. Format exactly: SAID: [quote] -> INSTEAD: [better version with explanation]. BAD: 'You trailed off.' GOOD: 'SAID: ...and I think maybe it could be useful for people -> INSTEAD: This will save most professionals 2 hours a week. Own the claim, cut the hedge, end with a fact.'>",
+  "daily_drill": "<2-minute drill with numbered steps and success criterion. BAD: 'Practice speaking clearly.' GOOD: '1. Take the topic sentence from today. 2. Say it out loud normally. 3. Say it again but pause instead of any filler. 4. Repeat 5x. SUCCESS: You pause deliberately. That silence will feel too long — that feeling means it is working.'>",
+  "mechanical_tip": "<One physical technique. BAD: 'Breathe deeply.' GOOD: 'Before you start speaking, inhale slowly for 4 counts through your nose, hold for 2, exhale for 6 through your mouth. This resets your vocal cords and drops your speaking rate without any conscious effort.'>",
+  "micro_habit": "<One behaviour to catch TODAY in casual talk — specific to their exact weakness detected. BAD: 'Notice filler words.' GOOD: 'Every time you start a new thought today, try to begin with the noun — not so, not like, not um. Just the subject of your sentence. Count how many times you manage it.'>",
+  "encouragement": "<One sentence, warm and specific. BAD: 'Keep it up!' GOOD: 'The discipline to practice on a topic this challenging is exactly what separates speakers who improve from those who plateau — you showed that today.'>",
+  "content_feedback": "<2 sentences on the IDEAS only — structure, argument, use of examples. BAD: 'You had good content.' GOOD: 'Your central argument was clear, but it needed one concrete example to land the point — the claim floated without an anchor. Next time, follow your main point immediately with a specific case or stat and the impact triples.'>",
+  "transcript_highlights": [{{"text": "<exact quoted phrase from transcript>", "type": "filler_cluster|hedge_words|rushed|strong_moment|incomplete", "suggestion": "<specific rewrite, or why the strong moment worked>"}}],
+  "session_comparison": "<1-2 sentences using actual trend data. BAD: 'You improved.' GOOD: 'Your filler rate dropped by half since last session — the pause drill is working. Delivery variety is now the main lever left.' Or empty string if first session.>",
+  "recurring_patterns": ["<Only if appeared in 3+ sessions. Use precise labels: trailing_sentence_endings, over_reliance_on_basically, weak_opening_words>"],
+  "improvement_noted": "<Specific improvement from past data with evidence. BAD: 'You improved.' GOOD: 'Three sessions ago you averaged 6 fillers per minute; today it was under 2. That is a measurable result from consistent work.' Or empty string.>",
+  "drill_followup": "<Specific comment on last drill based on today's results. BAD: 'Good work.' GOOD: 'Last session I asked you to pause instead of filling — and today's numbers show it stuck. The habit is forming.' Or empty string if no history.>",
+  "next_session_focus": "<filler_words|delivery_monotony|idea_structure|vocabulary|confidence>"
 }}
 
-Pre-calculated scores (USE THESE EXACTLY, copy them into scores):
+Pre-calculated scores (COPY THESE EXACTLY into the scores field):
 {{
   "filler": {pre_scores["filler"]},
   "delivery": {pre_scores["delivery"]},
@@ -404,8 +404,7 @@ Pre-calculated scores (USE THESE EXACTLY, copy them into scores):
   "confidence": {pre_scores["confidence"]}
 }}
 
-Your ONLY job for scores is to copy these exact numbers.
-Focus energy on writing excellent coaching text, strictly following the STRICT COACHING RULES above."""
+Your scores field must match those numbers exactly. ALL creative energy goes into the coaching text fields."""
 
 
 class CoachingService:

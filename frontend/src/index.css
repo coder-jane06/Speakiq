@@ -103,6 +103,18 @@ html.light, body.light {
   --teal:   #0D9488;
 }
 
+/* ── UI Density — Compact mode ──────────────────────────────── */
+[data-density="compact"] .p-8  { padding: 1.25rem !important; }
+[data-density="compact"] .p-6  { padding: 1rem !important; }
+[data-density="compact"] .p-5  { padding: 0.875rem !important; }
+[data-density="compact"] .p-4  { padding: 0.625rem !important; }
+[data-density="compact"] .gap-6 { gap: 0.875rem !important; }
+[data-density="compact"] .gap-8 { gap: 1rem !important; }
+[data-density="compact"] .mb-8  { margin-bottom: 1.25rem !important; }
+[data-density="compact"] .mb-6  { margin-bottom: 1rem !important; }
+[data-density="compact"] .space-y-6 > * + * { margin-top: 0.875rem !important; }
+[data-density="compact"] .space-y-8 > * + * { margin-top: 1rem !important; }
+
 /* ═══════════════════════════════════════════════════════════════
    BASE STYLES
    ═══════════════════════════════════════════════════════════════ */
