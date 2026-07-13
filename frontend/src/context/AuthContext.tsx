@@ -79,7 +79,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password })
+    const { error } = await supabase.auth.signUp({ 
+      email, 
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}${window.location.pathname}`
+      }
+    })
     if (error) throw error
   }
 
