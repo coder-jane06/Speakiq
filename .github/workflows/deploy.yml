@@ -31,9 +31,10 @@ jobs:
         run: npx vite build
         working-directory: frontend
         env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_BASE_PATH: /Speakiq/
+          VITE_API_URL: https://shaurya0606-speakiq-backend.hf.space
+          VITE_SUPABASE_URL: https://gakfjshqzwtgqpkftnyd.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdha2Zqc2hxend0Z3Fwa2Z0bnlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NDIwNTcsImV4cCI6MjA5NDUxODA1N30.GA8j5tlSxx8Qpl6I1SA6QJYg97G0oxxp_NayU9z4uMM
           VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
 
       - name: Copy index.html to 404.html (SPA fallback)
