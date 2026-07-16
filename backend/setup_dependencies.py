@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SpeakIQ Dependency Setup & Verification Script
+Fluently Dependency Setup & Verification Script
 
 This script:
 1. Checks if all required Python packages are installed
@@ -27,14 +27,14 @@ def print_status(message, status="info"):
         "error": "\033[91m",     # Red
         "reset": "\033[0m"
     }
-    
+
     symbols = {
         "info": "ℹ",
         "success": "✓",
         "warning": "⚠",
         "error": "✗"
     }
-    
+
     color = colors.get(status, colors["info"])
     symbol = symbols.get(status, "•")
     print(f"{color}{symbol} {message}{colors['reset']}")
@@ -89,7 +89,7 @@ def check_faster_whisper():
     try:
         from faster_whisper import WhisperModel
         print_status("faster-whisper is installed", "success")
-        
+
         # Try to load the base model
         print_status("Testing faster-whisper model loading...", "info")
         model = WhisperModel("base", device="cpu", compute_type="int8")
@@ -107,7 +107,7 @@ def check_ffmpeg():
     """Check if ffmpeg is accessible"""
     import shutil
     ffmpeg_path = shutil.which("ffmpeg")
-    
+
     if ffmpeg_path:
         print_status(f"ffmpeg found at: {ffmpeg_path}", "success")
         return True
@@ -127,7 +127,7 @@ def check_groq_api():
     """Check if Groq API key is set"""
     from dotenv import load_dotenv
     load_dotenv()
-    
+
     groq_key = os.getenv("GROQ_API_KEY")
     if groq_key and len(groq_key) > 10:
         print_status("GROQ_API_KEY is set", "success")
@@ -142,10 +142,10 @@ def check_supabase_config():
     """Check if Supabase credentials are set"""
     from dotenv import load_dotenv
     load_dotenv()
-    
+
     url = os.getenv("SUPABASE_URL")
     key = os.getenv("SUPABASE_SERVICE_KEY")
-    
+
     if url and key:
         print_status("Supabase configuration is set", "success")
         return True
@@ -157,11 +157,11 @@ def check_supabase_config():
 
 def main():
     print("\n" + "="*60)
-    print("  SpeakIQ Dependency Verification")
+    print("  Fluently Dependency Verification")
     print("="*60 + "\n")
-    
+
     all_ok = True
-    
+
     # 1. Check core packages
     print_status("Checking core Python packages...", "info")
     packages = [
@@ -175,13 +175,13 @@ def main():
         ("numpy", "numpy"),
         ("pydantic", "pydantic"),
     ]
-    
+
     for pkg_name, import_name in packages:
         if not check_package(pkg_name, import_name):
             all_ok = False
-    
+
     print()
-    
+
     # 2. Check spaCy model
     print_status("Checking spaCy English model...", "info")
     if not check_spacy_model():
@@ -192,31 +192,31 @@ def main():
                 print_status("Please run this script again to verify", "info")
             else:
                 print_status("Manual installation: python -m spacy download en_core_web_sm", "info")
-    
+
     print()
-    
+
     # 3. Check faster-whisper
     print_status("Checking faster-whisper...", "info")
     if not check_faster_whisper():
         all_ok = False
-    
+
     print()
-    
+
     # 4. Check ffmpeg
     print_status("Checking ffmpeg...", "info")
     if not check_ffmpeg():
         all_ok = False
-    
+
     print()
-    
+
     # 5. Check API keys
     print_status("Checking API configuration...", "info")
     if not check_groq_api():
         all_ok = False
-    
+
     if not check_supabase_config():
         all_ok = False
-    
+
     print("\n" + "="*60)
     if all_ok:
         print_status("All dependencies are properly configured!", "success")
@@ -225,7 +225,7 @@ def main():
         print_status("Some dependencies need attention", "warning")
         print_status("Fix the issues above, then run this script again", "info")
     print("="*60 + "\n")
-    
+
     return 0 if all_ok else 1
 
 

@@ -77,16 +77,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   });
 
   const [accentColor, setAccentColorState] = useState<AccentColor>(() => {
-    return (localStorage.getItem('speakiq_accent') as AccentColor) || 'green';
+    return (localStorage.getItem('fluently_accent') as AccentColor) || 'green';
   });
 
   const [borderRadius, setBorderRadiusState] = useState<number>(() => {
-    const saved = localStorage.getItem('speakiq_radius');
+    const saved = localStorage.getItem('fluently_radius');
     return saved ? Number(saved) : 22;
   });
 
   const [uiDensity, setUiDensityState] = useState<'Comfortable' | 'Compact'>(() => {
-    return (localStorage.getItem('speakiq_density') as 'Comfortable' | 'Compact') || 'Comfortable';
+    return (localStorage.getItem('fluently_density') as 'Comfortable' | 'Compact') || 'Comfortable';
   });
 
   // ── Apply theme class ──────────────────────────────────────────────────────
@@ -109,19 +109,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // ── Apply accent color ─────────────────────────────────────────────────────
   useEffect(() => {
     applyAccentToDOM(accentColor, theme);
-    localStorage.setItem('speakiq_accent', accentColor);
+    localStorage.setItem('fluently_accent', accentColor);
   }, [accentColor, theme]);
 
   // ── Apply border radius ────────────────────────────────────────────────────
   useEffect(() => {
     applyRadiusToDOM(borderRadius);
-    localStorage.setItem('speakiq_radius', String(borderRadius));
+    localStorage.setItem('fluently_radius', String(borderRadius));
   }, [borderRadius]);
 
   // ── Apply density ──────────────────────────────────────────────────────────
   useEffect(() => {
     applyDensityToDOM(uiDensity);
-    localStorage.setItem('speakiq_density', uiDensity);
+    localStorage.setItem('fluently_density', uiDensity);
   }, [uiDensity]);
 
   // ── On first mount, apply all saved values immediately ────────────────────

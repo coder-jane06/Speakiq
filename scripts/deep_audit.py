@@ -1,5 +1,5 @@
 """
-SpeakIQ — Deep App Audit Script
+Fluently — Deep App Audit Script
 Tests every page and data flow end-to-end.
 """
 
@@ -9,7 +9,7 @@ import sys
 import os
 from playwright.async_api import async_playwright, Page, expect
 
-FRONTEND = "https://localhost:5174/Speakiq"
+FRONTEND = "https://localhost:5174/Fluently"
 BACKEND  = "http://127.0.0.1:8002"
 
 # ── We'll log in with the test account ──────────────────────────
@@ -296,7 +296,7 @@ async def audit_session_endpoint():
 async def main():
     print()
     print("=" * 60)
-    print("SPEAKIQ DEEP APP AUDIT")
+    print("FLUENTLY DEEP APP AUDIT")
     print("=" * 60)
     print()
 

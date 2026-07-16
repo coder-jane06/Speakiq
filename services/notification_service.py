@@ -37,7 +37,7 @@ def _send_email(to_email: str, subject: str, html: str) -> bool:
 
         resend.api_key = api_key
         resend.Emails.send({
-            "from": os.getenv("RESEND_FROM_EMAIL", "SpeakIQ <onboarding@resend.dev>"),
+            "from": os.getenv("RESEND_FROM_EMAIL", "Fluently <onboarding@resend.dev>"),
             "to": [to_email],
             "subject": subject,
             "html": html,
@@ -69,7 +69,7 @@ def _send_push(user_id: str, payload: dict[str, Any]) -> bool:
                     },
                     data=json.dumps(payload),
                     vapid_private_key=vapid_private_key,
-                    vapid_claims={"sub": os.getenv("VAPID_SUBJECT", "mailto:admin@speakiq.com")},
+                    vapid_claims={"sub": os.getenv("VAPID_SUBJECT", "mailto:admin@fluently.com")},
                 )
                 sent += 1
             except WebPushException as exc:
@@ -111,11 +111,11 @@ def send_session_complete_notifications(
         ] if scores else []
         avg_score = round(sum(score_values) / len(score_values)) if score_values else 0
         priority = getattr(coaching_report, "priority_fix", "") or "Open your report for the next practice step."
-        report_url = f"{os.getenv('FRONTEND_URL', 'https://speakiq.app')}/session/{session_id}/results"
+        report_url = f"{os.getenv('FRONTEND_URL', 'https://fluently.app')}/session/{session_id}/results"
 
         if _prefs_enabled(prefs, "push"):
             _send_push(user_id, {
-                "title": "SpeakIQ report ready",
+                "title": "Fluently report ready",
                 "body": f"{topic or 'Your session'} scored {avg_score}/100. {priority[:90]}",
                 "url": report_url,
             })
@@ -126,7 +126,7 @@ def send_session_complete_notifications(
                 email_topic = topic or "today's speaking session"
                 _send_email(
                     to_email,
-                    "Your SpeakIQ coaching report is ready",
+                    "Your Fluently coaching report is ready",
                     f"""
                     <div style="font-family: Inter, Arial, sans-serif; max-width: 620px; margin: 0 auto; background: #0f1115; color: #f5f5f5; padding: 32px; border-radius: 16px;">
                       <h2 style="margin: 0 0 12px; color: #C8F97D;">Nice work, {display_name}</h2>

@@ -36,6 +36,11 @@ class CoachingReport:
     micro_habit:        str = ""
     encouragement:      str = ""
     content_feedback:   str = ""
+    content_score:      int = 50
+    central_claim:      str = ""
+    evidence_gap:       str = ""
+    content_rewrite:    str = ""
+    content_outline:    list[str] = field(default_factory=list)
     focus_area:         str = "filler_words"
     session_number:     int = 1
     # Adaptive memory fields
@@ -86,7 +91,7 @@ def build_coaching_prompt(
     """Build personalized coaching prompt with all session data."""
 
     session_num = session_number or 1
-    
+
     # Progressive 30-day transformation roadmap
     if session_num <= 5:
         tier = "FOUNDATION (Days 1-5)"
@@ -96,7 +101,7 @@ def build_coaching_prompt(
         - Build confidence through encouragement
         - Daily drill must be SIMPLE (under 2 minutes)
         Keep feedback WARM and ENCOURAGING. They're building the habit of practice."""
-        
+
     elif session_num <= 10:
         tier = "AWARENESS (Days 6-10)"
         tier_instruction = """This is the AWARENESS phase. Your job:
@@ -105,7 +110,7 @@ def build_coaching_prompt(
         - Introduce ONE structural framework (e.g., "Point-Example-Point")
         - Daily drills should focus on SELF-CORRECTION
         Be CONSTRUCTIVE but push harder than week 1. They're ready."""
-        
+
     elif session_num <= 15:
         tier = "STRUCTURE (Days 11-15)"
         tier_instruction = """This is the STRUCTURE phase. Your job:
@@ -114,7 +119,7 @@ def build_coaching_prompt(
         - Introduce mode-specific frameworks (STAR for interviews, Rule of Three for speeches)
         - Daily drills should be TIMED exercises (e.g., "90-second answer")
         Be SPECIFIC. Vague advice is useless here. Quote exact moments from transcript."""
-        
+
     elif session_num <= 20:
         tier = "POLISH (Days 16-20)"
         tier_instruction = """This is the POLISH phase. Your job:
@@ -123,7 +128,7 @@ def build_coaching_prompt(
         - Push vocabulary: Are they using weak words like "thing, stuff, like"?
         - Daily drills should combine multiple skills
         Stop praising basics. They're past that."""
-        
+
     elif session_num <= 25:
         tier = "PRESENCE (Days 21-25)"
         tier_instruction = """This is the PRESENCE phase. Your job:
@@ -132,7 +137,7 @@ def build_coaching_prompt(
         - Push them on conviction: Do they believe what they're saying?
         - Daily drills should simulate high-pressure scenarios
         Be DEMANDING. Great speakers are forged in challenge."""
-        
+
     elif session_num <= 30:
         tier = "MASTERY (Days 26-30)"
         tier_instruction = """This is the MASTERY phase. Your job:
@@ -141,7 +146,7 @@ def build_coaching_prompt(
         - Give master-level feedback on nuance, subtlety, presence
         - Daily drill should be a capstone challenge
         They should feel like a DIFFERENT speaker than Day 1. Make that explicit."""
-        
+
     else:
         tier = "EXPERT MAINTENANCE"
         tier_instruction = """Post-30-day EXPERT maintenance. Your job:
@@ -260,13 +265,13 @@ def build_coaching_prompt(
     goal_text = goal_instructions.get(
         speaking_goal,
         """The user wants general speaking improvement across all dimensions.
-        
+
 🎯 GENERAL SPEAKING METRICS:
 - Fluency: Minimal fillers, smooth delivery
 - Structure: Clear beginning, middle, end
 - Engagement: Varied pace and tone
 - Confidence: Assertive without hedging
-        
+
 Balance all dimensions: filler control, pacing, structure, vocabulary, and confidence."""
     )
     goal_section = f"\n## 🎯 SPEAKING GOAL: {speaking_goal.upper()}\n{goal_text}\n"
@@ -296,8 +301,10 @@ Balance all dimensions: filler control, pacing, structure, vocabulary, and confi
 
     # ── User profile history ───────────────────────────────────────────
     ai_prefs = user_profile.get("ai_coach_preferences", {}) if user_profile else {}
-    coaching_style = ai_prefs.get("style", "balanced")
-    feedback_detail = ai_prefs.get("detail", "basic")
+    # Settings persist these as top-level columns. Keep the JSON fallback for
+    # older profiles created before the preferences migration.
+    coaching_style = ((user_profile or {}).get("coaching_style") or ai_prefs.get("style") or "Balanced").lower()
+    feedback_detail = ((user_profile or {}).get("feedback_detail") or ai_prefs.get("detail") or "Detailed").lower()
 
     style_instructions = {
         "encouraging": "ADOPT A HIGHLY ENCOURAGING TONE. Focus heavily on praise, soft corrections, and building confidence.",
@@ -309,7 +316,7 @@ Balance all dimensions: filler control, pacing, structure, vocabulary, and confi
         "detailed": "Provide detailed, comprehensive feedback with thorough explanations.",
         "expert": "Provide advanced, expert-level feedback using rhetorical terminology, linguistic analysis, and precise mechanics."
     }
-    
+
     tone_section = f"\n## Your Persona & Tone\n{style_instructions.get(coaching_style, style_instructions['balanced'])}\n{detail_instructions.get(feedback_detail, detail_instructions['basic'])}\n"
 
     if user_profile and (user_profile.get("total_sessions") or 0) > 1:
@@ -441,6 +448,13 @@ Even tiny progress deserves recognition - that's what builds momentum.
 Don't end with vague encouragement. End with ONE concrete thing to focus on tomorrow.
 "Tomorrow, focus on pausing for one full second before answering any question."
 
+CONTENT COACHING CONTRACT:
+- Judge quality of expression only: topic alignment, a clear central claim, logical order, and support from examples or reasoning. Do not fact-check or judge beliefs.
+- Identify the user's actual central claim. If there is none, say so plainly.
+- Name the most valuable missing support: a concrete example, reason, comparison, or outcome drawn from the topic.
+- Write a faithful 2-4 sentence improved version. Preserve the user's viewpoint and never invent statistics, personal experiences, or facts.
+- Give a reusable 3-4 step outline appropriate to the speaking goal.
+
 Return ONLY this JSON, no other text:
 {{
   "scores": {{
@@ -458,6 +472,11 @@ Return ONLY this JSON, no other text:
   "micro_habit": "<one thing to watch for in casual conversation today>",
   "encouragement": "<One warm, supportive sentence>",
   "content_feedback": "<1-2 sentences on their IDEAS, structure, and use of examples>",
+  "content_score": <0-100 for clarity, relevance, and support of the content; not factual correctness>,
+  "central_claim": "<the speaker's central claim, or 'No clear central claim yet'>",
+  "evidence_gap": "<one specific missing reason/example/outcome that would make the message stronger>",
+  "content_rewrite": "<a faithful 2-4 sentence improved version; no invented facts>",
+  "content_outline": ["<opening/hook>", "<main point>", "<specific support>", "<takeaway>"],
   "transcript_highlights": [{{"text": "<exact quoted phrase>", "type": "filler_cluster|hedge_words|rushed", "suggestion": "<better alternative>"}}],
   "session_comparison": "<1-2 sentences comparing THIS session to the previous one, or empty string if first session>",
   "recurring_patterns": ["<pattern_name if it appeared in 3+ sessions>"],
@@ -492,6 +511,11 @@ class CoachingService:
         "micro_habit": "Today, pause for one full second before answering any question someone asks you. Notice how it makes you feel more in control.",
         "encouragement": "Every great speaker started where you are. The difference is they didn't quit after day 3.",
         "content_feedback": "We couldn't analyze your ideas this session, but the fact that you organized your thoughts and spoke them aloud is valuable practice.",
+        "content_score": 50,
+        "central_claim": "Your main point could not be extracted because the AI report was unavailable.",
+        "evidence_gap": "Add one concrete example that supports your main point in your next recording.",
+        "content_rewrite": "Start with your main point, explain one reason it matters, then end with the takeaway you want the listener to remember.",
+        "content_outline": ["State your position", "Give one reason", "Add a concrete example", "Close with the takeaway"],
         "transcript_highlights": [],
         "session_comparison": "",
         "recurring_patterns": [],
@@ -578,7 +602,7 @@ class CoachingService:
 
         try:
             response_text = None
-            
+
             # Helper function to call the LLM
             def call_llm(client, is_openai=False):
                 if is_openai:
@@ -609,7 +633,7 @@ class CoachingService:
                         response_text = call_llm(self.openai_client, is_openai=True)
                     else:
                         raise e # No fallback available, raise to trigger _fallback_report
-            
+
             # Attempt OpenAI if it was primary
             elif provider == "openai" and hasattr(self, 'openai_client') and self.openai_client:
                 response_text = call_llm(self.openai_client, is_openai=True)
@@ -643,6 +667,11 @@ class CoachingService:
                 micro_habit=           report_data.get("micro_habit", ""),
                 encouragement=         report_data.get("encouragement", ""),
                 content_feedback=      report_data.get("content_feedback", ""),
+                content_score=         max(0, min(100, int(report_data.get("content_score", 50) or 50))),
+                central_claim=          report_data.get("central_claim", ""),
+                evidence_gap=           report_data.get("evidence_gap", ""),
+                content_rewrite=        report_data.get("content_rewrite", ""),
+                content_outline=        report_data.get("content_outline", []) if isinstance(report_data.get("content_outline", []), list) else [],
                 focus_area=            focus_area,
                 session_number=        session_number,
                 transcript_highlights= report_data.get("transcript_highlights", []),
@@ -666,13 +695,13 @@ class CoachingService:
 
     def _fallback_report(self, focus_area: str, session_number: int, pre_computed_scores: Optional[dict] = None, speaking_goal: str = "general") -> CoachingReport:
         d = self.FALLBACK_REPORT.copy()
-        
+
         # Inject the actual pre-computed scores so the user doesn't just see 50s everywhere
         if pre_computed_scores:
             d["scores"] = pre_computed_scores
 
         d["next_session_focus"] = focus_area
-        
+
         # Tailor fallback encouragement based on speaking_goal
         goal_messages = {
             "orator": "Even great orators experience technical pauses. Your analysis is safe; keep practicing your narrative flow.",
@@ -693,6 +722,11 @@ class CoachingService:
             micro_habit=d["micro_habit"],
             encouragement=d["encouragement"],
             content_feedback=d["content_feedback"],
+            content_score=d["content_score"],
+            central_claim=d["central_claim"],
+            evidence_gap=d["evidence_gap"],
+            content_rewrite=d["content_rewrite"],
+            content_outline=d["content_outline"],
             focus_area=focus_area,
             session_number=session_number,
             transcript_highlights=d["transcript_highlights"],

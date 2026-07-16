@@ -1,5 +1,5 @@
 -- ================================================================
--- SpeakIQ v4 integrations preferences migration
+-- Fluently v4 integrations preferences migration
 -- Safe to re-run.
 -- ================================================================
 

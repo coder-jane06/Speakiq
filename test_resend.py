@@ -11,9 +11,9 @@ if not resend.api_key:
 else:
     try:
         r = resend.Emails.send({
-            "from": "SpeakIQ <onboarding@resend.dev>",
+            "from": "Fluently <onboarding@resend.dev>",
             "to": "delivered@resend.dev",
-            "subject": "Test from Speakiq",
+            "subject": "Test from Fluently",
             "html": "<strong>It works!</strong>"
         })
         print(r)

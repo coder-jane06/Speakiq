@@ -1,5 +1,5 @@
 """
-SpeakIQ FastAPI backend.
+Fluently FastAPI backend.
 
 Run locally with:
     python -m uvicorn main:app --reload
@@ -34,7 +34,7 @@ logging.basicConfig(
         logging.FileHandler("app.log", encoding="utf-8")
     ],
 )
-logger = logging.getLogger("speakiq")
+logger = logging.getLogger("fluently")
 
 
 def check_supabase() -> dict[str, Any]:
@@ -65,7 +65,7 @@ def check_supabase() -> dict[str, Any]:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("----------------------------------------")
-    logger.info("SpeakIQ API starting up")
+    logger.info("Fluently API starting up")
 
     import uvicorn
     import gc
@@ -84,11 +84,11 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    logger.info("SpeakIQ API shutting down")
+    logger.info("Fluently API shutting down")
 
 
 app = FastAPI(
-    title="SpeakIQ API",
+    title="Fluently API",
     description="AI-powered speech coaching backend",
     version="0.1.0",
     lifespan=lifespan,
@@ -131,7 +131,7 @@ app.include_router(dashboard_router, prefix="/dashboard", tags=["dashboard"])
 
 @app.get("/health", tags=["system"])
 async def health():
-    return {"status": "ok", "service": "speakiq-api"}
+    return {"status": "ok", "service": "fluently-api"}
 
 
 @app.get("/system/status", tags=["system"])
@@ -145,7 +145,7 @@ async def system_status():
 
 @app.get("/api", tags=["system"])
 async def root():
-    return {"message": "SpeakIQ API - see /docs for endpoints"}
+    return {"message": "Fluently API - see /docs for endpoints"}
 
 
 # ── Serve built frontend (React SPA) ─────────────────────────────────────────
@@ -158,12 +158,12 @@ _FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
 if _FRONTEND_DIST.exists():
     # Mount assets (JS/CSS/images) at their exact paths
     app.mount(
-        "/Speakiq/assets",
+        "/assets",
         StaticFiles(directory=str(_FRONTEND_DIST / "assets")),
         name="assets",
     )
 
-    @app.get("/Speakiq/{full_path:path}", tags=["frontend"])
+    @app.get("/{full_path:path}", tags=["frontend"])
     async def serve_spa(full_path: str):
         """Return index.html for all SPA routes so React Router can handle them."""
         index = _FRONTEND_DIST / "index.html"
@@ -175,10 +175,10 @@ if _FRONTEND_DIST.exists():
     async def serve_root():
         """Redirect / to the SPA root."""
         from fastapi.responses import RedirectResponse
-        return RedirectResponse(url="/Speakiq/")
+        return RedirectResponse(url="/")
 
     logger.info(f"Frontend: serving from {_FRONTEND_DIST}")
 else:
     @app.get("/", tags=["system"])
     async def root_no_frontend():
-        return {"message": "SpeakIQ API — frontend not built. Run: cd frontend && npm run build"}
+        return {"message": "Fluently API — frontend not built. Run: cd frontend && npm run build"}

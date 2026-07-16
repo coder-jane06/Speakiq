@@ -1,7 +1,7 @@
 import os
 import re
 
-dir_path = "c:/Users/GAMER/Desktop/speakiq/frontend/src"
+dir_path = "c:/Users/GAMER/Desktop/fluently/frontend/src"
 
 replacements = {
     r"#0A0A0A": "var(--bg-main)",
@@ -23,11 +23,11 @@ for root, dirs, files in os.walk(dir_path):
             file_path = os.path.join(root, file)
             with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
-                
+
             new_content = content
             for old, new in replacements.items():
                 new_content = re.sub(old, new, new_content, flags=re.IGNORECASE)
-                
+
             if new_content != content:
                 with open(file_path, "w", encoding="utf-8") as f:
                     f.write(new_content)

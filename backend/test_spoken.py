@@ -1,6 +1,6 @@
 import requests, time, sys
 
-url = "https://shaurya0606-speakiq-backend.hf.space/sessions/upload"
+url = "https://shaurya0606-fluently-backend.hf.space/sessions/upload"
 print(f"Uploading spoken.wav to {url}...")
 try:
     with open("../spoken.wav", "rb") as f:
@@ -12,7 +12,7 @@ try:
             session_id = res.json()["session_id"]
             for i in range(25):
                 time.sleep(2)
-                res2 = requests.get(f"https://shaurya0606-speakiq-backend.hf.space/sessions/{session_id}")
+                res2 = requests.get(f"https://shaurya0606-fluently-backend.hf.space/sessions/{session_id}")
                 if res2.status_code == 200:
                     data = res2.json()
                     status = data.get('status')

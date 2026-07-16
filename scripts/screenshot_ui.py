@@ -1,9 +1,9 @@
-"""Screenshot every page of SpeakIQ at desktop + mobile widths for UI analysis."""
+"""Screenshot every page of Fluently at desktop + mobile widths for UI analysis."""
 from playwright.sync_api import sync_playwright
 import os, time
 
 OUT = r"C:\Users\GAMER\.gemini\antigravity\brain\59a7c87b-15cf-4fd3-a191-ea976ae1c6f4"
-BASE = "https://localhost:5174/Speakiq"
+BASE = "https://localhost:5174/Fluently"
 
 PAGES = [
     ("home",        "/"),

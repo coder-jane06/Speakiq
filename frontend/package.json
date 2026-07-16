@@ -1,12 +1,12 @@
 {
-  "name": "frontend",
+  "name": "fluently",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build && node -e \"fs.copyFileSync('dist/index.html', 'dist/404.html')\"",
-    "predeploy": "npm run build",
+    "predeploy": "tsc -b && vite build --base=./ && node -e \"fs.copyFileSync('dist/index.html', 'dist/404.html')\"",
     "deploy": "gh-pages -d dist",
     "lint": "eslint .",
     "preview": "vite preview"

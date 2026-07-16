@@ -1,5 +1,5 @@
 -- ================================================================
--- SpeakIQ v2 FINAL MIGRATION — Paste ALL of this in one go
+-- Fluently v2 FINAL MIGRATION — Paste ALL of this in one go
 -- Supabase Dashboard > SQL Editor > New Query > Run
 -- Safe to re-run (IF NOT EXISTS everywhere)
 -- Does NOT touch your 43 sessions, 37 metrics, 1 profile, 30 topics

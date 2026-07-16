@@ -1,8 +1,8 @@
-"""Capture all console errors from every page of the SpeakIQ app."""
+"""Capture all console errors from every page of the Fluently app."""
 import asyncio, json
 from playwright.async_api import async_playwright
 
-FRONTEND = "https://localhost:5174/Speakiq"
+FRONTEND = "https://localhost:5174/Fluently"
 
 PAGES = [
     ("Home",        "/"),
@@ -54,7 +54,7 @@ async def capture_errors(page_name, url, page):
     return errors, warnings, network_fails
 
 async def main():
-    print("\nSpeakIQ Console Error Capture\n")
+    print("\nFluently Console Error Capture\n")
     all_errors = []
 
     async with async_playwright() as pw:

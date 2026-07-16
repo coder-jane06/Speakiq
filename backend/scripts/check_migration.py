@@ -1,5 +1,5 @@
 """
-SpeakIQ v2 — Full Migration Runner
+Fluently v2 — Full Migration Runner
 Runs entirely via the Supabase REST API using the service key.
 No SQL editor needed. Safe to re-run.
 """
@@ -48,7 +48,7 @@ def supabase_upsert(table, rows, on_conflict=None):
     return r.ok, r.status_code, r.text
 
 print("=" * 60)
-print("SpeakIQ v2 Migration Runner")
+print("Fluently v2 Migration Runner")
 print("=" * 60)
 
 # ─────────────────────────────────────────────────────────────────
@@ -144,7 +144,7 @@ ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS difficulty_tier          TEXT
 ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS onboarding_complete      BOOLEAN DEFAULT FALSE;
 ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS recording_duration_secs  INT     DEFAULT 60;
 
--- 2. topics new columns  
+-- 2. topics new columns
 ALTER TABLE topics ADD COLUMN IF NOT EXISTS target_skill  TEXT DEFAULT 'general';
 ALTER TABLE topics ADD COLUMN IF NOT EXISTS goal_type     TEXT DEFAULT 'general';
 

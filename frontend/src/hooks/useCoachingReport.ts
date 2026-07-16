@@ -55,6 +55,11 @@ export interface CoachingReport {
   what_went_well?: string
   priority_fix?: string
   content_feedback?: string
+  content_score?: number
+  central_claim?: string
+  evidence_gap?: string
+  content_rewrite?: string
+  content_outline?: string[]
   example_moment?: string
   encouragement?: string
   // New actionable coaching fields
@@ -113,10 +118,10 @@ export function useCoachingReport(sessionId: string | undefined): CoachingReport
         if (import.meta.env.DEV) {
           console.log(`[Poll] Fetching session ${sessionId} (elapsed: ${elapsed}ms)`)
         }
-        
+
         const { data: { session: authSession } } = await supabase.auth.getSession()
         const token = authSession?.access_token
-        
+
         const res = await fetch(`${API_BASE}/sessions/${sessionId}`, {
           headers: {
             'Authorization': token ? `Bearer ${token}` : ''
@@ -201,10 +206,10 @@ export function useCoachingReport(sessionId: string | undefined): CoachingReport
         const fillerDetail = parseJson(rawMetrics.filler_detail, {})
         const words = parseJson(rawMetrics.words, [])
         const pauseList = parseJson(rawMetrics.pause_list, [])
-        
+
         // Construct duration_s from last word's end timestamp
         const duration_s = words.length > 0 ? words[words.length - 1].end : 0
-        
+
         // Prepare filler_words for FillerBreakdown
         const filler_words = Object.entries(fillerDetail).map(([word, count]) => ({
           word,
@@ -215,10 +220,10 @@ export function useCoachingReport(sessionId: string | undefined): CoachingReport
         if (import.meta.env.DEV) {
           console.log('[Poll] SUCCESS - coaching report loaded')
         }
-        
+
         setSession(data)
-        setMetrics({ 
-          ...rawMetrics, 
+        setMetrics({
+          ...rawMetrics,
           filler_detail: fillerDetail,
           words,
           pause_list: pauseList,

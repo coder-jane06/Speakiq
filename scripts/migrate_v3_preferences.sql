@@ -1,5 +1,5 @@
 -- ================================================================
--- SpeakIQ v3 preferences + adaptive dashboard migration
+-- Fluently v3 preferences + adaptive dashboard migration
 -- Safe to re-run.
 -- ================================================================
 

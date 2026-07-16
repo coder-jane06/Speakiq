@@ -1,9 +1,9 @@
-# SpeakIQ production launch
+# Fluently production launch
 
 This repository uses two Render services defined in `render.yaml`:
 
-- `speakiq-api`: the FastAPI API and speech-analysis worker.
-- `speakiq-web`: the React static site.
+- `fluently-api`: the FastAPI API and speech-analysis worker.
+- `fluently-web`: the React static site.
 
 Deploy the API first so that its public URL can be used as `VITE_API_URL` for the web build.
 
@@ -18,7 +18,7 @@ Deploy the API first so that its public URL can be used as `VITE_API_URL` for th
 ## 2. Configure email and push delivery
 
 1. Create and verify a sending domain in Resend, such as `mail.example.com`.
-2. Set `RESEND_FROM_EMAIL` to a verified sender such as `SpeakIQ <hello@mail.example.com>`. Do not use `onboarding@resend.dev` outside Resend's testing constraints.
+2. Set `RESEND_FROM_EMAIL` to a verified sender such as `Fluently <hello@mail.example.com>`. Do not use `onboarding@resend.dev` outside Resend's testing constraints.
 3. Set `RESEND_API_KEY` on the API service.
 4. Generate VAPID keys and set `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` on the API service. Set the matching public key as `VITE_VAPID_PUBLIC_KEY` on the static site.
 
@@ -27,14 +27,14 @@ Session-report emails are only sent when both `email` and `sessionCompletion` ar
 ## 3. Create the Render services
 
 1. In Render, select **New → Blueprint** and connect this GitHub repository. Render reads `render.yaml`.
-2. Enter API secrets on `speakiq-api`:
+2. Enter API secrets on `fluently-api`:
    - `SUPABASE_URL`
    - `SUPABASE_SERVICE_KEY`
    - `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and/or `GROQ_API_KEY` as used by the selected coaching provider
    - `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`
-   - `FRONTEND_URL` (the final `speakiq-web` URL, no trailing slash)
-3. Deploy `speakiq-api` and confirm `https://<api-host>/health` returns `{"status":"ok"}`.
-4. Enter these build-time values on `speakiq-web` and deploy it:
+   - `FRONTEND_URL` (the final `fluently-web` URL, no trailing slash)
+3. Deploy `fluently-api` and confirm `https://<api-host>/health` returns `{"status":"ok"}`.
+4. Enter these build-time values on `fluently-web` and deploy it:
    - `VITE_API_URL=https://<api-host>`
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY` (the public anon/publishable key only)
@@ -43,9 +43,9 @@ Session-report emails are only sent when both `email` and `sessionCompletion` ar
 
 ## 4. Attach a custom domain
 
-1. Add `app.example.com` to the `speakiq-web` custom domains in Render.
+1. Add `app.example.com` to the `fluently-web` custom domains in Render.
 2. At the domain registrar, create exactly the DNS record Render displays (normally a CNAME for a subdomain). Wait for Render to issue HTTPS.
-3. Add `api.example.com` to `speakiq-api` only if a public API domain is wanted. Otherwise the generated Render API hostname is sufficient.
+3. Add `api.example.com` to `fluently-api` only if a public API domain is wanted. Otherwise the generated Render API hostname is sufficient.
 4. Replace the temporary Render values in Supabase Site URL, Redirect URLs, `FRONTEND_URL`, and `VITE_API_URL` with the custom domain values; redeploy the web site after changing `VITE_API_URL`.
 
 ## 5. Final acceptance checks

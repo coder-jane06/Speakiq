@@ -1,5 +1,5 @@
 """
-SpeakIQ Schema Migration v2.0
+Fluently Schema Migration v2.0
 Run this script to add all new tables and columns to Supabase.
 Usage: python scripts/migrate_v2.py
 """
@@ -12,7 +12,7 @@ from config import get_db
 
 def run_migration():
     db = get_db()
-    
+
     migrations = [
         # 1. User profile additions
         """ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS speaking_goal TEXT DEFAULT 'general'""",
@@ -20,16 +20,16 @@ def run_migration():
         """ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS difficulty_tier TEXT DEFAULT 'beginner'""",
         """ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS onboarding_complete BOOLEAN DEFAULT FALSE""",
         """ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS recording_duration_secs INT DEFAULT 60""",
-        
+
         # 2. Topics table additions
         """ALTER TABLE topics ADD COLUMN IF NOT EXISTS target_skill TEXT DEFAULT 'general'""",
         """ALTER TABLE topics ADD COLUMN IF NOT EXISTS difficulty TEXT DEFAULT 'medium'""",
         """ALTER TABLE topics ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'opinion'""",
         """ALTER TABLE topics ADD COLUMN IF NOT EXISTS goal_type TEXT DEFAULT 'general'""",
     ]
-    
-    print("Running SpeakIQ v2.0 migrations...")
-    
+
+    print("Running Fluently v2.0 migrations...")
+
     for i, sql in enumerate(migrations, 1):
         try:
             db.rpc('exec_sql', {'query': sql}).execute()
@@ -37,7 +37,7 @@ def run_migration():
         except Exception as e:
             # Try alternative approach via postgrest
             print(f"  [{i}/{len(migrations)}] ⚠ RPC failed, trying direct: {str(e)[:50]}")
-    
+
     # Create tables via Supabase API (these need to be created via SQL editor)
     # We'll create them using the postgrest approach
     create_tables_sql = """
@@ -82,14 +82,14 @@ def run_migration():
         UNIQUE(user_id, week_start)
     );
     """
-    
+
     print("\n" + "="*60)
     print("IMPORTANT: The following tables need to be created via")
     print("Supabase SQL Editor (Dashboard → SQL Editor → New Query):")
     print("="*60)
     print(create_tables_sql)
     print("="*60)
-    
+
     # Try to create via RPC if available
     for table_sql in create_tables_sql.split(';'):
         table_sql = table_sql.strip()
@@ -100,7 +100,7 @@ def run_migration():
                 print(f"  ✓ Created table: {table_name}")
             except Exception as e:
                 print(f"  ⚠ Could not create via RPC (create manually in SQL Editor)")
-    
+
     print("\n✓ Migration script complete!")
     print("  If any tables failed, please run the SQL above in Supabase SQL Editor.")
 

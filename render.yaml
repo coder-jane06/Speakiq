@@ -1,7 +1,7 @@
 services:
   # Public API and the worker that processes uploaded recordings.
   - type: web
-    name: speakiq-api
+    name: fluently-api
     runtime: docker
     dockerContext: backend
     dockerfilePath: backend/Dockerfile
@@ -35,12 +35,12 @@ services:
   # The React application must be deployed separately from the API. This builds
   # the `frontend/` package and serves it from a custom domain or Render URL.
   - type: web
-    name: speakiq-web
+    name: fluently-web
     runtime: static
     buildCommand: cd frontend && npm ci && npm run build
     staticPublishPath: ./frontend/dist
     envVars:
-      # Set this to the public HTTPS URL of speakiq-api before the first build.
+      # Set this to the public HTTPS URL of fluently-api before the first build.
       - key: VITE_API_URL
         sync: false
       - key: VITE_SUPABASE_URL

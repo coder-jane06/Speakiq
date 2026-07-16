@@ -48,5 +48,6 @@ COPY --chown=user . .
 # Expose port 7860 for Hugging Face Spaces
 EXPOSE 7860
 
-# Start the application on port 7860
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
+# The production API is maintained in backend/. Running it from that directory
+# keeps the Hugging Face Space aligned with the Render deployment.
+CMD ["sh", "-c", "cd backend && uvicorn main:app --host 0.0.0.0 --port ${PORT:-7860}"]

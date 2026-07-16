@@ -1,5 +1,5 @@
 """
-auth.py — JWT authentication for SpeakIQ backend.
+auth.py — JWT authentication for Fluently backend.
 
 Verifies Supabase-issued JWTs using the project's JWT secret.
 The secret is found in: Supabase Dashboard → Settings → API → JWT Secret.

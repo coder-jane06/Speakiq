@@ -38,11 +38,11 @@ def _report_email_html(
     )
     return f'''<!doctype html>
 <html><body style="margin:0;padding:0;background:#eef2ed;color:#18351c">
-  <div style="display:none;max-height:0;overflow:hidden">Your SpeakIQ report is ready — one focused step for your next practice.</div>
+  <div style="display:none;max-height:0;overflow:hidden">Your Fluently report is ready — one focused step for your next practice.</div>
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#eef2ed;padding:28px 12px"><tr><td align="center">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 8px 30px rgba(24,53,28,.12)">
       <tr><td style="padding:25px 32px;background:linear-gradient(135deg,#17351d,#2f7d32);color:#ffffff">
-        <div style="font:700 22px Arial,sans-serif;letter-spacing:-.4px">SpeakIQ</div>
+        <div style="font:700 22px Arial,sans-serif;letter-spacing:-.4px">Fluently</div>
         <div style="margin-top:21px;font:700 26px Arial,sans-serif;line-height:1.2">Your voice is getting stronger.</div>
         <div style="margin-top:8px;font:400 14px Arial,sans-serif;color:#d9f0d8">Your coaching report is ready to use.</div>
       </td></tr>
@@ -64,7 +64,7 @@ def _report_email_html(
         </div>
       </td></tr>
       <tr><td align="center" style="padding:0 32px 34px">{cta}<p style="margin:20px 0 0;font:400 12px Arial,sans-serif;line-height:1.5;color:#77827a">Small, consistent practice changes how you sound — and how you feel when you speak.</p></td></tr>
-      <tr><td style="padding:18px 32px;background:#f5f7f4;text-align:center;font:400 11px Arial,sans-serif;line-height:1.5;color:#758077">You received this because session-completion emails are enabled in your SpeakIQ settings.<br/>You can change notification preferences any time in the app.</td></tr>
+      <tr><td style="padding:18px 32px;background:#f5f7f4;text-align:center;font:400 11px Arial,sans-serif;line-height:1.5;color:#758077">You received this because session-completion emails are enabled in your Fluently settings.<br/>You can change notification preferences any time in the app.</td></tr>
     </table>
   </td></tr></table>
 </body></html>'''
@@ -128,16 +128,16 @@ def send_session_complete_notifications(user_id: str, session_id: str, topic: st
         report_url = f"{frontend_url}/#/session/{session_id}/results" if frontend_url else ""
         message = f"{topic or 'Your session'} scored {score}/100. {priority}"
         if prefs.get("push", False):
-            _send_push(user_id, {"title": "SpeakIQ report ready", "body": message, "url": report_url})
+            _send_push(user_id, {"title": "Fluently report ready", "body": message, "url": report_url})
         if prefs.get("email", False):
             api_key, email = os.getenv("RESEND_API_KEY"), _get_user_email(user_id)
             if api_key and email:
                 import resend
                 resend.api_key = api_key
                 resend.Emails.send({
-                    "from": os.getenv("RESEND_FROM_EMAIL", "SpeakIQ <onboarding@resend.dev>"),
+                    "from": os.getenv("RESEND_FROM_EMAIL", "Fluently <onboarding@resend.dev>"),
                     "to": [email],
-                    "subject": f"Your SpeakIQ report is ready — {score}/100",
+                    "subject": f"Your Fluently report is ready — {score}/100",
                     "html": _report_email_html(profile.get("display_name") or "Speaker", topic, score_map, score, priority, report_url),
                 })
     except Exception as exc:

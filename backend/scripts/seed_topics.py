@@ -1,5 +1,5 @@
 """
-SpeakIQ — Topic Seeder
+Fluently — Topic Seeder
 Run AFTER applying migrate_v2.sql in Supabase.
 Inserts 37 categorised topics using the Python client (no SQL column issues).
 Safe to re-run — checks for duplicates first.
@@ -69,7 +69,7 @@ TOPICS = [
 
 def main():
     print("=" * 55)
-    print("SpeakIQ Topic Seeder")
+    print("Fluently Topic Seeder")
     print("=" * 55)
 
     # First verify the new columns exist

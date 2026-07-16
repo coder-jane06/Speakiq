@@ -84,13 +84,13 @@ async def run_analysis_pipeline(
         try:
             logger.info(f"[Pipeline] Stage 1: Whisper transcription...")
             logger.debug(f"[Pipeline] Audio bytes size: {len(audio_bytes)} bytes")
-            
+
             # CRITICAL: Verify audio bytes are not empty
             if len(audio_bytes) < 1000:
                 logger.error(f"[Pipeline] Audio too small ({len(audio_bytes)} bytes) - likely corrupted")
                 # Don't continue - this is a critical error
                 raise Exception(f"Audio file too small: {len(audio_bytes)} bytes")
-            
+
             transcript_result = await whisper_service.transcribe_from_bytes(
                 audio_bytes=audio_bytes,
                 filename="recording.webm"
@@ -102,7 +102,7 @@ async def run_analysis_pipeline(
                     f"{transcript_result.word_count} words, "
                     f"{transcript_result.duration_secs:.1f}s duration"
                 )
-                
+
                 # CRITICAL: If we got a result but 0 words, something is wrong
                 if transcript_result.word_count == 0 and len(audio_bytes) > 100000:
                     logger.warning(
@@ -117,7 +117,7 @@ async def run_analysis_pipeline(
         except Exception as e:
             import traceback
             logger.error(f"[Pipeline] Whisper failed: {e}\n{traceback.format_exc()}")
-            
+
             # Mark session as failed and return
             try:
                 from config import get_db
@@ -127,7 +127,7 @@ async def run_analysis_pipeline(
                 logger.error(f"[Pipeline] Marked session {session_id} as failed due to Whisper error")
             except Exception as db_err:
                 logger.error(f"[Pipeline] Could not update session status: {db_err}")
-            
+
             # Return None to indicate complete failure
             return None
 
@@ -651,6 +651,11 @@ async def save_results_to_db(
             "micro_habit":       coaching.micro_habit,
             "encouragement":     coaching.encouragement,
             "content_feedback":  coaching.content_feedback,
+            "content_score":     coaching.content_score,
+            "central_claim":     coaching.central_claim,
+            "evidence_gap":      coaching.evidence_gap,
+            "content_rewrite":   coaching.content_rewrite,
+            "content_outline":   coaching.content_outline,
             "focus_area":        coaching.focus_area,
             "transcript_highlights": coaching.transcript_highlights,
             "session_comparison":    coaching.session_comparison,

@@ -18,25 +18,25 @@ logger = logging.getLogger(__name__)
 
 async def test_full_pipeline():
     """Test the complete analysis pipeline with a test audio file."""
-    
+
     logger.info("=" * 60)
-    logger.info("SPEAKIQ DIAGNOSTIC TEST")
+    logger.info("FLUENTLY DIAGNOSTIC TEST")
     logger.info("=" * 60)
-    
+
     # Step 1: Check if test audio exists
     test_audio_path = Path("test_audio_real.webm")
     if not test_audio_path.exists():
         logger.error(f"❌ Test audio file not found: {test_audio_path}")
         logger.info("Run: python create_test_audio.py")
         return False
-    
+
     logger.info(f"✅ Test audio file found: {test_audio_path} ({test_audio_path.stat().st_size} bytes)")
-    
+
     # Step 2: Load audio bytes
     with open(test_audio_path, 'rb') as f:
         audio_bytes = f.read()
     logger.info(f"✅ Audio loaded: {len(audio_bytes)} bytes")
-    
+
     # Step 3: Test Whisper transcription
     logger.info("\n" + "=" * 60)
     logger.info("STEP 1: Testing Whisper Transcription")
@@ -47,7 +47,7 @@ async def test_full_pipeline():
             audio_bytes=audio_bytes,
             filename="test_recording.webm"
         )
-        
+
         if transcript_result:
             logger.info(f"✅ Transcription successful!")
             logger.info(f"   - Transcript: {transcript_result.transcript[:200]}...")
@@ -60,7 +60,7 @@ async def test_full_pipeline():
     except Exception as e:
         logger.error(f"❌ Whisper transcription failed: {e}", exc_info=True)
         return False
-    
+
     # Step 4: Test Acoustic Analysis
     logger.info("\n" + "=" * 60)
     logger.info("STEP 2: Testing Acoustic Analysis")
@@ -71,7 +71,7 @@ async def test_full_pipeline():
             audio_bytes=audio_bytes,
             word_count=transcript_result.word_count
         )
-        
+
         if acoustic_result:
             logger.info(f"✅ Acoustic analysis successful!")
             logger.info(f"   - WPM: {acoustic_result.wpm:.1f}")
@@ -85,7 +85,7 @@ async def test_full_pipeline():
     except Exception as e:
         logger.error(f"❌ Acoustic analysis failed: {e}", exc_info=True)
         return False
-    
+
     # Step 5: Test NLP Analysis
     logger.info("\n" + "=" * 60)
     logger.info("STEP 3: Testing NLP Analysis")
@@ -96,7 +96,7 @@ async def test_full_pipeline():
             transcript=transcript_result.transcript,
             duration_secs=transcript_result.duration_secs
         )
-        
+
         if nlp_result:
             logger.info(f"✅ NLP analysis successful!")
             logger.info(f"   - Filler count: {nlp_result.filler_count} ({nlp_result.fillers_per_minute}/min)")
@@ -110,14 +110,14 @@ async def test_full_pipeline():
     except Exception as e:
         logger.error(f"❌ NLP analysis failed: {e}", exc_info=True)
         return False
-    
+
     # Step 6: Test Scoring Algorithm
     logger.info("\n" + "=" * 60)
     logger.info("STEP 4: Testing Scoring Algorithm")
     logger.info("=" * 60)
     try:
         from analysis.pipeline import compute_scores_from_data
-        
+
         scores = compute_scores_from_data(
             transcript=transcript_result,
             acoustic=acoustic_result,
@@ -126,32 +126,32 @@ async def test_full_pipeline():
             difficulty_tier="beginner",
             session_history=None
         )
-        
+
         logger.info(f"✅ Scoring successful!")
         logger.info(f"   - Filler score: {scores['filler']}/100")
         logger.info(f"   - Delivery score: {scores['delivery']}/100")
         logger.info(f"   - Structure score: {scores['structure']}/100")
         logger.info(f"   - Vocab score: {scores['vocab']}/100")
         logger.info(f"   - Confidence score: {scores['confidence']}/100")
-        
+
         # Check for zero scores
         zero_scores = [k for k, v in scores.items() if v == 0]
         if zero_scores:
             logger.warning(f"⚠️  Warning: Zero scores detected for: {zero_scores}")
         else:
             logger.info("✅ All scores are non-zero!")
-            
+
     except Exception as e:
         logger.error(f"❌ Scoring algorithm failed: {e}", exc_info=True)
         return False
-    
+
     # Step 7: Test Coaching Service
     logger.info("\n" + "=" * 60)
     logger.info("STEP 5: Testing Coaching Service")
     logger.info("=" * 60)
     try:
         from analysis.coaching_service import coaching_service
-        
+
         coaching_report = await coaching_service.generate_report(
             topic="Test diagnostic session",
             transcript_result=transcript_result,
@@ -163,7 +163,7 @@ async def test_full_pipeline():
             session_history=None,
             speaking_goal="general"
         )
-        
+
         if coaching_report:
             logger.info(f"✅ Coaching report generated!")
             logger.info(f"   - Scores: {coaching_report.scores.__dict__}")
@@ -175,7 +175,7 @@ async def test_full_pipeline():
     except Exception as e:
         logger.error(f"❌ Coaching service failed: {e}", exc_info=True)
         return False
-    
+
     # Final Summary
     logger.info("\n" + "=" * 60)
     logger.info("DIAGNOSTIC COMPLETE")
@@ -187,7 +187,7 @@ async def test_full_pipeline():
     logger.info(f"  Structure:  {coaching_report.scores.structure}/100")
     logger.info(f"  Vocab:      {coaching_report.scores.vocab}/100")
     logger.info(f"  Confidence: {coaching_report.scores.confidence}/100")
-    
+
     avg_score = (
         coaching_report.scores.filler +
         coaching_report.scores.delivery +
@@ -196,7 +196,7 @@ async def test_full_pipeline():
         coaching_report.scores.confidence
     ) / 5
     logger.info(f"\n  OVERALL:    {avg_score:.0f}/100")
-    
+
     return True
 
 if __name__ == "__main__":

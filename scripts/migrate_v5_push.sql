@@ -1,5 +1,5 @@
 -- ================================================================
--- SpeakIQ v5 Web Push Subscriptions
+-- Fluently v5 Web Push Subscriptions
 -- Safe to re-run.
 -- ================================================================
 

@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   // Use `/` for a custom domain. GitHub Pages deployments can set
-  // VITE_BASE_PATH=/Speakiq/ at build time.
+  // VITE_BASE_PATH=/Fluently/ at build time.
   base: process.env.VITE_BASE_PATH || '/',
   plugins: [react()],
   server: {

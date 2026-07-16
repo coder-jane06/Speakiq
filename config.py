@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     resend_api_key: str = ""
     vapid_public_key: str = ""
     vapid_private_key: str = ""
-    vapid_subject: str = "mailto:admin@speakiq.com"
+    vapid_subject: str = "mailto:admin@fluently.com"
 
     # ── App ─────────────────────────────────────────────────────────────────────
     environment: str = "development"

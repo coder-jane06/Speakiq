@@ -13,7 +13,7 @@
 #   - Running CPU-heavy code without blocking the server
 #   - The difference between sync and async functions
 #
-# WHY THIS MATTERS FOR SPEAKIQ:
+# WHY THIS MATTERS FOR FLUENTLY:
 #   The transcript tells us WHAT someone said.
 #   Acoustic analysis tells us HOW they said it.
 #   A great speaker and a nervous speaker can say the exact
@@ -152,7 +152,7 @@ class AcousticResult:
     # Healthy variance = natural emphasis on key words
 
     intensity_db: float = 0.0
-    # Average acoustic intensity (loudness) in decibels (dB). 
+    # Average acoustic intensity (loudness) in decibels (dB).
     # Measures vocal projection and command.
 
     # --- Voice Quality (Nerves & Control) ---
@@ -449,7 +449,7 @@ class AcousticService:
                 jitter = float(np.mean(np.abs(np.diff(t0))) / np.mean(t0)) * 100.0
             else:
                 jitter = 0.0
-                
+
             # Shimmer: cycle-to-cycle variation of amplitude
             if len(speech_rms) > 1:
                 shimmer = float(np.mean(np.abs(np.diff(speech_rms))) / np.mean(speech_rms)) * 100.0

@@ -1,5 +1,5 @@
 import requests, time
-url = "https://shaurya0606-speakiq-backend.hf.space"
+url = "https://shaurya0606-fluently-backend.hf.space"
 with open("test.webm", "wb") as f:
     f.write(b"fake audio data" * 100)
 files = {"audio": ("test.webm", open("test.webm", "rb"), "audio/webm")}

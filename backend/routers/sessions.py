@@ -56,7 +56,7 @@ async def get_topic(
                 p = profile.data[0]
                 if not goal:
                     speaking_goal = normalize_goal(p.get("speaking_goal")) or "general"
-                
+
                 if not difficulty:
                     tier = normalize_difficulty(p.get("difficulty_tier")) or "beginner"
                     diff_tier = {"beginner": "easy", "advanced": "hard"}.get(tier, "medium")
@@ -94,12 +94,12 @@ async def get_topic(
 
         if result.data:
             candidates = [t for t in result.data if t.get("text")]
-            
+
             if exclude:
                 filtered_candidates = [t for t in candidates if str(t.get("id")) != exclude]
                 if filtered_candidates:
                     candidates = filtered_candidates
-            
+
             # Prefer unseen topics; fall back to full list if all seen
             unseen = [t for t in candidates if t["text"] not in recent_topic_texts]
             if unseen:
@@ -164,6 +164,8 @@ async def upload_session(
     audio_url = None
 
     user_id = get_user_id(authorization)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
     normalized_goal = normalize_goal(speaking_goal)
     normalized_difficulty = normalize_difficulty(difficulty_tier)
 
@@ -176,7 +178,7 @@ async def upload_session(
             file_options={"content-type": "audio/webm"},
         )
         audio_url = storage_path
-        
+
         db.table("sessions").insert({
             "id": session_id,
             "topic_id": None,
@@ -301,7 +303,7 @@ async def get_session(session_id: str, authorization: Optional[str] = Header(Non
         user_id = get_user_id(authorization)
         if not user_id:
             raise HTTPException(status_code=401, detail="Authentication required")
-        
+
         if session_id == "latest":
             # fetch the actual latest completed session for this user
             result = (
@@ -321,14 +323,14 @@ async def get_session(session_id: str, authorization: Optional[str] = Header(Non
                 .eq("user_id", user_id)
                 .execute()
             )
-        
+
         logger.info(f"[sessions] get {session_id}: {len(result.data)} rows found")
-        
+
         if not result.data or len(result.data) == 0:
             raise HTTPException(status_code=404, detail="Session not found")
-        
+
         session = result.data[0]
-        
+
         # If session exists but has no metrics yet, return analyzing status
         # so frontend keeps polling or shows analyzing
         metrics = session.get("session_metrics", [])
@@ -337,9 +339,9 @@ async def get_session(session_id: str, authorization: Optional[str] = Header(Non
                 session["status"] = "analyzing"
             session["session_metrics"] = []
             return session
-        
+
         return session
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -357,7 +359,7 @@ async def get_transcript(session_id: str, authorization: Optional[str] = Header(
         user_id = get_user_id(authorization)
         if not user_id:
             raise HTTPException(status_code=401, detail="Authentication required")
-        
+
         result = (
             db.table("session_metrics")
             .select("words, filler_positions, sessions!inner(user_id)")
@@ -366,23 +368,23 @@ async def get_transcript(session_id: str, authorization: Optional[str] = Header(
             .limit(1)
             .execute()
         )
-        
+
         if not result.data or len(result.data) == 0:
             raise HTTPException(status_code=404, detail="Transcript not found")
-        
+
         metrics = result.data[0]
-        
+
         # Parse JSON fields
         import json
         words_raw = metrics.get("words")
         words = json.loads(words_raw) if isinstance(words_raw, str) else (words_raw or [])
-        
+
         filler_positions_raw = metrics.get("filler_positions")
         filler_positions = json.loads(filler_positions_raw) if isinstance(filler_positions_raw, str) else (filler_positions_raw or [])
-        
+
         # Create a set of filler word positions for fast lookup
         filler_indices = {f["position"] for f in filler_positions if isinstance(f, dict) and "position" in f}
-        
+
         # Add semantic type to each word
         transcript_words = []
         for idx, word_obj in enumerate(words):
@@ -394,10 +396,10 @@ async def get_transcript(session_id: str, authorization: Optional[str] = Header(
                 "end": word_obj.get("end", 0),
                 "type": "filler" if idx in filler_indices else "normal"
             })
-        
+
         logger.info(f"[sessions] Transcript for {session_id}: {len(transcript_words)} words")
         return transcript_words
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -417,7 +419,7 @@ async def get_audio_url(session_id: str, authorization: Optional[str] = Header(N
         user_id = get_user_id(authorization)
         if not user_id:
             raise HTTPException(status_code=401, detail="Authentication required")
-        
+
         # Fetch the session to get the audio_url path
         result = (
             db.table("sessions")
@@ -427,23 +429,23 @@ async def get_audio_url(session_id: str, authorization: Optional[str] = Header(N
             .limit(1)
             .execute()
         )
-        
+
         if not result.data or len(result.data) == 0:
             raise HTTPException(status_code=404, detail="Session not found")
-        
+
         audio_path = result.data[0].get("audio_url")
         if not audio_path:
             raise HTTPException(status_code=404, detail="Audio file not found")
-        
+
         # Generate a signed URL valid for 1 hour (3600 seconds)
         signed_url = db.storage.from_("audio-recordings").create_signed_url(
             audio_path,
             expires_in=3600
         )
-        
+
         logger.info(f"[sessions] Generated signed URL for {session_id}")
         return {"url": signed_url["signedURL"]}
-        
+
     except HTTPException:
         raise
     except Exception as e:

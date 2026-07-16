@@ -378,7 +378,7 @@ export default function SettingsPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `speakiq-export-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `fluently-export-${new Date().toISOString().split('T')[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
@@ -456,7 +456,7 @@ export default function SettingsPage() {
     { id: 'privacy', label: 'Privacy & Security', icon: Shield },
     { id: 'personalization', label: 'AI Personalization', icon: Brain },
     { id: 'help', label: 'Help & Support', icon: HelpCircle },
-    { id: 'about', label: 'About SpeakIQ', icon: Info },
+    { id: 'about', label: 'About Fluently', icon: Info },
   ] as const;
 
   if (loadingProfile) {
@@ -1094,15 +1094,15 @@ export default function SettingsPage() {
                   <h2 className="text-[20px] font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
                     <HelpCircle size={20} className="text-emerald-400" /> Help & Support
                   </h2>
-                  <p className="text-[13px] text-[var(--text-tertiary)] font-medium">Get assistance or report issues with SpeakIQ.</p>
+                  <p className="text-[13px] text-[var(--text-tertiary)] font-medium">Get assistance or report issues with Fluently.</p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[
-                    { title: 'GitHub Repository', desc: 'View source code and open issues', icon: '📦', href: 'https://github.com/coder-jane06/Speakiq' },
-                    { title: 'Report a Bug', desc: 'Submit audio processing or UI issues', icon: '🐛', href: 'https://github.com/coder-jane06/Speakiq/issues/new' },
-                    { title: 'Feature Requests', desc: 'Suggest new AI coach features', icon: '💡', href: 'https://github.com/coder-jane06/Speakiq/issues/new' },
-                    { title: 'Contact via Email', desc: 'Reach the team directly', icon: '📧', href: 'mailto:admin@speakiq.com' },
+                    { title: 'GitHub Repository', desc: 'View source code and open issues', icon: '📦', href: 'https://github.com/coder-jane06/Fluently' },
+                    { title: 'Report a Bug', desc: 'Submit audio processing or UI issues', icon: '🐛', href: 'https://github.com/coder-jane06/Fluently/issues/new' },
+                    { title: 'Feature Requests', desc: 'Suggest new AI coach features', icon: '💡', href: 'https://github.com/coder-jane06/Fluently/issues/new' },
+                    { title: 'Contact via Email', desc: 'Reach the team directly', icon: '📧', href: 'mailto:admin@fluently.com' },
                   ].map((h, i) => (
                     <a
                       key={i}
@@ -1125,7 +1125,7 @@ export default function SettingsPage() {
               </section>
             )}
 
-            {/* ── About SpeakIQ ── */}
+            {/* ── About Fluently ── */}
             {activeTab === 'about' && (
               <section className="bg-[var(--bg-card)] border border-[var(--border)] rounded-[28px] p-8 shadow-xl space-y-6">
                 <div className="flex items-center gap-4 pb-4 border-b border-[var(--border)]">
@@ -1134,7 +1134,7 @@ export default function SettingsPage() {
                   </div>
                   <div>
                     <h2 className="text-[22px] font-extrabold text-[var(--text-primary)] tracking-tight" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>
-                      SpeakIQ
+                      Fluently
                     </h2>
                     <p className="text-[13px] text-[var(--text-tertiary)] font-semibold">AI-Powered Speech Coach</p>
                   </div>
@@ -1156,7 +1156,7 @@ export default function SettingsPage() {
                   <div className="flex justify-between items-center py-2">
                     <span className="font-bold text-[var(--text-secondary)]">Source Code</span>
                     <a
-                      href="https://github.com/coder-jane06/Speakiq"
+                      href="https://github.com/coder-jane06/Fluently"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-emerald-400 font-bold text-[13px] hover:underline flex items-center gap-1"

@@ -92,6 +92,11 @@ export interface CoachingReport {
   example_moment: string | null
   drill_for_tomorrow: string
   content_feedback: string
+  content_score?: number
+  central_claim?: string
+  evidence_gap?: string
+  content_rewrite?: string
+  content_outline?: string[]
   encouragement: string
   focus_area: FocusArea
   daily_drill: string

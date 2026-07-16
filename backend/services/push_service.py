@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY")
 VAPID_CLAIMS = {
-    "sub": os.environ.get("VAPID_SUBJECT", "mailto:admin@speakiq.com")
+    "sub": os.environ.get("VAPID_SUBJECT", "mailto:admin@fluently.com")
 }
 
 def send_web_push(user_id: str, payload: dict):
@@ -18,7 +18,7 @@ def send_web_push(user_id: str, payload: dict):
     if not VAPID_PRIVATE_KEY:
         logger.warning("No VAPID_PRIVATE_KEY set. Skipping push notification.")
         return False
-        
+
     db = get_db()
     try:
         # Check notification preferences first
@@ -33,7 +33,7 @@ def send_web_push(user_id: str, payload: dict):
         subs_res = db.table("push_subscriptions").select("*").eq("user_id", user_id).execute()
         if not subs_res.data:
             return False
-            
+
         success_count = 0
         for sub in subs_res.data:
             try:
@@ -44,7 +44,7 @@ def send_web_push(user_id: str, payload: dict):
                         "auth": sub["auth"]
                     }
                 }
-                
+
                 webpush(
                     subscription_info=subscription_info,
                     data=json.dumps(payload),
@@ -57,7 +57,7 @@ def send_web_push(user_id: str, payload: dict):
                 # If gone, delete from DB
                 if ex.response and ex.response.status_code == 410:
                     db.table("push_subscriptions").delete().eq("id", sub["id"]).execute()
-                    
+
         return success_count > 0
     except Exception as e:
         logger.error(f"Error sending push: {e}")

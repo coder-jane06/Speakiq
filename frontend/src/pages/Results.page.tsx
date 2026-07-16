@@ -23,7 +23,7 @@ export default function ResultsPage() {
   const { loading, error, session, metrics, coaching } = useCoachingReport(sessionId || 'latest')
   const { streakData } = useStreak()
   const [stats, setStats] = useState<any>(null)
-  
+
   // For loading text progression
   const [loadingStage, setLoadingStage] = useState(0)
   const [elapsed, setElapsed] = useState(0)
@@ -38,16 +38,16 @@ export default function ResultsPage() {
 
   useEffect(() => {
     if (!sessionId || loading || !session) return;
-    
+
     const fetchPhase2Data = async () => {
       try {
         const { data: { session: authSession } } = await supabase.auth.getSession();
         const token = authSession?.access_token;
         const headers = { 'Authorization': token ? `Bearer ${token}` : '' }
-        
+
         const trRes = await fetch(`${API_URL}/sessions/${sessionId}/transcript`, { headers });
         if (trRes.ok) setTranscript(await trRes.json());
-        
+
         const auRes = await fetch(`${API_URL}/sessions/${sessionId}/audio-url`, { headers });
         if (auRes.ok) {
           const auData = await auRes.json();
@@ -116,23 +116,23 @@ export default function ResultsPage() {
         style={{ background: 'var(--bg-base)' }}
       >
         {/* Soft green ambient background blobs */}
-        <div 
+        <div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full pointer-events-none z-0"
           style={{ background: 'radial-gradient(circle, rgba(62,140,0,0.12) 0%, rgba(62,140,0,0) 70%)', filter: 'blur(60px)' }}
         />
-        <div 
+        <div
           className="absolute top-1/3 right-1/4 w-[250px] h-[250px] rounded-full pointer-events-none z-0"
           style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.08) 0%, rgba(59,130,246,0) 70%)', filter: 'blur(40px)' }}
         />
 
         <div className="w-full max-w-[440px] flex flex-col items-center animate-fadeSlideUp relative z-10 text-center">
-          
+
           {/* Animated AI Processing Orb */}
           <div className="relative mb-8 flex items-center justify-center">
             <div className="absolute w-28 h-28 rounded-full animate-ping opacity-20" style={{ background: '#3E8C00' }} />
             <div className="absolute w-36 h-36 rounded-full opacity-30 blur-xl" style={{ background: 'radial-gradient(circle, #3E8C00 0%, transparent 70%)' }} />
-            
-            <div 
+
+            <div
               className="w-24 h-24 rounded-full flex items-center justify-center relative shadow-2xl"
               style={{
                 background: 'linear-gradient(135deg, #3E8C00 0%, #22C55E 50%, #15803D 100%)',
@@ -144,7 +144,7 @@ export default function ResultsPage() {
               <Brain size={38} className="text-white drop-shadow-md animate-pulse" strokeWidth={2} />
             </div>
           </div>
-          
+
           {/* Stage Title & Subtitle */}
           <h2
             className="text-[26px] font-[800] tracking-[-0.02em] text-center mb-2 text-gray-900"
@@ -165,7 +165,7 @@ export default function ResultsPage() {
               <span>{Math.min(100, Math.round(((loadingStage + 1) / 5) * 100))}%</span>
             </div>
             <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden mb-3">
-              <div 
+              <div
                 className="h-full bg-gradient-to-r from-emerald-500 to-green-600 transition-all duration-500 rounded-full"
                 style={{ width: `${((loadingStage + 1) / 5) * 100}%` }}
               />
@@ -241,7 +241,7 @@ export default function ResultsPage() {
 
   const scores = (coaching.scores as Record<string, number>) || {}
   const scoreKeys = Object.keys(scores)
-  
+
   let lowestKey = scoreKeys[0] || 'delivery';
   let lowestScore = scores[lowestKey] || 0;
   scoreKeys.forEach(k => {
@@ -287,10 +287,10 @@ export default function ResultsPage() {
     chartData = [{ session: 'Current', score: activeTrendMetric === 'overall' ? avgScore : (scores[activeTrendMetric] || 0) }];
   }
 
-  const displayDuration = (metrics as any)?.duration_s 
+  const displayDuration = (metrics as any)?.duration_s
     ? (metrics as any)?.duration_s.toFixed(1)
-    : (metrics as any)?.words?.length 
-      ? Math.round((metrics as any).words[(metrics as any).words.length - 1].end) 
+    : (metrics as any)?.words?.length
+      ? Math.round((metrics as any).words[(metrics as any).words.length - 1].end)
       : 0;
 
   return (
@@ -299,7 +299,7 @@ export default function ResultsPage() {
       style={{ background: 'var(--bg-base)' }}
     >
       {/* Soft ambient background glow */}
-      <div 
+      <div
         className="fixed top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full pointer-events-none z-0 opacity-40"
         style={{ background: 'radial-gradient(circle, rgba(62,140,0,0.08) 0%, transparent 70%)', filter: 'blur(100px)' }}
       />
@@ -339,7 +339,7 @@ export default function ResultsPage() {
         {/* ── SECTION 1 — Hero Summary ── */}
         <div className="w-full rounded-[28px] p-8 mb-8 relative overflow-hidden bg-[var(--bg-card)] border border-[var(--border)] shadow-xl animate-cardEntrance">
           <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(62,140,0,0.08) 0%, transparent 70%)', filter: 'blur(50px)' }} />
-          
+
           <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
             <div className="flex flex-col sm:flex-row items-center gap-8 text-center sm:text-left">
               {/* Radial Score Ring */}
@@ -386,10 +386,10 @@ export default function ResultsPage() {
           </div>
         </div>
 
-        
+
         {/* ── PHASE 2: RESULTS EXPERIENCE ── */}
         <div className="w-full mb-8 flex flex-col gap-6 animate-cardEntrance" style={{ animationDelay: '0.15s', animationFillMode: 'forwards' }}>
-          
+
           <div className="flex items-center justify-between">
             <h2 className="text-[20px] font-bold text-[var(--text-primary)] flex items-center gap-2">
                Your Speaking Analysis
@@ -397,23 +397,23 @@ export default function ResultsPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
+
             {/* Left Column: Audio & Transcript */}
             <div className="lg:col-span-2 flex flex-col gap-6">
               {audioUrl && (
-                <AudioPlayer 
-                  ref={audioPlayerRef} 
-                  src={audioUrl} 
-                  onTimeUpdate={setCurrentAudioTime} 
+                <AudioPlayer
+                  ref={audioPlayerRef}
+                  src={audioUrl}
+                  onTimeUpdate={setCurrentAudioTime}
                 />
               )}
-              
+
               <div className="p-6 rounded-[22px] bg-[var(--bg-card)] border border-[var(--border)] shadow-sm h-[400px] overflow-y-auto custom-scrollbar">
                 {transcript.length > 0 ? (
-                  <TranscriptViewer 
-                    words={transcript} 
-                    currentTime={currentAudioTime} 
-                    onWordClick={(time) => audioPlayerRef.current?.seekTo(time)} 
+                  <TranscriptViewer
+                    words={transcript}
+                    currentTime={currentAudioTime}
+                    onWordClick={(time) => audioPlayerRef.current?.seekTo(time)}
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full text-[var(--text-tertiary)]">Loading transcript...</div>
@@ -431,7 +431,7 @@ export default function ResultsPage() {
                   <div className="space-y-2 text-[13px] font-medium leading-relaxed">
                     {String((coaching as any).example_moment).split('->').map((part: string, i: number) => (
                       <div key={i} className={`px-3 py-2 rounded-xl ${
-                        i === 0 
+                        i === 0
                           ? 'bg-red-500/10 border border-red-500/20 text-red-800 dark:text-red-300'
                           : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300'
                       }`}>
@@ -448,12 +448,12 @@ export default function ResultsPage() {
 
           {/* Delivery & Fillers Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <DeliveryDiagnosis 
+            <DeliveryDiagnosis
               wpm={metrics?.wpm || 0}
               pitchVariance={metrics?.pitch_variance || 0}
               silenceCount={(metrics?.silence_gaps || []).length}
             />
-            <FillerBreakdown 
+            <FillerBreakdown
               fillers={metrics?.filler_words || []}
             />
           </div>
@@ -594,6 +594,24 @@ export default function ResultsPage() {
         </div>
 
         {/* ── SECTION 3 — Skill Analysis ── */}
+        {(coaching.content_rewrite || coaching.central_claim || coaching.content_outline?.length) && (
+          <div className="w-full rounded-[28px] p-8 mb-8 bg-[var(--bg-card)] border border-[var(--border)] shadow-xl animate-cardEntrance" style={{ animationDelay: '0.15s', animationFillMode: 'forwards' }}>
+            <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b border-[var(--border)]">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400"><Brain size={20} /></div>
+                <div><h2 className="text-[20px] font-bold text-[var(--text-primary)] leading-tight">Content Coach</h2><p className="text-[12px] text-[var(--text-tertiary)] font-medium">Make your ideas clearer, better supported, and easier to remember.</p></div>
+              </div>
+              {typeof coaching.content_score === 'number' && <div className="text-right rounded-2xl bg-indigo-500/10 border border-indigo-500/20 px-4 py-2"><p className="text-[22px] font-black text-indigo-400 leading-none">{Math.max(0, Math.min(100, Math.round(coaching.content_score)))}</p><p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mt-1">Content clarity</p></div>}
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div className="p-5 rounded-[22px] bg-indigo-500/5 border border-indigo-500/20"><p className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-400 mb-2">Your central message</p><p className="text-[15px] font-semibold text-[var(--text-primary)] leading-relaxed">{coaching.central_claim || 'Keep practising until your main point can be stated in one clear sentence.'}</p>{coaching.evidence_gap && <><p className="text-[11px] font-extrabold uppercase tracking-wider text-amber-400 mt-5 mb-2">Make it stronger</p><p className="text-[14px] font-medium text-[var(--text-secondary)] leading-relaxed">{coaching.evidence_gap}</p></>}</div>
+              <div className="p-5 rounded-[22px] bg-emerald-500/5 border border-emerald-500/20"><p className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-400 mb-2">A stronger version in your voice</p><p className="text-[14px] font-medium text-[var(--text-primary)] leading-relaxed">{coaching.content_rewrite || 'Start with your position, support it with one concrete reason, then end with a clear takeaway.'}</p></div>
+            </div>
+            {coaching.content_outline && coaching.content_outline.length > 0 && <div className="mt-5 p-5 rounded-[22px] bg-[var(--bg-hover)] border border-[var(--border)]"><p className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">Use this structure next time</p><ol className="grid grid-cols-1 sm:grid-cols-2 gap-3">{coaching.content_outline.slice(0, 4).map((step, index) => <li key={`${step}-${index}`} className="flex gap-3 text-[13px] font-medium text-[var(--text-primary)]"><span className="shrink-0 w-6 h-6 rounded-full bg-[var(--accent)] text-[var(--accent-text)] flex items-center justify-center font-black text-[11px]">{index + 1}</span><span className="pt-1">{step}</span></li>)}</ol></div>}
+            <p className="mt-4 text-[11px] text-[var(--text-tertiary)]">This reviews clarity and support of the expressed ideas. It does not verify factual claims.</p>
+          </div>
+        )}
+
         <div className="w-full rounded-[28px] p-8 mb-8 bg-[var(--bg-card)] border border-[var(--border)] shadow-xl animate-cardEntrance" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
           <h2 className="text-[20px] font-bold text-[var(--text-primary)] mb-6 flex items-center gap-2">
             <BarChart3 size={20} className="text-blue-400" /> Skill Analysis Centerpiece
@@ -707,7 +725,7 @@ export default function ResultsPage() {
                 </div>
               </div>
             ))}
-            
+
             {/* Filler Breakdown Card */}
             <div className="col-span-2 p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs">
               <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] block mb-3">Filler Word Breakdown</span>
@@ -748,7 +766,7 @@ export default function ResultsPage() {
                 : { label: 'Needs Work', color: '#F59E0B' }
 
               return (
-                <div 
+                <div
                   key={m.id}
                   onClick={() => setExpandedMetric(isExp ? null : m.id)}
                   className="p-5 rounded-[22px] bg-[var(--bg-card)] border border-[var(--border)] shadow-md cursor-pointer transition-all hover:bg-[var(--bg-hover)]"
@@ -799,8 +817,8 @@ export default function ResultsPage() {
                 <TrendingUp size={20} className="text-emerald-400" /> Your 30-Day Transformation Journey
               </h2>
               <p className="text-[12px] text-[var(--text-tertiary)] font-medium">
-                {stats?.sessions?.length >= 30 
-                  ? "🎉 Completed! Compare Day 1 vs Day 30" 
+                {stats?.sessions?.length >= 30
+                  ? "🎉 Completed! Compare Day 1 vs Day 30"
                   : `Day ${stats?.sessions?.length || 1} of 30 — Keep the streak alive`}
               </p>
             </div>
@@ -829,7 +847,7 @@ export default function ResultsPage() {
                 </span>
               </div>
               <div className="w-full h-3 rounded-full bg-[var(--bg-hover)] overflow-hidden border border-[var(--border)]">
-                <div 
+                <div
                   className="h-full bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500 rounded-full transition-all duration-700"
                   style={{ width: `${Math.min(100, (stats.sessions.length / 30) * 100)}%` }}
                 />
@@ -1039,7 +1057,7 @@ export function InteractiveDrillCard({ sessionId, drill }: { sessionId: string, 
       setSaving(false);
     }
   };
-  
+
   return (
     <div
       className="card-interactive p-6 transition-all duration-500 overflow-hidden relative"
@@ -1049,7 +1067,7 @@ export function InteractiveDrillCard({ sessionId, drill }: { sessionId: string, 
         borderRadius: 'var(--radius-lg)',
       }}
     >
-       
+
        {done && (
          <div
            className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 rounded-full pointer-events-none animate-scale-pop"
@@ -1069,15 +1087,15 @@ export function InteractiveDrillCard({ sessionId, drill }: { sessionId: string, 
             Daily Action Item
           </span>
        </div>
-       
+
        <p
          className="font-medium text-[16px] leading-[1.7] mb-6 relative z-10"
          style={{ color: 'var(--text-primary)' }}
        >
          {drill}
        </p>
-       
-       <button 
+
+       <button
          onClick={markPracticed}
          disabled={done || saving}
          className="relative z-10 w-full md:w-auto px-8 py-3.5 rounded-xl font-bold text-[14px] transition-all flex items-center justify-center gap-2 active:scale-95"
