@@ -2,8 +2,8 @@
 import logging, random, uuid, asyncio
 from typing import Optional
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, BackgroundTasks, Header
-import jwt
 from routers.dashboard import normalize_difficulty, normalize_goal
+from auth import get_user_id
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -25,17 +25,6 @@ ALLOWED_AUDIO_TYPES = {
     "audio/mp4","audio/wav","audio/mpeg","audio/ogg","application/octet-stream"
 }
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
-
-
-def get_user_id(authorization: Optional[str]) -> Optional[str]:
-    if not authorization or not authorization.startswith("Bearer "):
-        return None
-    try:
-        token = authorization.replace("Bearer ", "")
-        decoded = jwt.decode(token, options={"verify_signature": False})
-        return decoded.get("sub")
-    except Exception:
-        return None
 
 
 @router.get("/topic")
@@ -309,11 +298,12 @@ async def get_session(session_id: str, authorization: Optional[str] = Header(Non
     try:
         from config import get_db
         db = get_db()
+        user_id = get_user_id(authorization)
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Authentication required")
         
         if session_id == "latest":
             # fetch the actual latest completed session for this user
-            from routers.dashboard import get_user_id
-            user_id = get_user_id(authorization) or "00000000-0000-0000-0000-000000000000"
             result = (
                 db.table("sessions")
                 .select("*, session_metrics(*)")
@@ -328,6 +318,7 @@ async def get_session(session_id: str, authorization: Optional[str] = Header(Non
                 db.table("sessions")
                 .select("*, session_metrics(*)")
                 .eq("id", session_id)
+                .eq("user_id", user_id)
                 .execute()
             )
         
@@ -354,8 +345,6 @@ async def get_session(session_id: str, authorization: Optional[str] = Header(Non
     except Exception as e:
         logger.error(f"[sessions] get failed {session_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-
 @router.get("/{session_id}/transcript")
 async def get_transcript(session_id: str, authorization: Optional[str] = Header(None)):
     """
@@ -365,11 +354,15 @@ async def get_transcript(session_id: str, authorization: Optional[str] = Header(
     try:
         from config import get_db
         db = get_db()
+        user_id = get_user_id(authorization)
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Authentication required")
         
         result = (
             db.table("session_metrics")
-            .select("words, filler_positions")
+            .select("words, filler_positions, sessions!inner(user_id)")
             .eq("session_id", session_id)
+            .eq("sessions.user_id", user_id)
             .limit(1)
             .execute()
         )
@@ -421,12 +414,16 @@ async def get_audio_url(session_id: str, authorization: Optional[str] = Header(N
     try:
         from config import get_db
         db = get_db()
+        user_id = get_user_id(authorization)
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Authentication required")
         
         # Fetch the session to get the audio_url path
         result = (
             db.table("sessions")
             .select("audio_url")
             .eq("id", session_id)
+            .eq("user_id", user_id)
             .limit(1)
             .execute()
         )
@@ -451,97 +448,4 @@ async def get_audio_url(session_id: str, authorization: Optional[str] = Header(N
         raise
     except Exception as e:
         logger.error(f"[sessions] audio URL generation failed {session_id}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/{session_id}/transcript")
-async def get_session_transcript(session_id: str, authorization: Optional[str] = Header(None)):
-    """
-    Return the transcript as a list of word objects with semantic typing.
-    Each word has: { word, start, end, type } where type is 'normal' | 'filler' | 'hedge' | 'strong'
-    """
-    try:
-        from config import get_db
-        db = get_db()
-        
-        result = (
-            db.table("session_metrics")
-            .select("words, filler_positions")
-            .eq("session_id", session_id)
-            .limit(1)
-            .execute()
-        )
-        
-        if not result.data or len(result.data) == 0:
-            return []
-        
-        metrics = result.data[0]
-        
-        # Parse words JSON
-        import json
-        words = json.loads(metrics.get("words", "[]")) if isinstance(metrics.get("words"), str) else (metrics.get("words") or [])
-        filler_positions = json.loads(metrics.get("filler_positions", "[]")) if isinstance(metrics.get("filler_positions"), str) else (metrics.get("filler_positions") or [])
-        
-        # Create a set of filler word positions for fast lookup
-        filler_indices = {fp["position"] for fp in filler_positions if "position" in fp}
-        
-        # Add semantic type to each word
-        typed_words = []
-        for i, word in enumerate(words):
-            word_type = "filler" if i in filler_indices else "normal"
-            typed_words.append({
-                "word": word.get("word", ""),
-                "start": word.get("start", 0),
-                "end": word.get("end", 0),
-                "type": word_type
-            })
-        
-        return typed_words
-        
-    except Exception as e:
-        logger.error(f"[sessions] transcript failed {session_id}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/{session_id}/audio-url")
-async def get_session_audio_url(session_id: str, authorization: Optional[str] = Header(None)):
-    """
-    Generate a signed URL for the session's audio file from Supabase Storage.
-    Returns: { url: string }
-    """
-    try:
-        from config import get_db
-        db = get_db()
-        
-        # Get the session to find the audio_url (storage path)
-        result = (
-            db.table("sessions")
-            .select("audio_url")
-            .eq("id", session_id)
-            .limit(1)
-            .execute()
-        )
-        
-        if not result.data or len(result.data) == 0:
-            raise HTTPException(status_code=404, detail="Session not found")
-        
-        audio_path = result.data[0].get("audio_url")
-        if not audio_path:
-            raise HTTPException(status_code=404, detail="No audio file found for this session")
-        
-        # Generate a signed URL (valid for 1 hour)
-        signed_url = db.storage.from_("audio-recordings").create_signed_url(
-            path=audio_path,
-            expires_in=3600  # 1 hour
-        )
-        
-        if not signed_url or "signedURL" not in signed_url:
-            raise HTTPException(status_code=500, detail="Failed to generate signed URL")
-        
-        return {"url": signed_url["signedURL"]}
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"[sessions] audio-url failed {session_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))

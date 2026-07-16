@@ -96,9 +96,14 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+frontend_origins = ["http://localhost:3000", "http://localhost:5173"]
+configured_frontend = os.getenv("FRONTEND_URL", "").rstrip("/")
+if configured_frontend:
+    frontend_origins.append(configured_frontend)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=".*",
+    allow_origins=frontend_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -141,16 +146,6 @@ async def system_status():
 @app.get("/api", tags=["system"])
 async def root():
     return {"message": "SpeakIQ API - see /docs for endpoints"}
-
-
-@app.get("/logs", tags=["system"])
-async def get_logs():
-    try:
-        with open("app.log", "r", encoding="utf-8") as f:
-            lines = f.readlines()
-            return {"logs": lines[-100:]}
-    except Exception as e:
-        return {"error": str(e)}
 
 
 # ── Serve built frontend (React SPA) ─────────────────────────────────────────

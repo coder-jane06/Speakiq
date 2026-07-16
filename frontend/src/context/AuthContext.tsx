@@ -6,7 +6,8 @@ interface AuthContextType {
   user: User | null
   session: Session | null
   loading: boolean
-  signUp: (email: string, password: string) => Promise<void>
+  signUp: (email: string, password: string) => Promise<{ needsEmailConfirmation: boolean }>
+  resendVerification: (email: string) => Promise<void>
   signIn: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
 }
@@ -78,13 +79,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const authRedirectUrl = () => new URL(import.meta.env.BASE_URL, window.location.origin).toString()
+
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ 
+    const { data, error } = await supabase.auth.signUp({
       email, 
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}${window.location.pathname}`
+        emailRedirectTo: authRedirectUrl(),
       }
+    })
+    if (error) throw error
+    return { needsEmailConfirmation: !data.session }
+  }
+
+  const resendVerification = async (email: string) => {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: authRedirectUrl() },
     })
     if (error) throw error
   }
@@ -101,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signUp, resendVerification, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   )

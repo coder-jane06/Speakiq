@@ -1,25 +1,14 @@
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 from typing import Any, Optional
-import jwt
 import json
 import logging
 from datetime import date, datetime, timedelta
 from config import get_db
+from auth import get_user_id
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-
-def get_user_id(authorization: Optional[str]) -> Optional[str]:
-    if not authorization or not authorization.startswith("Bearer "):
-        return None
-    try:
-        token = authorization.replace("Bearer ", "")
-        decoded = jwt.decode(token, options={"verify_signature": False})
-        return decoded.get("sub")
-    except Exception:
-        return None
 
 
 GOAL_ALIASES = {
@@ -758,6 +747,30 @@ class DrillCompletionData(BaseModel):
     drill_text: str
     drill_type: str = "daily_drill"
     self_rating: Optional[int] = None
+
+
+class PushSubscriptionData(BaseModel):
+    endpoint: str
+    p256dh: str
+    auth: str
+
+
+@router.post("/push-subscribe")
+async def save_push_subscription(data: PushSubscriptionData, authorization: Optional[str] = Header(None)):
+    user_id = get_user_id(authorization)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    try:
+        get_db().table("push_subscriptions").upsert({
+            "user_id": user_id,
+            "endpoint": data.endpoint,
+            "p256dh": data.p256dh,
+            "auth": data.auth,
+        }).execute()
+        return {"status": "ok"}
+    except Exception as exc:
+        logger.error("[dashboard] push subscription save failed: %s", exc)
+        raise HTTPException(status_code=500, detail="Unable to save push subscription")
 
 
 @router.post("/complete-drill")

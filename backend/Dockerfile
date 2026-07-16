@@ -45,8 +45,6 @@ RUN python -m spacy download en_core_web_sm
 # Copy the rest of the application code
 COPY --chown=user . .
 
-# Expose port 7860 for Hugging Face Spaces
+# Render injects PORT at runtime; 7860 remains a convenient local default.
 EXPOSE 7860
-
-# Start the application on port 7860
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-7860}"]

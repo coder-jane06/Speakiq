@@ -7,7 +7,7 @@ import { supabase } from '../services/supabase'
 type Mode = 'signin' | 'signup'
 
 export default function LoginPage() {
-  const { signIn, signUp, user } = useAuth()
+  const { signIn, signUp, resendVerification, user } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -22,6 +22,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
+  const [verificationPending, setVerificationPending] = useState(false)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -31,8 +32,11 @@ export default function LoginPage() {
 
     try {
       if (mode === 'signup') {
-        await signUp(email, password)
-        setSuccessMsg('Check your email to confirm your account.')
+        const { needsEmailConfirmation } = await signUp(email, password)
+        setVerificationPending(needsEmailConfirmation)
+        setSuccessMsg(needsEmailConfirmation
+          ? 'We sent a verification link. Open it in this browser to finish signing in.'
+          : 'Account created. You are signed in.')
       } else {
         await signIn(email, password)
         navigate(ROUTES.DASHBOARD, { replace: true })
@@ -48,6 +52,7 @@ export default function LoginPage() {
     setMode(next)
     setError(null)
     setSuccessMsg(null)
+    setVerificationPending(false)
   }
 
   return (
@@ -400,6 +405,29 @@ export default function LoginPage() {
                 <span className="mt-px">✅</span>
                 <span>{successMsg}</span>
               </div>
+            )}
+
+            {mode === 'signup' && verificationPending && (
+              <button
+                type="button"
+                disabled={loading}
+                onClick={async () => {
+                  setError(null)
+                  setLoading(true)
+                  try {
+                    await resendVerification(email)
+                    setSuccessMsg('A fresh verification link has been sent. Check spam or promotions too.')
+                  } catch (err: unknown) {
+                    setError(err instanceof Error ? err.message : 'Unable to resend the verification email.')
+                  } finally {
+                    setLoading(false)
+                  }
+                }}
+                className="self-center text-[13px] font-semibold transition-opacity hover:opacity-70"
+                style={{ color: 'var(--accent)' }}
+              >
+                Resend verification email
+              </button>
             )}
 
             {/* Submit */}

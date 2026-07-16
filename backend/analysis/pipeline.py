@@ -31,8 +31,7 @@ from analysis.whisper_service  import whisper_service,  TranscriptResult
 from analysis.acoustic_service import acoustic_service, AcousticResult
 from analysis.nlp_service      import nlp_service,      NLPResult
 from analysis.coaching_service import coaching_service, CoachingReport
-from services.email_service import send_notification_email
-from services.push_service import send_web_push
+from services.notification_service import send_session_complete_notifications
 
 logger = logging.getLogger(__name__)
 
@@ -320,26 +319,15 @@ async def run_analysis_pipeline(
             except Exception as e:
                 logger.error(f"[Pipeline] Streak update failed: {e}")
 
-        # --- NEW: Trigger Notifications ---
-        try:
-            if user_id:
-                # Check streak or just send a test notification for now
-                # We'll send a "streak" alert if they have a streak
-                streak = new_streak if 'new_streak' in locals() else 1
-                if streak > 0:
-                    # Trigger Email
-                    send_notification_email(user_id, "streak", {"streak": streak})
-                    # Trigger Push
-                    send_web_push(user_id, {
-                        "title": "Session Complete! 🚀",
-                        "body": f"Your AI coaching report is ready. You're on a {streak}-day streak!",
-                        "icon": "/icon-192x192.png"
-                    })
-        except Exception as notify_err:
-            logger.error(f"[pipeline] Failed to send notifications: {notify_err}")
+        # Deliver the report only after the session is complete. This follows the
+        # user's saved choices and does not treat every completed session as a streak alert.
+        if user_id:
+            try:
+                send_session_complete_notifications(user_id, session_id, topic, coaching_report)
+            except Exception as notify_err:
+                logger.error(f"[pipeline] Failed to send session notification: {notify_err}")
 
-        logger.info(f"[Pipeline] ✓ Pipeline complete for session {session_id[:8]}")
-
+        logger.info(f"[Pipeline] Pipeline complete for session {session_id[:8]}")
         try:
             from services.profile_service import update_user_profile
             await update_user_profile(

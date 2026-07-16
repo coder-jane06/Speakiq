@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     anthropic_api_key: str = os.getenv("ANTHROPIC_API_KEY", "")
     groq_api_key: str = os.getenv("GROQ_API_KEY", "")
     environment: str = os.getenv("ENVIRONMENT", "development")
+    frontend_url: str = os.getenv("FRONTEND_URL", "")
 
     class Config:
         env_file = ".env"

@@ -11,7 +11,10 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false,   // prevents hash-URL parsing errors on non-auth pages
+    // Email confirmations and password resets return a short-lived auth code.
+    // This must be enabled or a verified user lands back in the app unsigned in.
+    detectSessionInUrl: true,
+    flowType: 'pkce',
   },
 })
 

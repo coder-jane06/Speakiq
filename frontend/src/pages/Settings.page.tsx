@@ -286,9 +286,16 @@ export default function SettingsPage() {
       if (!token) throw new Error('Not authenticated');
       await patchPreferences(token, { notification_preferences: notifications });
       if (notifications.push) {
-        await registerPushSubscription(token);
+        try {
+          await registerPushSubscription(token);
+          showMsg(setNotifSaveMsg, '✓ Notifications and browser push saved');
+        } catch (pushError) {
+          const reason = pushError instanceof Error ? pushError.message : 'browser push is not active on this device';
+          showMsg(setNotifSaveMsg, `✓ Preferences saved. Push setup: ${reason}`);
+        }
+      } else {
+        showMsg(setNotifSaveMsg, '✓ Notifications saved');
       }
-      showMsg(setNotifSaveMsg, '✓ Notifications saved');
     } catch (e) {
       showMsg(setNotifSaveMsg, '✗ Failed to save');
     } finally {
