@@ -3,7 +3,7 @@
 backend/.env
 frontend/.env
 frontend/.env.local
-frontend/.env.production
+# frontend/.env.production is intentionally tracked — contains only public keys (anon key, API URL)
 *.env
 
 # ── Python ─────────────────────────────────────────────────────────────────────
