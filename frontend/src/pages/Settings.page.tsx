@@ -223,20 +223,24 @@ export default function SettingsPage() {
         const data: ProfileStatus = await res.json();
         setProfile(data);
 
-        // Hydrate from backend ONLY when localStorage has no user-saved value.
-        // This prevents the backend's default values (returned when DB columns are
-        // missing) from overwriting what the user explicitly saved locally.
+        // Backend is always the source of truth now that DB columns exist.
+        // localStorage provides instant initial values above (no flicker),
+        // but the backend fetch always wins and enables cross-device sync.
         if (data.display_name) setDisplayName(data.display_name);
 
-        // AI Coach prefs — only apply backend if user hasn't saved locally yet
-        if (data.speaking_goal && !localStorage.getItem(LS.SPEAKING_GOAL))    setSpeakingGoal(data.speaking_goal);
-        if (data.difficulty_tier && !localStorage.getItem(LS.DIFFICULTY))     setDifficulty(data.difficulty_tier);
-        if (data.coaching_style && !localStorage.getItem(LS.COACHING_STYLE))  setCoachingStyle(data.coaching_style);
-        if (data.feedback_detail && !localStorage.getItem(LS.FEEDBACK_DETAIL)) setFeedbackDetail(data.feedback_detail);
+        // AI Coach prefs — always apply from backend (cross-device sync)
+        if (data.speaking_goal)  setSpeakingGoal(data.speaking_goal);
+        if (data.difficulty_tier) setDifficulty(data.difficulty_tier);
+        if (data.coaching_style)  setCoachingStyle(data.coaching_style);
+        if (data.feedback_detail) setFeedbackDetail(data.feedback_detail);
+        // Also update localStorage so next load is instant
+        if (data.speaking_goal)   lsSet(LS.SPEAKING_GOAL, data.speaking_goal);
+        if (data.difficulty_tier) lsSet(LS.DIFFICULTY, data.difficulty_tier);
+        if (data.coaching_style)  lsSet(LS.COACHING_STYLE, data.coaching_style);
+        if (data.feedback_detail) lsSet(LS.FEEDBACK_DETAIL, data.feedback_detail);
 
-        // Appearance — only override ThemeContext (localStorage) if user hasn't
-        // customised locally AND backend has a non-default value
-        if (data.appearance_preferences && !localStorage.getItem('fluently_accent')) {
+        // Appearance — always apply from backend (cross-device sync)
+        if (data.appearance_preferences) {
           const savedAccent = data.appearance_preferences.accentColor;
           const safeAccent = ['green', 'blue', 'purple', 'orange', 'red'].includes(savedAccent) ? savedAccent : 'green';
           const safeDensity = data.appearance_preferences.uiDensity === 'Compact' ? 'Compact' : 'Comfortable';
@@ -245,17 +249,21 @@ export default function SettingsPage() {
           setRoundedCorners(data.appearance_preferences.roundedCorners ?? 24);
         }
 
-        // Notifications & audio — only apply backend if user hasn't saved locally
-        if (data.notification_preferences && !localStorage.getItem(LS.NOTIFICATIONS)) {
+        // Notifications — always apply from backend (cross-device sync)
+        if (data.notification_preferences) {
           setNotifications(data.notification_preferences);
+          lsSet(LS.NOTIFICATIONS, data.notification_preferences);
         }
-        if (data.audio_preferences && !localStorage.getItem(LS.AUDIO)) {
-          setAudioSettings({
+        // Audio — always apply from backend (cross-device sync)
+        if (data.audio_preferences) {
+          const audio = {
             noiseCancellation: data.audio_preferences.noiseCancellation ?? true,
             sensitivity: data.audio_preferences.sensitivity ?? 75,
             autoGain: data.audio_preferences.autoGain ?? true,
             voiceEnhancement: data.audio_preferences.voiceEnhancement ?? true,
-          });
+          };
+          setAudioSettings(audio);
+          lsSet(LS.AUDIO, audio);
         }
       } catch (e) {
         console.error('Error fetching profile:', e);
