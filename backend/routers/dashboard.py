@@ -599,7 +599,14 @@ async def save_preferences(
         return {"status": "ok", "updated": []}
 
     db = get_db()
-    resilient_profile_write(db, user_id, update_data)
+    try:
+        resilient_profile_write(db, user_id, update_data)
+    except Exception as exc:
+        logger.exception("[dashboard] preference save failed for user %s", user_id)
+        raise HTTPException(
+            status_code=503,
+            detail="Your settings could not be saved right now. Please try again shortly.",
+        ) from exc
     return {"status": "ok", "updated": list(update_data.keys())}
 
 
@@ -662,15 +669,11 @@ async def get_profile_status(authorization: Optional[str] = Header(None)):
             "preferred_feedback_label": f"{profile.get('feedback_detail') or 'Detailed'} / {profile.get('coaching_style') or 'Balanced'}",
         }
     except Exception as e:
-        logger.error(f"[dashboard] profile-status error: {e}")
-        return {
-            "onboarding_complete": True,
-            "speaking_goal": "general",
-            "difficulty_tier": "beginner",
-            "appearance_preferences": DEFAULT_APPEARANCE,
-            "notification_preferences": DEFAULT_NOTIFICATIONS,
-            "audio_preferences": DEFAULT_AUDIO,
-        }
+        logger.exception("[dashboard] profile-status error")
+        raise HTTPException(
+            status_code=503,
+            detail="Your saved settings are temporarily unavailable. Please try again shortly.",
+        ) from e
 
 
 @router.get("/export")

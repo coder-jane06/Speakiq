@@ -4,6 +4,7 @@ import json
 import logging
 import os
 from html import escape
+from datetime import date
 from typing import Any
 
 from config import get_db
@@ -77,6 +78,97 @@ def _get_user_email(user_id: str) -> str | None:
     except Exception as exc:
         logger.warning("[notifications] could not resolve user email: %s", exc)
         return None
+
+
+def _reminder_email_html(display_name: str, streak: int, report_url: str) -> str:
+    """A concise, encouraging daily reminder for users who explicitly opted in."""
+    name = escape(display_name or "Speaker")
+    streak_label = f"{max(0, streak)}-day streak" if streak else "next practice"
+    cta = (
+        f'<a href="{escape(report_url, quote=True)}" style="display:inline-block;background:#b8f45d;color:#13240d;padding:15px 24px;border-radius:10px;font:700 15px Arial,sans-serif;text-decoration:none">Practise for one minute →</a>'
+        if report_url else ""
+    )
+    return f'''<!doctype html>
+<html><body style="margin:0;padding:0;background:#eef2ed;color:#17351d">
+  <div style="display:none;max-height:0;overflow:hidden">One thoughtful minute can keep your speaking habit moving.</div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#eef2ed;padding:28px 12px"><tr><td align="center">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 8px 30px rgba(24,53,28,.12)">
+      <tr><td style="padding:28px 32px;background:linear-gradient(135deg,#17351d,#2f7d32);color:#ffffff">
+        <div style="font:700 22px Arial,sans-serif">Fluently</div>
+        <div style="margin-top:20px;font:700 27px Arial,sans-serif;line-height:1.18">Your voice deserves one focused minute today.</div>
+      </td></tr>
+      <tr><td style="padding:30px 32px;text-align:center">
+        <div style="font:700 14px Arial,sans-serif;color:#43813e;letter-spacing:.8px;text-transform:uppercase">{escape(streak_label)}</div>
+        <p style="margin:16px 0;font:400 16px Arial,sans-serif;line-height:1.6;color:#44564a">Hi {name}, confidence is not built in one perfect speech. It is built when you return, notice one small improvement, and speak again. Keep your momentum alive with a short Fluently practice.</p>
+        {cta}
+        <p style="margin:22px 0 0;font:400 12px Arial,sans-serif;line-height:1.55;color:#77827a">You received this because daily email reminders are enabled in your Fluently settings. You can change them any time.</p>
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body></html>'''
+
+
+def _claim_delivery(user_id: str, kind: str, delivery_day: date) -> bool:
+    """Atomically reserve one delivery per user, type, and day; fail closed if unmigrated."""
+    try:
+        get_db().table("notification_deliveries").insert({
+            "user_id": user_id,
+            "kind": kind,
+            "delivery_date": delivery_day.isoformat(),
+        }).execute()
+        return True
+    except Exception as exc:
+        logger.info("[notifications] reminder skipped (already sent or migration missing): %s", exc)
+        return False
+
+
+def send_daily_practice_reminders(today: date | None = None) -> dict[str, int]:
+    """Send one opt-in daily reminder per user. Intended for a scheduled worker."""
+    day = today or date.today()
+    sent = skipped = 0
+    api_key = os.getenv("RESEND_API_KEY")
+    if not api_key:
+        logger.warning("[notifications] RESEND_API_KEY is not configured; daily reminders skipped")
+        return {"sent": 0, "skipped": 0}
+
+    try:
+        profiles = get_db().table("user_profiles").select(
+            "user_id, display_name, notification_preferences"
+        ).execute().data or []
+    except Exception as exc:
+        logger.exception("[notifications] could not load reminder recipients")
+        raise RuntimeError("Unable to load reminder recipients") from exc
+
+    frontend_url = os.getenv("FRONTEND_URL", "").rstrip("/")
+    practice_url = f"{frontend_url}/#/session" if frontend_url else ""
+    import resend
+    resend.api_key = api_key
+    for profile in profiles:
+        prefs = profile.get("notification_preferences") or {}
+        if not (prefs.get("email") and prefs.get("dailyReminder")):
+            skipped += 1
+            continue
+        user_id = profile.get("user_id")
+        if not user_id or not _claim_delivery(user_id, "daily_practice", day):
+            skipped += 1
+            continue
+        email = _get_user_email(user_id)
+        if not email:
+            skipped += 1
+            continue
+        try:
+            streak_rows = get_db().table("streaks").select("current_streak").eq("user_id", user_id).limit(1).execute().data or []
+            streak = int(streak_rows[0].get("current_streak") or 0) if streak_rows else 0
+            resend.Emails.send({
+                "from": os.getenv("RESEND_FROM_EMAIL", "Fluently <onboarding@resend.dev>"),
+                "to": [email],
+                "subject": "A small practice today can change tomorrow's voice",
+                "html": _reminder_email_html(profile.get("display_name") or "Speaker", streak, practice_url),
+            })
+            sent += 1
+        except Exception as exc:
+            logger.warning("[notifications] daily reminder failed for %s: %s", user_id, exc)
+    return {"sent": sent, "skipped": skipped}
 
 
 def _send_push(user_id: str, payload: dict[str, Any]) -> None:

@@ -11,6 +11,7 @@ import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -99,7 +100,14 @@ app = FastAPI(
 frontend_origins = ["http://localhost:3000", "http://localhost:5173"]
 configured_frontend = os.getenv("FRONTEND_URL", "").rstrip("/")
 if configured_frontend:
-    frontend_origins.append(configured_frontend)
+    # FRONTEND_URL may include a GitHub Pages project path for report links.
+    # CORS, however, must receive the browser origin only.
+    parsed_frontend = urlsplit(configured_frontend)
+    frontend_origins.append(
+        f"{parsed_frontend.scheme}://{parsed_frontend.netloc}"
+        if parsed_frontend.scheme and parsed_frontend.netloc
+        else configured_frontend
+    )
 
 app.add_middleware(
     CORSMiddleware,

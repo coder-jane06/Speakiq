@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../services/supabase';
-import { API_URL, APP_BASE_URL, VAPID_PUBLIC_KEY } from '../constants';
+import { API_CONFIGURED, API_URL, APP_BASE_URL, VAPID_PUBLIC_KEY } from '../constants';
 import {
   User, Sparkles, Monitor, Bell, Mic, Shield, Brain, HelpCircle, Info,
   Check, Download, Trash2, ChevronRight, Moon, Sun,
@@ -55,12 +55,23 @@ async function getToken(): Promise<string | null> {
 }
 
 async function patchPreferences(token: string, payload: Record<string, unknown>) {
+  if (!API_CONFIGURED) {
+    throw new Error('Fluently is not connected to its API yet. Please try again after deployment configuration is completed.');
+  }
   const res = await fetch(`${API_URL}/dashboard/preferences`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error('Failed to save preferences');
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || `Unable to save preferences (${res.status})`);
+  }
+  return res.json().catch(() => ({}));
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Unable to save changes. Please try again.';
 }
 
 function urlBase64ToUint8Array(base64String: string) {
@@ -99,7 +110,10 @@ async function registerPushSubscription(token: string) {
       auth: subJson.keys?.auth,
     }),
   });
-  if (!res.ok) throw new Error('Failed to save push subscription');
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || `Unable to register browser push (${res.status})`);
+  }
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -122,6 +136,7 @@ export default function SettingsPage() {
   // ── Loaded from backend ────────────────────────────────────────────────────
   const [profile, setProfile] = useState<ProfileStatus | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
+  const [profileLoadError, setProfileLoadError] = useState('');
 
   // ── Profile tab ───────────────────────────────────────────────────────────
   const [displayName, setDisplayName] = useState('');
@@ -175,13 +190,18 @@ export default function SettingsPage() {
   useEffect(() => {
     async function fetchProfile() {
       setLoadingProfile(true);
+      setProfileLoadError('');
       try {
         const token = await getToken();
-        if (!token) return;
+        if (!token) throw new Error('Sign in again to load your saved settings.');
+        if (!API_CONFIGURED) throw new Error('Fluently is not connected to its API yet. Changes cannot be saved on this deployment.');
         const res = await fetch(`${API_URL}/dashboard/profile-status`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (!res.ok) return;
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.detail || `Unable to load settings (${res.status})`);
+        }
         const data: ProfileStatus = await res.json();
         setProfile(data);
         // Hydrate local state from backend values
@@ -214,6 +234,7 @@ export default function SettingsPage() {
         }
       } catch (e) {
         console.error('Error fetching profile:', e);
+        setProfileLoadError(errorMessage(e));
       } finally {
         setLoadingProfile(false);
       }
@@ -238,7 +259,7 @@ export default function SettingsPage() {
       setIsEditingName(false);
       showMsg(setProfileSaveMsg, '✓ Name saved');
     } catch (e) {
-      showMsg(setProfileSaveMsg, '✗ Failed to save');
+      showMsg(setProfileSaveMsg, `✗ ${errorMessage(e)}`);
     } finally {
       setSavingProfile(false);
     }
@@ -257,7 +278,7 @@ export default function SettingsPage() {
       });
       showMsg(setAiSaveMsg, '✓ AI Coach preferences saved');
     } catch (e) {
-      showMsg(setAiSaveMsg, '✗ Failed to save');
+      showMsg(setAiSaveMsg, `✗ ${errorMessage(e)}`);
     } finally {
       setSavingAI(false);
     }
@@ -273,7 +294,7 @@ export default function SettingsPage() {
       });
       showMsg(setAppearanceSaveMsg, '✓ Appearance saved');
     } catch (e) {
-      showMsg(setAppearanceSaveMsg, '✗ Failed to save');
+      showMsg(setAppearanceSaveMsg, `✗ ${errorMessage(e)}`);
     } finally {
       setSavingAppearance(false);
     }
@@ -297,7 +318,7 @@ export default function SettingsPage() {
         showMsg(setNotifSaveMsg, '✓ Notifications saved');
       }
     } catch (e) {
-      showMsg(setNotifSaveMsg, '✗ Failed to save');
+      showMsg(setNotifSaveMsg, `✗ ${errorMessage(e)}`);
     } finally {
       setSavingNotif(false);
     }
@@ -311,7 +332,7 @@ export default function SettingsPage() {
       await patchPreferences(token, { audio_preferences: audioSettings });
       showMsg(setAudioSaveMsg, '✓ Audio settings saved');
     } catch (e) {
-      showMsg(setAudioSaveMsg, '✗ Failed to save');
+      showMsg(setAudioSaveMsg, `✗ ${errorMessage(e)}`);
     } finally {
       setSavingAudio(false);
     }
@@ -485,6 +506,12 @@ export default function SettingsPage() {
             Manage your account preferences, AI coach behavior, and workspace customization.
           </p>
         </header>
+
+        {profileLoadError && (
+          <div role="alert" className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-[13px] font-semibold text-red-300">
+            Saved settings are unavailable: {profileLoadError}
+          </div>
+        )}
 
         <div className="flex flex-col lg:flex-row gap-8 items-start">
 
@@ -823,7 +850,9 @@ export default function SettingsPage() {
                 <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
                   <p className="text-[13px] font-bold text-amber-300">Delivery status</p>
                   <p className="text-[12px] text-amber-200/80 font-medium mt-1">
-                    Browser push is enabled when this device grants permission. Email reminders require Resend plus a scheduled job on the backend.
+                    {API_CONFIGURED
+                      ? 'Saving confirms your notification choices with Fluently. Email delivery also needs the configured mail service and reminder schedule.'
+                      : 'This deployment is not connected to the Fluently API, so notification choices cannot be saved yet.'}
                   </p>
                 </div>
 

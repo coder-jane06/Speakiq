@@ -6,7 +6,13 @@ export const AUDIO_MIME_TYPE = 'audio/webm'
 export const MAX_UPLOAD_SIZE_MB = 10
 export const MAX_UPLOAD_SIZE_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024
 
-export const API_URL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_URL ?? '')
+const configuredApiUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '')
+
+// A production Pages build cannot serve the API itself. Keep this explicit so a
+// missing build variable is reported to the user instead of silently calling
+// GitHub Pages and pretending a preference was saved.
+export const API_URL = import.meta.env.DEV ? '' : (configuredApiUrl ?? '')
+export const API_CONFIGURED = import.meta.env.DEV || Boolean(configuredApiUrl)
 export const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY ?? ''
 export const APP_BASE_URL = import.meta.env.BASE_URL
 export const ROUTES = {

@@ -9,7 +9,7 @@ Deploy the API first so that its public URL can be used as `VITE_API_URL` for th
 
 ## 1. Prepare Supabase
 
-1. In the Supabase SQL Editor, run `scripts/migrate_v3_preferences.sql` and `backend/scripts/migrate_v5_push.sql`.
+1. In the Supabase SQL Editor, run `backend/scripts/migrate_v3_preferences.sql`, `backend/scripts/migrate_v5_push.sql`, and `backend/scripts/migrate_v6_notification_deliveries.sql`.
 2. In **Authentication → URL Configuration**, set **Site URL** to the final web URL, for example `https://app.example.com`.
 3. Add the exact final URL with a trailing slash to **Redirect URLs**, for example `https://app.example.com/`. Keep `http://localhost:3000/**` and `http://localhost:5173/**` for local work.
 4. In **Authentication → Providers → Email**, keep **Confirm email** enabled for real accounts. The client uses PKCE and now processes the return code after verification.
@@ -22,7 +22,7 @@ Deploy the API first so that its public URL can be used as `VITE_API_URL` for th
 3. Set `RESEND_API_KEY` on the API service.
 4. Generate VAPID keys and set `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` on the API service. Set the matching public key as `VITE_VAPID_PUBLIC_KEY` on the static site.
 
-Session-report emails are only sent when both `email` and `sessionCompletion` are enabled in a user's saved notification preferences.
+Session-report emails are only sent when both `email` and `sessionCompletion` are enabled in a user's saved notification preferences. Daily reminders additionally require a trusted daily scheduler that runs `cd backend && python -m jobs.reminders`; the included delivery table prevents duplicate messages on retry.
 
 ## 3. Create the Render services
 
@@ -32,7 +32,7 @@ Session-report emails are only sent when both `email` and `sessionCompletion` ar
    - `SUPABASE_SERVICE_KEY`
    - `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and/or `GROQ_API_KEY` as used by the selected coaching provider
    - `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`
-   - `FRONTEND_URL` (the final `fluently-web` URL, no trailing slash)
+   - `FRONTEND_URL` (the final web URL, including its GitHub Pages project path if applicable, with no trailing slash). The API derives the correct CORS origin automatically.
 3. Deploy `fluently-api` and confirm `https://<api-host>/health` returns `{"status":"ok"}`.
 4. Enter these build-time values on `fluently-web` and deploy it:
    - `VITE_API_URL=https://<api-host>`
