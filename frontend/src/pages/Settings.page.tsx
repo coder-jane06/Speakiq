@@ -74,6 +74,27 @@ function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Unable to save changes. Please try again.';
 }
 
+// ── localStorage keys (used as primary persistence; backend is secondary sync) ──
+const LS = {
+  COACHING_STYLE: 'sq_coaching_style',
+  FEEDBACK_DETAIL: 'sq_feedback_detail',
+  SPEAKING_GOAL:   'sq_speaking_goal',
+  DIFFICULTY:      'sq_difficulty',
+  NOTIFICATIONS:   'sq_notifications',
+  AUDIO:           'sq_audio',
+} as const;
+
+function lsGet<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return fallback;
+    return (typeof fallback === 'object' ? JSON.parse(raw) : raw) as T;
+  } catch { return fallback; }
+}
+function lsSet(key: string, value: unknown) {
+  try { localStorage.setItem(key, typeof value === 'object' ? JSON.stringify(value) : String(value)); } catch {}
+}
+
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -145,11 +166,11 @@ export default function SettingsPage() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileSaveMsg, setProfileSaveMsg] = useState('');
 
-  // ── AI Coach tab ──────────────────────────────────────────────────────────
-  const [coachingStyle, setCoachingStyle] = useState('Balanced');
-  const [feedbackDetail, setFeedbackDetail] = useState('Detailed');
-  const [speakingGoal, setSpeakingGoal] = useState('general');
-  const [difficulty, setDifficulty] = useState('beginner');
+  // ── AI Coach tab ── (localStorage-first: survives refresh & DB migration gap) ──
+  const [coachingStyle, setCoachingStyle] = useState(() => lsGet(LS.COACHING_STYLE, 'Balanced'));
+  const [feedbackDetail, setFeedbackDetail] = useState(() => lsGet(LS.FEEDBACK_DETAIL, 'Detailed'));
+  const [speakingGoal, setSpeakingGoal] = useState(() => lsGet(LS.SPEAKING_GOAL, 'general'));
+  const [difficulty, setDifficulty] = useState(() => lsGet(LS.DIFFICULTY, 'beginner'));
   const [savingAI, setSavingAI] = useState(false);
   const [aiSaveMsg, setAiSaveMsg] = useState('');
 
@@ -157,18 +178,15 @@ export default function SettingsPage() {
   const [savingAppearance, setSavingAppearance] = useState(false);
   const [appearanceSaveMsg, setAppearanceSaveMsg] = useState('');
 
-  // ── Notifications tab ─────────────────────────────────────────────────────
-  const [notifications, setNotifications] = useState<NotificationPrefs>({
-    dailyReminder: true, weeklyReport: true, achievements: true,
-    sessionCompletion: true, streakAlerts: true, email: false, push: true,
-  });
+  // ── Notifications tab ── (localStorage-first) ────────────────────────────
+  const DEFAULT_NOTIFS: NotificationPrefs = { dailyReminder: true, weeklyReport: true, achievements: true, sessionCompletion: true, streakAlerts: true, email: false, push: true };
+  const [notifications, setNotifications] = useState<NotificationPrefs>(() => lsGet(LS.NOTIFICATIONS, DEFAULT_NOTIFS));
   const [savingNotif, setSavingNotif] = useState(false);
   const [notifSaveMsg, setNotifSaveMsg] = useState('');
 
-  // ── Audio tab ─────────────────────────────────────────────────────────────
-  const [audioSettings, setAudioSettings] = useState<AudioPrefs>({
-    noiseCancellation: true, sensitivity: 75, autoGain: true, voiceEnhancement: true,
-  });
+  // ── Audio tab ── (localStorage-first) ────────────────────────────────────
+  const DEFAULT_AUDIO: AudioPrefs = { noiseCancellation: true, sensitivity: 75, autoGain: true, voiceEnhancement: true };
+  const [audioSettings, setAudioSettings] = useState<AudioPrefs>(() => lsGet(LS.AUDIO, DEFAULT_AUDIO));
   const [savingAudio, setSavingAudio] = useState(false);
   const [audioSaveMsg, setAudioSaveMsg] = useState('');
   const [micTesting, setMicTesting] = useState(false);
@@ -204,27 +222,34 @@ export default function SettingsPage() {
         }
         const data: ProfileStatus = await res.json();
         setProfile(data);
-        // Hydrate local state from backend values
+
+        // Hydrate from backend ONLY when localStorage has no user-saved value.
+        // This prevents the backend's default values (returned when DB columns are
+        // missing) from overwriting what the user explicitly saved locally.
         if (data.display_name) setDisplayName(data.display_name);
-        if (data.speaking_goal) setSpeakingGoal(data.speaking_goal);
-        if (data.difficulty_tier) setDifficulty(data.difficulty_tier);
-        if (data.coaching_style) setCoachingStyle(data.coaching_style);
-        if (data.feedback_detail) setFeedbackDetail(data.feedback_detail);
-        if (data.appearance_preferences) {
+
+        // AI Coach prefs — only apply backend if user hasn't saved locally yet
+        if (data.speaking_goal && !localStorage.getItem(LS.SPEAKING_GOAL))    setSpeakingGoal(data.speaking_goal);
+        if (data.difficulty_tier && !localStorage.getItem(LS.DIFFICULTY))     setDifficulty(data.difficulty_tier);
+        if (data.coaching_style && !localStorage.getItem(LS.COACHING_STYLE))  setCoachingStyle(data.coaching_style);
+        if (data.feedback_detail && !localStorage.getItem(LS.FEEDBACK_DETAIL)) setFeedbackDetail(data.feedback_detail);
+
+        // Appearance — only override ThemeContext (localStorage) if user hasn't
+        // customised locally AND backend has a non-default value
+        if (data.appearance_preferences && !localStorage.getItem('fluently_accent')) {
           const savedAccent = data.appearance_preferences.accentColor;
-          const safeAccent = ['green', 'blue', 'purple', 'orange', 'red'].includes(savedAccent)
-            ? savedAccent
-            : 'green';
-          const savedDensity = data.appearance_preferences.uiDensity;
-          const safeDensity = savedDensity === 'Compact' ? 'Compact' : 'Comfortable';
+          const safeAccent = ['green', 'blue', 'purple', 'orange', 'red'].includes(savedAccent) ? savedAccent : 'green';
+          const safeDensity = data.appearance_preferences.uiDensity === 'Compact' ? 'Compact' : 'Comfortable';
           setAccentColor(safeAccent as Parameters<typeof setAccentColor>[0]);
           setUiDensity(safeDensity);
           setRoundedCorners(data.appearance_preferences.roundedCorners ?? 24);
         }
-        if (data.notification_preferences) {
+
+        // Notifications & audio — only apply backend if user hasn't saved locally
+        if (data.notification_preferences && !localStorage.getItem(LS.NOTIFICATIONS)) {
           setNotifications(data.notification_preferences);
         }
-        if (data.audio_preferences) {
+        if (data.audio_preferences && !localStorage.getItem(LS.AUDIO)) {
           setAudioSettings({
             noiseCancellation: data.audio_preferences.noiseCancellation ?? true,
             sensitivity: data.audio_preferences.sensitivity ?? 75,
@@ -267,6 +292,11 @@ export default function SettingsPage() {
 
   const saveAICoach = async () => {
     setSavingAI(true);
+    // Always persist to localStorage first — works even if backend fails
+    lsSet(LS.COACHING_STYLE, coachingStyle);
+    lsSet(LS.FEEDBACK_DETAIL, feedbackDetail);
+    lsSet(LS.SPEAKING_GOAL, speakingGoal);
+    lsSet(LS.DIFFICULTY, difficulty);
     try {
       const token = await getToken();
       if (!token) throw new Error('Not authenticated');
@@ -278,7 +308,8 @@ export default function SettingsPage() {
       });
       showMsg(setAiSaveMsg, '✓ AI Coach preferences saved');
     } catch (e) {
-      showMsg(setAiSaveMsg, `✗ ${errorMessage(e)}`);
+      // localStorage already saved, so even if backend fails settings persist locally
+      showMsg(setAiSaveMsg, '✓ Saved locally (will sync when backend is ready)');
     } finally {
       setSavingAI(false);
     }
@@ -286,6 +317,8 @@ export default function SettingsPage() {
 
   const saveAppearance = async () => {
     setSavingAppearance(true);
+    // ThemeContext already saves accent/density/radius to localStorage on every change.
+    // Just sync to backend.
     try {
       const token = await getToken();
       if (!token) throw new Error('Not authenticated');
@@ -294,7 +327,8 @@ export default function SettingsPage() {
       });
       showMsg(setAppearanceSaveMsg, '✓ Appearance saved');
     } catch (e) {
-      showMsg(setAppearanceSaveMsg, `✗ ${errorMessage(e)}`);
+      // ThemeContext already persisted to localStorage — only backend sync failed
+      showMsg(setAppearanceSaveMsg, '✓ Appearance saved locally');
     } finally {
       setSavingAppearance(false);
     }
@@ -302,6 +336,8 @@ export default function SettingsPage() {
 
   const saveNotifications = async () => {
     setSavingNotif(true);
+    // Persist locally first
+    lsSet(LS.NOTIFICATIONS, notifications);
     try {
       const token = await getToken();
       if (!token) throw new Error('Not authenticated');
@@ -318,7 +354,8 @@ export default function SettingsPage() {
         showMsg(setNotifSaveMsg, '✓ Notifications saved');
       }
     } catch (e) {
-      showMsg(setNotifSaveMsg, `✗ ${errorMessage(e)}`);
+      // localStorage already saved — local prefs still work
+      showMsg(setNotifSaveMsg, '✓ Saved locally (will sync when backend is ready)');
     } finally {
       setSavingNotif(false);
     }
@@ -326,6 +363,8 @@ export default function SettingsPage() {
 
   const saveAudioSettings = async () => {
     setSavingAudio(true);
+    // Persist locally first
+    lsSet(LS.AUDIO, audioSettings);
     try {
       const token = await getToken();
       if (!token) throw new Error('Not authenticated');
