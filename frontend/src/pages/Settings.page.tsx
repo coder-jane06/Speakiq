@@ -275,39 +275,9 @@ export default function SettingsPage() {
     fetchProfile();
   }, []);
 
-  useEffect(() => {
-    const app = lsGet<{accentColor: string, uiDensity: string, roundedCorners: number}>('sq_appearance', { accentColor: 'green', uiDensity: 'Comfortable', roundedCorners: 24 });
-    // Only override CSS if user has explicitly chosen a NON-default accent color
-    // Default 'green' = original app lime #C8F97D — let index.css own it (no inline override)
-    const accToColor: Record<string, string> = {
-      green: '#C8F97D',   // original app lime — matches index.css --accent
-      blue: '#60A5FA',
-      purple: '#A78BFA',
-      orange: '#FB923C',
-      red: '#F87171',
-    };
-    if (app.accentColor && app.accentColor !== 'green') {
-      document.documentElement.style.setProperty('--accent', accToColor[app.accentColor] || '#C8F97D');
-    } else {
-      // Remove any stale inline override so index.css default takes effect
-      document.documentElement.style.removeProperty('--accent');
-    }
-    if (app.roundedCorners && app.roundedCorners !== 24) {
-      document.documentElement.style.setProperty('--radius-base', app.roundedCorners + 'px');
-    } else {
-      document.documentElement.style.removeProperty('--radius-base');
-    }
-    if (app.uiDensity === 'Compact') {
-      document.documentElement.classList.add('density-compact');
-      document.documentElement.classList.remove('density-comfortable');
-    } else {
-      document.documentElement.classList.add('density-comfortable');
-      document.documentElement.classList.remove('density-compact');
-    }
-    const t = lsGet('sq_theme', 'dark');
-    if (t === 'dark') document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
-  }, []);
+  // ThemeContext (in App root) already applies accent/radius/density CSS vars
+  // on every page load and whenever they change — no duplicate useEffect needed here.
+
 
   // ── Save helpers ──────────────────────────────────────────────────────────
   const showMsg = (setter: (m: string) => void, msg: string) => {
@@ -358,32 +328,9 @@ export default function SettingsPage() {
 
   const saveAppearance = async () => {
     setSavingAppearance(true);
-    const accToColor: Record<string, string> = {
-      green: '#C8F97D',   // original app lime — matches index.css --accent
-      blue: '#60A5FA',
-      purple: '#A78BFA',
-      orange: '#FB923C',
-      red: '#F87171',
-    };
-    if (accentColor && accentColor !== 'green') {
-      document.documentElement.style.setProperty('--accent', accToColor[accentColor] || '#C8F97D');
-    } else {
-      document.documentElement.style.removeProperty('--accent');
-    }
-    if (roundedCorners !== 24) {
-      document.documentElement.style.setProperty('--radius-base', roundedCorners + 'px');
-    } else {
-      document.documentElement.style.removeProperty('--radius-base');
-    }
-    if (uiDensity === 'Compact') {
-      document.documentElement.classList.add('density-compact');
-      document.documentElement.classList.remove('density-comfortable');
-    } else {
-      document.documentElement.classList.add('density-comfortable');
-      document.documentElement.classList.remove('density-compact');
-    }
-    lsSet('sq_appearance', { accentColor, uiDensity, roundedCorners });
-    
+    // ThemeContext setters (setAccentColor, setBorderRadius, setUiDensity) already handle
+    // CSS variable application + localStorage when the user clicks buttons in real-time.
+    // saveAppearance only needs to persist the current ThemeContext state to the backend.
     try {
       const token = await getToken();
       if (!token) throw new Error('Not authenticated');
@@ -873,22 +820,27 @@ export default function SettingsPage() {
                       <p className="text-[12px] text-[var(--text-tertiary)] font-medium">Choose primary branding highlight color (saved to profile)</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      {[
-                        { id: 'green', color: 'bg-emerald-500' },
-                        { id: 'blue', color: 'bg-blue-500' },
-                        { id: 'purple', color: 'bg-purple-500' },
-                        { id: 'orange', color: 'bg-orange-500' },
-                        { id: 'red', color: 'bg-red-500' },
-                      ].map((acc) => (
-                        <button
-                          key={acc.id}
-                          onClick={() => setAccentColor(acc.id as Parameters<typeof setAccentColor>[0])}
-                          className={`w-8 h-8 rounded-full ${acc.color} flex items-center justify-center transition-transform cursor-pointer ${accentColor === acc.id ? 'ring-4 ring-emerald-500/40 scale-110' : 'opacity-70 hover:opacity-100'}`}
-                        >
-                          {accentColor === acc.id && <Check size={14} className="text-black" />}
-                        </button>
-                      ))}
-                    </div>
+                       {([
+                         { id: 'green',  hex: '#C8F97D', ring: 'ring-[#C8F97D]/40' },
+                         { id: 'blue',   hex: '#60A5FA', ring: 'ring-[#60A5FA]/40' },
+                         { id: 'purple', hex: '#C084FC', ring: 'ring-[#C084FC]/40' },
+                         { id: 'orange', hex: '#FB923C', ring: 'ring-[#FB923C]/40' },
+                         { id: 'red',    hex: '#F87171', ring: 'ring-[#F87171]/40' },
+                       ] as const).map((acc) => (
+                         <button
+                           key={acc.id}
+                           onClick={() => setAccentColor(acc.id as Parameters<typeof setAccentColor>[0])}
+                           style={{ backgroundColor: acc.hex }}
+                           className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform cursor-pointer ${
+                             accentColor === acc.id
+                               ? `ring-4 ${acc.ring} scale-110`
+                               : 'opacity-70 hover:opacity-100 hover:scale-105'
+                           }`}
+                         >
+                           {accentColor === acc.id && <Check size={14} className="text-black" />}
+                         </button>
+                       ))}
+                     </div>
                   </div>
 
                   {/* UI Density */}
