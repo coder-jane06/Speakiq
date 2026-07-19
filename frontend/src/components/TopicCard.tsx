@@ -10,9 +10,10 @@ interface TopicCardProps {
   difficulty?: string
   /** When true, renders only the refresh button (embedded inside a parent card) */
   embedded?: boolean
+  excludeTexts?: string[]
 }
 
-export function TopicCard({ onReady, goalType, difficulty, embedded = false }: TopicCardProps) {
+export function TopicCard({ onReady, goalType, difficulty, embedded = false, excludeTexts }: TopicCardProps) {
   const [topic, setTopic] = useState<Topic | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -27,6 +28,9 @@ export function TopicCard({ onReady, goalType, difficulty, embedded = false }: T
       if (currentTopicId) params.set('exclude', currentTopicId)
       if (goalType)        params.set('goal', goalType)
       if (difficulty)      params.set('difficulty', difficulty)
+      if (excludeTexts && excludeTexts.length > 0) {
+        params.set('exclude_texts', excludeTexts.slice(0, 15).join(','))
+      }
 
       const urlStr = `${API_URL}/sessions/topic${params.toString() ? '?' + params.toString() : ''}`
 

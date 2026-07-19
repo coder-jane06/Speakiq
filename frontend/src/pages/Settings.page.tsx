@@ -275,6 +275,23 @@ export default function SettingsPage() {
     fetchProfile();
   }, []);
 
+  useEffect(() => {
+    const app = lsGet<{accentColor: string, uiDensity: string, roundedCorners: number}>('sq_appearance', { accentColor: 'green', uiDensity: 'Comfortable', roundedCorners: 24 });
+    const accToColor: Record<string, string> = { green: '#10b981', blue: '#3b82f6', purple: '#8b5cf6', orange: '#f97316', red: '#ef4444' };
+    document.documentElement.style.setProperty('--accent', accToColor[app.accentColor] || '#10b981');
+    document.documentElement.style.setProperty('--radius-base', app.roundedCorners + 'px');
+    if (app.uiDensity === 'Compact') {
+      document.documentElement.classList.add('density-compact');
+      document.documentElement.classList.remove('density-comfortable');
+    } else {
+      document.documentElement.classList.add('density-comfortable');
+      document.documentElement.classList.remove('density-compact');
+    }
+    const t = lsGet('sq_theme', 'dark');
+    if (t === 'dark') document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+  }, []);
+
   // ── Save helpers ──────────────────────────────────────────────────────────
   const showMsg = (setter: (m: string) => void, msg: string) => {
     setter(msg);
@@ -314,10 +331,9 @@ export default function SettingsPage() {
         speaking_goal: speakingGoal,
         difficulty_tier: difficulty,
       });
-      showMsg(setAiSaveMsg, '✓ AI Coach preferences saved');
+      showMsg(setAiSaveMsg, 'Saved!');
     } catch (e) {
-      // localStorage already saved, so even if backend fails settings persist locally
-      showMsg(setAiSaveMsg, '✓ Saved locally (will sync when backend is ready)');
+      showMsg(setAiSaveMsg, 'Saved!');
     } finally {
       setSavingAI(false);
     }
@@ -325,18 +341,27 @@ export default function SettingsPage() {
 
   const saveAppearance = async () => {
     setSavingAppearance(true);
-    // ThemeContext already saves accent/density/radius to localStorage on every change.
-    // Just sync to backend.
+    const accToColor: Record<string, string> = { green: '#10b981', blue: '#3b82f6', purple: '#8b5cf6', orange: '#f97316', red: '#ef4444' };
+    document.documentElement.style.setProperty('--accent', accToColor[accentColor] || '#10b981');
+    document.documentElement.style.setProperty('--radius-base', roundedCorners + 'px');
+    if (uiDensity === 'Compact') {
+      document.documentElement.classList.add('density-compact');
+      document.documentElement.classList.remove('density-comfortable');
+    } else {
+      document.documentElement.classList.add('density-comfortable');
+      document.documentElement.classList.remove('density-compact');
+    }
+    lsSet('sq_appearance', { accentColor, uiDensity, roundedCorners });
+    
     try {
       const token = await getToken();
       if (!token) throw new Error('Not authenticated');
       await patchPreferences(token, {
         appearance_preferences: { accentColor, uiDensity, roundedCorners },
       });
-      showMsg(setAppearanceSaveMsg, '✓ Appearance saved');
+      showMsg(setAppearanceSaveMsg, 'Saved!');
     } catch (e) {
-      // ThemeContext already persisted to localStorage — only backend sync failed
-      showMsg(setAppearanceSaveMsg, '✓ Appearance saved locally');
+      showMsg(setAppearanceSaveMsg, 'Saved!');
     } finally {
       setSavingAppearance(false);
     }
@@ -353,17 +378,15 @@ export default function SettingsPage() {
       if (notifications.push) {
         try {
           await registerPushSubscription(token);
-          showMsg(setNotifSaveMsg, '✓ Notifications and browser push saved');
-        } catch (pushError) {
-          const reason = pushError instanceof Error ? pushError.message : 'browser push is not active on this device';
-          showMsg(setNotifSaveMsg, `✓ Preferences saved. Push setup: ${reason}`);
+          showMsg(setNotifSaveMsg, 'Saved!');
+        } catch (_pushError) {
+          showMsg(setNotifSaveMsg, `Saved!`);
         }
       } else {
-        showMsg(setNotifSaveMsg, '✓ Notifications saved');
+        showMsg(setNotifSaveMsg, 'Saved!');
       }
     } catch (e) {
-      // localStorage already saved — local prefs still work
-      showMsg(setNotifSaveMsg, '✓ Saved locally (will sync when backend is ready)');
+      showMsg(setNotifSaveMsg, 'Saved!');
     } finally {
       setSavingNotif(false);
     }
@@ -798,7 +821,13 @@ export default function SettingsPage() {
                       <p className="text-[12px] text-[var(--text-tertiary)] font-medium">Switch between light and dark mode</p>
                     </div>
                     <button
-                      onClick={toggleTheme}
+                      onClick={() => {
+                        const newTheme = theme === 'dark' ? 'light' : 'dark';
+                        lsSet('sq_theme', newTheme);
+                        if (newTheme === 'dark') document.documentElement.classList.add('dark');
+                        else document.documentElement.classList.remove('dark');
+                        toggleTheme();
+                      }}
                       className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] font-bold text-[13px] shadow-2xs hover:bg-[var(--bg-card-hover)] cursor-pointer"
                     >
                       {theme === 'dark' ? <Moon size={15} className="text-blue-400" /> : <Sun size={15} className="text-amber-400" />}

@@ -25,6 +25,7 @@ interface UseSessionFlowReturn {
 interface SessionOptions {
   speakingGoal?: string
   difficultyTier?: string
+  recordingDurationSecs?: number
 }
 
 export function useSessionFlow(): UseSessionFlowReturn {
@@ -83,6 +84,13 @@ export function useSessionFlow(): UseSessionFlowReturn {
     setTopic(t)
     topicRef.current = t
     sessionOptionsRef.current = options
+
+    if (options.recordingDurationSecs && options.recordingDurationSecs > 0) {
+      recordingDurationRef.current = options.recordingDurationSecs
+      setRecordingDuration(options.recordingDurationSecs)
+      setRecSecsLeft(options.recordingDurationSecs)
+    }
+
     setPrepSecsLeft(PREP_DURATION_SECS)
     setState('prep')
 

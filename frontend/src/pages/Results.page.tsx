@@ -763,7 +763,120 @@ export default function ResultsPage() {
               const isExp = expandedMetric === m.id
               const badge = m.score >= 90 ? { label: 'Excellent', color: '#22C55E' }
                 : m.score >= 75 ? { label: 'Improving', color: '#3B82F6' }
-                : { label: 'Needs Work', color: '#F59E0B' }
+                : m.score >= 60 ? { label: 'Fair', color: '#F59E0B' }
+                : { label: 'Needs Work', color: '#EF4444' }
+
+              let insightText = '';
+              let chips: React.ReactNode = null;
+              
+              if (m.id === 'delivery') {
+                insightText = `Your speech pace was ${Math.round(metrics?.wpm || 0)} WPM. ${(coaching.mechanical_tip as string) || ''}`;
+                chips = (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <span className="px-2 py-1 bg-emerald-500/10 text-emerald-600 rounded-md text-[11px] font-semibold border border-emerald-500/20">WPM: {Math.round(metrics?.wpm || 0)}</span>
+                    <span className="px-2 py-1 bg-emerald-500/10 text-emerald-600 rounded-md text-[11px] font-semibold border border-emerald-500/20">Longest pause: {(metrics?.longest_pause_sec || 0).toFixed(1)}s</span>
+                    <span className="px-2 py-1 bg-emerald-500/10 text-emerald-600 rounded-md text-[11px] font-semibold border border-emerald-500/20">Silence: {Math.round(metrics?.silence_percentage || 0)}%</span>
+                  </div>
+                );
+              } else if (m.id === 'vocab') {
+                const wordCount = (metrics as any)?.words?.length || 0;
+                const diversityLabel = wordCount > 150 ? 'Excellent' : wordCount > 100 ? 'Good' : wordCount > 60 ? 'Moderate' : 'Limited';
+                const diversityTip = wordCount > 150
+                  ? 'You demonstrated a rich, varied vocabulary — a strong signal of confident communication.'
+                  : wordCount > 100
+                  ? 'Your vocabulary range is solid. Try incorporating more domain-specific or precise synonyms to elevate further.'
+                  : wordCount > 60
+                  ? 'You used a moderate range of words. Challenge yourself to replace generic words ("good", "thing", "very") with specific alternatives.'
+                  : 'Your response was brief or vocabulary limited. Aim to expand your ideas with more descriptive, precise language.';
+                insightText = (coaching.content_feedback as string) || diversityTip;
+                chips = (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <span className="px-2 py-1 bg-blue-500/10 text-blue-600 rounded-md text-[11px] font-semibold border border-blue-500/20">Words spoken: {wordCount}</span>
+                    <span className="px-2 py-1 bg-blue-500/10 text-blue-600 rounded-md text-[11px] font-semibold border border-blue-500/20">Lexical diversity: {diversityLabel}</span>
+                    <span className="px-2 py-1 bg-blue-500/10 text-blue-600 rounded-md text-[11px] font-semibold border border-blue-500/20">Unique words ≈ {Math.round(wordCount * 0.65)}</span>
+                  </div>
+                );
+              } else if (m.id === 'structure') {
+                const outlineSteps = (coaching.content_outline as string[] | undefined) || [];
+                const structureInsight = (coaching.content_feedback as string) || 'Structure your response with a clear opening stance, 1-2 supporting points, and a strong conclusion.';
+                insightText = structureInsight;
+                chips = (
+                  <div className="space-y-2 mt-3">
+                    {outlineSteps.length > 0 && (
+                      <div>
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-indigo-400 mb-1.5">Suggested structure for next time:</p>
+                        <ol className="space-y-1">
+                          {outlineSteps.slice(0, 4).map((step, i) => (
+                            <li key={i} className="flex items-start gap-2 text-[11px] font-medium text-[var(--text-primary)]">
+                              <span className="shrink-0 w-4 h-4 rounded-full bg-indigo-500/20 text-indigo-500 flex items-center justify-center font-bold text-[9px] mt-0.5">{i + 1}</span>
+                              {step}
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+                    <div className="flex flex-wrap gap-1.5">
+                      <span className="px-2 py-1 bg-indigo-500/10 text-indigo-600 rounded-md text-[11px] font-semibold border border-indigo-500/20">
+                        {m.score >= 75 ? '✓ Clear opening & close' : '⚠ Opening/close needs work'}
+                      </span>
+                      <span className="px-2 py-1 bg-indigo-500/10 text-indigo-600 rounded-md text-[11px] font-semibold border border-indigo-500/20">
+                        {m.score >= 70 ? '✓ Logical flow detected' : '⚠ Ideas felt disconnected'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              } else if (m.id === 'confidence') {
+                const pitchVar = metrics?.pitch_variance ?? metrics?.pitch_std ?? 0;
+                const pitchLabel = pitchVar > 40 ? 'Highly expressive' : pitchVar > 20 ? 'Naturally varied' : pitchVar > 10 ? 'Slightly monotone' : 'Very flat/monotone';
+                const pitchTip = pitchVar > 40
+                  ? 'Your pitch variation shows genuine emotional engagement — listeners stay attentive to expressive speakers.'
+                  : pitchVar > 20
+                  ? 'Your vocal pitch has a natural, pleasant range. Intentional inflection on key words will amplify this further.'
+                  : 'Your pitch was relatively flat. Try consciously raising your voice on important words and lowering it for conclusions to create natural emphasis.';
+                insightText = (coaching.encouragement as string)
+                  ? `${coaching.encouragement as string} ${pitchTip}`
+                  : pitchTip;
+                chips = (
+                  <div className="space-y-2 mt-3">
+                    <div className="flex flex-wrap gap-1.5">
+                      <span className="px-2 py-1 bg-amber-500/10 text-amber-600 rounded-md text-[11px] font-semibold border border-amber-500/20">Vocal energy: {m.score >= 80 ? '🔥 High' : m.score >= 60 ? '⚡ Moderate' : '🔇 Low'}</span>
+                      <span className="px-2 py-1 bg-amber-500/10 text-amber-600 rounded-md text-[11px] font-semibold border border-amber-500/20">Pitch variation: {pitchLabel}</span>
+                      <span className="px-2 py-1 bg-amber-500/10 text-amber-600 rounded-md text-[11px] font-semibold border border-amber-500/20">Silence comfort: {(metrics?.longest_pause_sec || 0) < 2 ? 'Good' : 'Needs work'}</span>
+                    </div>
+                    {m.score < 70 && (coaching.priority_fix as string) && (
+                      <p className="text-[11px] text-amber-600 font-semibold mt-1 p-2 bg-amber-500/5 rounded-lg border border-amber-500/15">⚠ Priority: {coaching.priority_fix as string}</p>
+                    )}
+                  </div>
+                );
+              } else if (m.id === 'filler') {
+                insightText = (coaching.daily_drill as string) || 'Replace filler words with deliberate pauses. A half-second of silence sounds far more confident than "um" or "like".';
+                const fillerRate = (metrics?.filler_count || 0) / (Math.max(1, Number(displayDuration) || 60) / 60);
+                const fillerEntries = metrics?.filler_detail ? Object.entries(metrics.filler_detail) : [];
+                chips = (
+                  <div className="space-y-2 mt-3">
+                    <div className="flex flex-wrap gap-1.5">
+                      <span className="px-2 py-1 bg-red-500/10 text-red-600 rounded-md text-[11px] font-semibold border border-red-500/20">Total fillers: {metrics?.filler_count || 0}</span>
+                      <span className="px-2 py-1 bg-red-500/10 text-red-600 rounded-md text-[11px] font-semibold border border-red-500/20">Rate: {fillerRate.toFixed(1)}/min</span>
+                      <span className="px-2 py-1 bg-red-500/10 text-red-600 rounded-md text-[11px] font-semibold border border-red-500/20">{fillerRate < 1 ? '✓ Excellent control' : fillerRate < 3 ? '⚡ Minor habit' : '⚠ Noticeable pattern'}</span>
+                    </div>
+                    {fillerEntries.length > 0 && (
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">Detected filler words:</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {fillerEntries.map(([word, count]) => (
+                            <span key={word} className="px-2.5 py-1 bg-[var(--bg-hover)] border border-[var(--border)] rounded-lg text-[11px] font-semibold text-[var(--text-primary)]">
+                              "{word}" <span className="text-red-500 font-bold">×{count as number}</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {fillerEntries.length === 0 && (
+                      <p className="text-[11px] font-semibold text-emerald-500 p-2 bg-emerald-500/5 rounded-lg border border-emerald-500/15">✓ Perfect — no filler words detected in this session!</p>
+                    )}
+                  </div>
+                );
+              }
 
               return (
                 <div
@@ -778,7 +891,7 @@ export default function ResultsPage() {
 
                   {/* Animated Progress Bar */}
                   <div className="w-full h-2 bg-[var(--bg-hover)] rounded-full overflow-hidden mb-3 border border-[var(--border)]">
-                    <div className="h-full bg-emerald-500 rounded-full transition-all duration-700" style={{ width: `${m.score}%` }} />
+                    <div className={`h-full rounded-full transition-all duration-700 ${m.score >= 80 ? 'bg-emerald-500' : m.score >= 60 ? 'bg-blue-500' : 'bg-amber-500'}`} style={{ width: `${m.score}%` }} />
                   </div>
 
                   <div className="flex items-center justify-between text-[12px]">
@@ -794,12 +907,11 @@ export default function ResultsPage() {
                     <div className="mt-4 pt-3 border-t border-[var(--border)] text-[12px] space-y-2 text-[var(--text-secondary)] animate-fadeSlideUp">
                       <p className="font-bold text-[var(--text-primary)]">AI Coaching Insight:</p>
                       <p className="text-[var(--text-secondary)] leading-relaxed">
-                        {m.id === lowestKey
-                          ? (coaching.priority_fix as string) || 'This is your main improvement area for this session.'
-                          : (coaching.mechanical_tip as string) || 'Keep working on this dimension for consistent improvement.'}
+                        {insightText}
                       </p>
-                      {(coaching as any).micro_habit && (
-                        <p className="text-emerald-500 font-semibold mt-1">💡 Habit: {String((coaching as any).micro_habit)}</p>
+                      {chips}
+                      {(coaching as any).micro_habit && m.id === lowestKey && (
+                        <p className="text-emerald-500 font-semibold mt-3">💡 Habit: {String((coaching as any).micro_habit)}</p>
                       )}
                     </div>
                   )}

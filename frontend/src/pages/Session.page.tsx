@@ -99,7 +99,7 @@ const LEVELS = [
     skillBg: 'rgba(37,99,235,0.08)',
     borderSelected: '#2563EB',
     bgSelected: 'rgba(37,99,235,0.05)',
-    duration: 60,
+    duration: 90,
   },
   {
     id: 'advanced',
@@ -114,7 +114,7 @@ const LEVELS = [
     skillBg: 'rgba(139,92,246,0.08)',
     borderSelected: '#7C3AED',
     bgSelected: 'rgba(139,92,246,0.05)',
-    duration: 60,
+    duration: 120,
   },
 ]
 
@@ -132,6 +132,9 @@ export default function SessionPage() {
   const [isPaused, setIsPaused] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
   const [tipIndex, setTipIndex] = useState(0)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [userStats, setUserStats] = useState<any>(null)
+  const [recentTopicTexts, setRecentTopicTexts] = useState<string[]>([])
 
   const tips = [
     '💡 Maintain strong pacing and clear pronunciation.',
@@ -172,6 +175,7 @@ export default function SessionPage() {
   }, [recorder.audioBlob])
 
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let intervalId: any;
     if (flow.state === 'analyzing' && flow.sessionId) {
       intervalId = setInterval(async () => {
@@ -201,6 +205,34 @@ export default function SessionPage() {
     return () => clearInterval(intervalId)
   }, [flow.state, flow.sessionId, navigate])
 
+  useEffect(() => {
+    const loadStats = async () => {
+      if (setupStep === 'setup-complete') {
+        try {
+          const { data: { session } } = await supabase.auth.getSession()
+          const token = session?.access_token
+          if (token) {
+            const res = await fetch(`${API_URL}/dashboard/stats`, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            if (res.ok) {
+              const data = await res.json()
+              setUserStats(data)
+              if (data.sessions && Array.isArray(data.sessions)) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const texts = data.sessions.map((s: any) => s.topic_text).filter(Boolean)
+                setRecentTopicTexts(texts)
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Error loading stats", err)
+        }
+      }
+    }
+    loadStats()
+  }, [setupStep])
+
   // Back: go back through setup steps or home
   const handleBack = () => {
     if (setupStep === 'setup-level') { setSetupStep('setup-goal'); return }
@@ -229,6 +261,22 @@ export default function SessionPage() {
 
   const currentGoalObj  = GOALS.find(g => g.id === selectedGoal) || GOALS[0]
   const currentLevelObj = LEVELS.find(l => l.id === selectedLevel) || LEVELS[0]
+
+  const GOAL_FOCUS: Record<string, string> = {
+    orator: 'Storytelling, Stage Presence, Confidence',
+    debater: 'Critical Thinking, Rebuttals, Persuasion',
+    presenter: 'Clarity, Data Delivery, Pitch Structure',
+    interviewer: 'STAR Method, Confidence, Impact',
+  }
+  const focusLabel = GOAL_FOCUS[selectedGoal] || 'Clarity, Pacing, Structure'
+
+  const GOAL_BRAINSTORM: Record<string, string[]> = {
+    orator: ['Use vivid storytelling metaphors', 'Build emotional connection first', 'End with a powerful call to action'],
+    debater: ['State your position clearly upfront', 'Anticipate counter-arguments', 'Use facts and concrete examples'],
+    presenter: ['Lead with the key insight or data', 'Structure: problem → solution → proof', 'Use the rule of three for key points'],
+    interviewer: ['Use the STAR method: Situation, Task, Action, Result', 'Quantify your impact with numbers', 'Focus on YOUR specific contribution'],
+  }
+  const brainstormHints = GOAL_BRAINSTORM[selectedGoal] || ['Take a breath and structure your thoughts', 'Start with your main point', 'Use a real example to support your answer']
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden"
@@ -617,13 +665,13 @@ export default function SessionPage() {
                     <div className="p-2.5 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
                       <p className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase">Speech Score</p>
                       <p className="text-[17px] font-extrabold text-[var(--text-primary)] flex items-baseline gap-1">
-                        88 <span className="text-[11px] font-normal text-emerald-500">/ 100</span>
+                        {userStats?.sessions?.length > 0 ? Math.round(userStats.sessions[0].scores?.overall || 0) : '—'} <span className="text-[11px] font-normal text-emerald-500">/ 100</span>
                       </p>
                     </div>
                     <div className="p-2.5 rounded-xl bg-[var(--bg-hover)] border border-[var(--border)]">
                       <p className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase">Confidence</p>
                       <p className="text-[17px] font-extrabold text-emerald-500 flex items-center gap-1">
-                        92% <TrendingUp size={13} />
+                        {userStats?.sessions?.length > 0 ? Math.round(userStats.sessions[0].scores?.confidence || 0) + '%' : '—'} <TrendingUp size={13} />
                       </p>
                     </div>
                   </div>
@@ -631,14 +679,14 @@ export default function SessionPage() {
                   <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-between">
                     <div>
                       <p className="text-[11px] font-bold text-[var(--text-primary)]">Daily Challenge</p>
-                      <p className="text-[10px] text-[var(--text-secondary)]">Unlocked & waiting</p>
+                      <p className="text-[10px] text-[var(--text-secondary)]">{userStats?.total_sessions > 0 ? 'Ready for your next session' : 'Unlocked & waiting'}</p>
                     </div>
                     <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
                   </div>
                 </div>
 
                 <div className="mt-3 text-[11px] text-[var(--text-tertiary)] font-medium flex items-center justify-between">
-                  <span>Progress Tracker: Day 1 Streak</span>
+                  <span>Progress Tracker: Day {Math.max(1, userStats?.current_streak || 1)} Streak</span>
                   <span className="text-emerald-500 font-bold">Ready</span>
                 </div>
               </div>
@@ -654,7 +702,7 @@ export default function SessionPage() {
             {/* CTA Section */}
             <div className="w-full relative z-10 mb-4">
               <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">
-                Begin your first AI coaching session
+                {userStats?.total_sessions > 0 ? 'Begin your next AI coaching session' : 'Begin your first AI coaching session'}
               </p>
               <button
                 onClick={() => setSetupStep('session')}
@@ -716,10 +764,14 @@ export default function SessionPage() {
                   )}
                   {/* Generate new challenge button */}
                   <TopicCard
-                    onReady={setSelectedTopic}
+                    onReady={(t) => {
+                      setSelectedTopic(t)
+                      setRecentTopicTexts(prev => [...new Set([...prev, t.text])].slice(-15))
+                    }}
                     goalType={selectedGoal}
                     difficulty={selectedLevel === 'advanced' ? 'hard' : selectedLevel === 'intermediate' ? 'medium' : 'easy'}
                     embedded={true}
+                    excludeTexts={recentTopicTexts}
                   />
                 </div>
               </div>
@@ -744,7 +796,7 @@ export default function SessionPage() {
                     🎯 FOCUS
                   </p>
                   <p className="text-[14px] font-bold text-[var(--text-primary)]">
-                    Clarity, Pacing, Structure
+                    {focusLabel}
                   </p>
                 </div>
               </div>
@@ -787,7 +839,7 @@ export default function SessionPage() {
                     </span>
                   </summary>
                   <div className="pt-4 pl-6 space-y-2">
-                    {['Structured thinking', 'Interview confidence', 'Decision-making'].map(item => (
+                    {brainstormHints.map(item => (
                       <p key={item} className="text-[13px] font-medium flex items-center gap-2 text-[var(--text-secondary)]">
                         <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
                         {item}
@@ -835,6 +887,7 @@ export default function SessionPage() {
                     flow.startPrep(selectedTopic, {
                       speakingGoal: selectedGoal,
                       difficultyTier: selectedLevel,
+                      recordingDurationSecs: currentLevelObj.duration,
                     })
                   }
                 }}
@@ -903,7 +956,7 @@ export default function SessionPage() {
                     🎯 FOCUS
                   </p>
                   <p className="text-[14px] font-bold text-[var(--text-primary)]">
-                    Clarity, Pacing, Structure
+                    {focusLabel}
                   </p>
                 </div>
               </div>
@@ -947,7 +1000,7 @@ export default function SessionPage() {
                     </span>
                   </summary>
                   <div className="pt-4 pl-6 space-y-2">
-                    {['Structured thinking', 'Interview confidence', 'Decision-making'].map(item => (
+                    {brainstormHints.map(item => (
                       <p key={item} className="text-[13px] font-medium flex items-center gap-2 text-[var(--text-secondary)]">
                         <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
                         {item}
