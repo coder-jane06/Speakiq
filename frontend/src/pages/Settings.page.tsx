@@ -277,9 +277,26 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const app = lsGet<{accentColor: string, uiDensity: string, roundedCorners: number}>('sq_appearance', { accentColor: 'green', uiDensity: 'Comfortable', roundedCorners: 24 });
-    const accToColor: Record<string, string> = { green: '#10b981', blue: '#3b82f6', purple: '#8b5cf6', orange: '#f97316', red: '#ef4444' };
-    document.documentElement.style.setProperty('--accent', accToColor[app.accentColor] || '#10b981');
-    document.documentElement.style.setProperty('--radius-base', app.roundedCorners + 'px');
+    // Only override CSS if user has explicitly chosen a NON-default accent color
+    // Default 'green' = original app lime #C8F97D — let index.css own it (no inline override)
+    const accToColor: Record<string, string> = {
+      green: '#C8F97D',   // original app lime — matches index.css --accent
+      blue: '#60A5FA',
+      purple: '#A78BFA',
+      orange: '#FB923C',
+      red: '#F87171',
+    };
+    if (app.accentColor && app.accentColor !== 'green') {
+      document.documentElement.style.setProperty('--accent', accToColor[app.accentColor] || '#C8F97D');
+    } else {
+      // Remove any stale inline override so index.css default takes effect
+      document.documentElement.style.removeProperty('--accent');
+    }
+    if (app.roundedCorners && app.roundedCorners !== 24) {
+      document.documentElement.style.setProperty('--radius-base', app.roundedCorners + 'px');
+    } else {
+      document.documentElement.style.removeProperty('--radius-base');
+    }
     if (app.uiDensity === 'Compact') {
       document.documentElement.classList.add('density-compact');
       document.documentElement.classList.remove('density-comfortable');
@@ -341,9 +358,23 @@ export default function SettingsPage() {
 
   const saveAppearance = async () => {
     setSavingAppearance(true);
-    const accToColor: Record<string, string> = { green: '#10b981', blue: '#3b82f6', purple: '#8b5cf6', orange: '#f97316', red: '#ef4444' };
-    document.documentElement.style.setProperty('--accent', accToColor[accentColor] || '#10b981');
-    document.documentElement.style.setProperty('--radius-base', roundedCorners + 'px');
+    const accToColor: Record<string, string> = {
+      green: '#C8F97D',   // original app lime — matches index.css --accent
+      blue: '#60A5FA',
+      purple: '#A78BFA',
+      orange: '#FB923C',
+      red: '#F87171',
+    };
+    if (accentColor && accentColor !== 'green') {
+      document.documentElement.style.setProperty('--accent', accToColor[accentColor] || '#C8F97D');
+    } else {
+      document.documentElement.style.removeProperty('--accent');
+    }
+    if (roundedCorners !== 24) {
+      document.documentElement.style.setProperty('--radius-base', roundedCorners + 'px');
+    } else {
+      document.documentElement.style.removeProperty('--radius-base');
+    }
     if (uiDensity === 'Compact') {
       document.documentElement.classList.add('density-compact');
       document.documentElement.classList.remove('density-comfortable');
