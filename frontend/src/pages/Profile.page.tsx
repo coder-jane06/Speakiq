@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../constants';
 import { supabase } from '../services/supabase';
 import { 
-  Flame, Trophy, Mic, Clock, Calendar, TrendingUp, 
+  Flame, Trophy, Mic, Clock, Calendar,
   Edit3, Share2, ChevronRight, ChevronDown, ChevronUp, Check, Lock
 } from 'lucide-react';
 
@@ -71,12 +71,6 @@ export default function ProfilePage() {
   // Calculate dynamic stats
   const validSessions = rawSessions.filter((s: any) => s.scores);
   const totalScoreCount = validSessions.length;
-  const overallAvgScore = totalScoreCount > 0 
-    ? Math.round(validSessions.reduce((acc, s) => {
-        const sc = s.scores;
-        return acc + ((sc.filler + sc.delivery + sc.structure + sc.vocab + sc.confidence) / 5);
-      }, 0) / totalScoreCount)
-    : 0;
 
   const totalPracticeSeconds = rawSessions.reduce((acc: number, s: any) => acc + (s.duration_secs || 0), 0);
   const practiceMinutes = Math.round(totalPracticeSeconds / 60) || Math.round(totalSessions * 3); // Fallback if old data doesn't have duration_secs
@@ -119,6 +113,7 @@ export default function ProfilePage() {
   const currentXP = totalSessions * 140 + currentStreak * 65 + 320;
   const nextLevelXP = 5000;
   const xpPercentage = Math.min(100, Math.round((currentXP / nextLevelXP) * 100));
+  const longestStreak = stats?.longest_streak ?? 0;
 
   if (loading) {
     return (
@@ -217,23 +212,23 @@ export default function ProfilePage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3.5">
             {[
               { label: 'Current Streak', val: `${currentStreak} Days`, icon: Flame },
-              { label: 'Best Score', val: `${bestAvg}`, icon: Trophy },
+              { label: 'Longest Streak', val: `${longestStreak} Days`, icon: Flame },
               { label: 'Sessions Completed', val: `${totalSessions}`, icon: Mic },
               { label: 'Practice Minutes', val: `${practiceMinutes}m`, icon: Clock },
               { label: 'Days Active', val: `${uniqueDays}`, icon: Calendar },
-              { label: 'Average Score', val: `${overallAvgScore}`, icon: TrendingUp },
+              { label: 'Best Score', val: `${bestAvg}`, icon: Trophy },
             ].map((st, i) => {
               const Icon = st.icon;
               return (
-                <div 
-                  key={i} 
+                <div
+                  key={i}
                   className="p-5 rounded-[22px] bg-[var(--bg-card)] border border-[var(--border)] hover:border-[var(--accent)] hover:bg-[var(--bg-hover)] transition-all duration-300 shadow-xs flex flex-col justify-between min-h-[125px] group cursor-pointer"
                 >
                   <div className="flex items-center justify-between text-[var(--text-tertiary)]">
                     <Icon size={16} className="group-hover:text-[var(--accent)] transition-colors" />
                   </div>
                   <div>
-                    <div 
+                    <div
                       className="text-[26px] font-[800] text-[var(--text-primary)] leading-none"
                       style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}
                     >
@@ -261,17 +256,17 @@ export default function ProfilePage() {
 
           <div className="flex items-center gap-4 overflow-x-auto pb-3 pt-1 scrollbar-none pr-6">
             {unlockedAchievements.map((ach: any, i: number) => (
-              <div 
+              <div
                 key={i}
                 className={`shrink-0 min-w-[230px] px-5 py-4 rounded-[22px] border flex items-center gap-3.5 transition-all duration-200 ${
-                  ach.unlocked 
-                    ? 'bg-gradient-to-br from-amber-500/10 via-[var(--bg-card)] to-emerald-500/5 border-amber-500/30 shadow-sm hover:border-amber-500/50' 
+                  ach.unlocked
+                    ? 'bg-gradient-to-br from-amber-500/10 via-[var(--bg-card)] to-emerald-500/5 border-amber-500/30 shadow-sm hover:border-amber-500/50'
                     : 'bg-[var(--bg-card)] border-[var(--border)] shadow-xs hover:border-[var(--text-tertiary)]/40'
                 }`}
               >
                 <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-[22px] shrink-0 border ${
-                  ach.unlocked 
-                    ? 'bg-amber-500/15 border-amber-500/30' 
+                  ach.unlocked
+                    ? 'bg-amber-500/15 border-amber-500/30'
                     : 'bg-[var(--bg-hover)] border-[var(--border)]'
                 }`}>
                   {ach.icon}

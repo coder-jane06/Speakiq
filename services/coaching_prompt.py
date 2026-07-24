@@ -20,9 +20,33 @@ def build_coaching_prompt(analysis: SpeechAnalysis) -> str:
         "interviewer": "Focus on STAR structure, conciseness, and confident delivery.",
     }.get(analysis.user_goal, "Give balanced feedback across all dimensions.")
 
+    # Difficulty-aware coaching tone
+    difficulty = getattr(analysis, "difficulty_tier", "intermediate")
+    if difficulty in ("beginner", "easy"):
+        difficulty_instruction = (
+            "This is a BEGINNER speaker. Be warm, encouraging and positive. "
+            "Celebrate what they did well. Focus on only 1-2 key improvements to avoid overwhelm. "
+            "Use simple, accessible language. Set expectations appropriate for someone just starting out."
+        )
+    elif difficulty in ("advanced", "hard"):
+        difficulty_instruction = (
+            "This is an ADVANCED speaker. Apply professional-grade standards. "
+            "Be precise and demanding — point out subtle issues like pacing inconsistencies, "
+            "weak transitions, hedging language, and lack of rhetorical sophistication. "
+            "Compare to elite speakers in their domain. Push them to excellence."
+        )
+    else:
+        difficulty_instruction = (
+            "This is an INTERMEDIATE speaker. Give balanced, honest feedback. "
+            "Acknowledge progress while clearly identifying gaps. "
+            "Provide specific, actionable improvements with professional benchmarks."
+        )
+
     worst_start = analysis.worst_window.get('start', 0) if isinstance(analysis.worst_window.get('start', 0), (int, float)) else 0
 
     return f"""You are an expert speech coach. {goal_instruction}
+
+DIFFICULTY LEVEL: {difficulty_instruction}
 
 TOPIC THE USER WAS SPEAKING ON: {analysis.topic}
 
@@ -63,6 +87,7 @@ Respond ONLY as JSON:
   "worst_moment": {{"quote": "", "timestamp_s": 0, "what_went_wrong": ""}},
   "rewritten_sentences": [{{"original": "", "improved": ""}}],
   "drill": {{"title": "", "instructions": "", "duration_minutes": 10}},
-  "scores": {{"overall": 0, "delivery": 0, "vocabulary": 0, "filler_control": 0, "structure": 0}}
+  "scores": {{"overall": 0, "delivery": 0, "vocabulary": 0, "filler_control": 0, "structure": 0, "confidence": 0}}
 }}
 """
+

@@ -36,7 +36,7 @@ export default function HomePage() {
       </div>
 
       {/* ── HERO SECTION ──────────────────────────────────────────── */}
-      <section className="relative z-10 min-h-[90vh] flex items-center pt-2 pb-16 lg:pt-12 lg:pb-20">
+      <section className="relative z-10 min-h-[90vh] flex items-center pt-0 pb-6 lg:pt-4 lg:pb-10">
         <div className="max-w-[1280px] mx-auto w-full px-6 lg:px-10 flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-8">
 
           {/* ── LEFT COLUMN ── */}

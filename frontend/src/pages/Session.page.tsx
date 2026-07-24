@@ -134,7 +134,12 @@ export default function SessionPage() {
   const [tipIndex, setTipIndex] = useState(0)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [userStats, setUserStats] = useState<any>(null)
-  const [recentTopicTexts, setRecentTopicTexts] = useState<string[]>([])
+  const [recentTopicTexts, setRecentTopicTexts] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem('sq_recent_topics');
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  })
 
   const tips = [
     '💡 Maintain strong pacing and clear pronunciation.',
@@ -766,7 +771,11 @@ export default function SessionPage() {
                   <TopicCard
                     onReady={(t) => {
                       setSelectedTopic(t)
-                      setRecentTopicTexts(prev => [...new Set([...prev, t.text])].slice(-15))
+                      setRecentTopicTexts(prev => {
+                        const updated = [...new Set([...prev, t.text])].slice(-25);
+                        try { localStorage.setItem('sq_recent_topics', JSON.stringify(updated)); } catch {}
+                        return updated;
+                      })
                     }}
                     goalType={selectedGoal}
                     difficulty={selectedLevel === 'advanced' ? 'hard' : selectedLevel === 'intermediate' ? 'medium' : 'easy'}

@@ -407,7 +407,8 @@ async def get_dashboard_stats(request: Request, authorization: Optional[str] = H
         raw_sessions = []
 
     sessions_data = []
-    total_sessions = 0
+    # Bug fix: count ALL completed sessions upfront — not just those with parseable scores
+    total_sessions = len(raw_sessions)
     best_session = {"date": None, "avg_score": 0}
     first_scores = None
     last_scores = None
@@ -415,11 +416,12 @@ async def get_dashboard_stats(request: Request, authorization: Optional[str] = H
     start_of_week = week_start()
     sessions_this_week = 0
 
-    for s in raw_sessions:
+    for idx, s in enumerate(raw_sessions, start=1):
         metrics = s.get("session_metrics", [])
         if isinstance(metrics, dict):
             metrics = [metrics]
 
+        scores = {}
         if metrics and len(metrics) > 0:
             coaching_raw = metrics[0].get("coaching_report")
             if isinstance(coaching_raw, str):
@@ -430,37 +432,39 @@ async def get_dashboard_stats(request: Request, authorization: Optional[str] = H
             else:
                 coaching = coaching_raw or {}
             scores = coaching.get("scores", {})
-        else:
-            continue
 
-        if not scores:
-            continue
+        # Bug fix: handle both coaching_prompt key names and legacy aliases
+        # coaching_prompt emits: overall, delivery, vocabulary, filler_control, structure
+        # dashboard historically expected: filler, delivery, structure, vocab, confidence
+        resolved_scores = {
+            "filler":     scores.get("filler", 0) or scores.get("filler_control", 0),
+            "delivery":   scores.get("delivery", 0),
+            "structure":  scores.get("structure", 0),
+            "vocab":      scores.get("vocab", 0) or scores.get("vocabulary", 0),
+            "confidence": scores.get("confidence", 0) or scores.get("overall", 0),
+        }
 
-        total_sessions += 1
+        duration = metrics[0].get("duration_secs", 0) if metrics else 0
         session_obj = {
-            "session_number": total_sessions,
+            "session_number": idx,
             "id": s.get("id", ""),
             "date": s.get("created_at", "").split("T")[0] if s.get("created_at") else "",
             "topic": s.get("topic_text", ""),
-            "duration_secs": metrics[0].get("duration_secs", 0) if metrics else 0,
-            "scores": {
-                "filler":     scores.get("filler", 0),
-                "delivery":   scores.get("delivery", 0),
-                "structure":  scores.get("structure", 0),
-                "vocab":      scores.get("vocab", 0),
-                "confidence": scores.get("confidence", 0),
-            },
+            "duration_secs": duration,
+            "scores": resolved_scores,
         }
         sessions_data.append(session_obj)
         session_date = parse_session_date(s.get("created_at"))
         if session_date and session_date >= start_of_week:
             sessions_this_week += 1
 
-        if not first_scores:
-            first_scores = session_obj["scores"]
-        last_scores = session_obj["scores"]
+        # Only update first/last scores when we actually have score data
+        if any(resolved_scores.values()):
+            if not first_scores:
+                first_scores = resolved_scores
+            last_scores = resolved_scores
 
-        avg_score = sum(session_obj["scores"].values()) / 5.0
+        avg_score = sum(resolved_scores.values()) / 5.0
         if avg_score > best_session["avg_score"]:
             best_session["avg_score"] = int(avg_score)
             best_session["date"] = session_obj["date"]
@@ -576,6 +580,35 @@ async def get_dashboard_streak(request: Request, authorization: Optional[str] = 
         "last_session_date":  last_session_date,
         "grace_day_available": grace_day_available,
     }
+
+
+@router.post("/recalculate-streak")
+@limiter.limit("5/minute")
+async def recalculate_streak(request: Request, authorization: Optional[str] = Header(None)):
+    """Recalculate streak from scratch based on all completed sessions.
+    Use this to fix streak showing 0 when sessions exist."""
+    user_id = get_user_id(authorization)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    db = get_db()
+    try:
+        from services.streak_service import StreakService
+        svc = StreakService(db)
+        await svc.recalculate_streak_from_history(user_id)
+
+        # Return updated streak
+        streak_result = db.table('streaks').select('*').eq('user_id', user_id).execute()
+        streak = streak_result.data[0] if streak_result.data else {}
+        return {
+            "success": True,
+            "current_streak": streak.get("current_streak", 0),
+            "longest_streak": streak.get("longest_streak", 0),
+            "total_sessions": streak.get("total_sessions", 0),
+        }
+    except Exception as e:
+        logger.error(f"[recalculate-streak] Failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to recalculate streak")
 
 
 class OnboardingData(BaseModel):

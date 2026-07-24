@@ -34,7 +34,11 @@ def normalize_difficulty_local(diff: Optional[str]) -> str:
     if not diff:
         return "medium"
     d = diff.lower().strip()
-    mapping = {"beginner": "easy", "easy": "easy", "medium": "medium", "hard": "hard", "advanced": "hard"}
+    mapping = {
+        "beginner": "easy", "easy": "easy",
+        "intermediate": "medium", "medium": "medium",
+        "advanced": "hard", "hard": "hard",
+    }
     return mapping.get(d, "medium")
 
 def generate_topic_pool():
@@ -224,99 +228,99 @@ async def get_topic(
         except Exception as e:
             logger.warning(f"[sessions] Topic personalization skipped: {e}")
 
+    excluded_set = set(recent_topic_texts)
+    if exclude_texts:
+        excluded_set.update(x.strip() for x in exclude_texts.split(",") if x.strip())
+
+    def get_pool_candidates(g_type, t_tier):
+        if g_type not in TOPIC_POOL or t_tier not in TOPIC_POOL[g_type]:
+            return []
+        return [text for text in TOPIC_POOL[g_type][t_tier] if text not in excluded_set]
+
     try:
         query = db.table("topics").select("id, text, tier, target_skill, category, goal_type")
         if speaking_goal != "general":
             query = query.in_("goal_type", [speaking_goal, "general"])
-        result = query.limit(50).execute()
+        result = query.limit(200).execute()  # Increased from 50
 
-        if result.data:
-            candidates = [t for t in result.data if t.get("text")]
+        db_candidates = [t for t in (result.data or []) if t.get("text")]
 
-            if exclude:
-                filtered_candidates = [t for t in candidates if str(t.get("id")) != exclude]
-                if filtered_candidates:
-                    candidates = filtered_candidates
+        # Filter excluded from DB candidates
+        if exclude:
+            db_candidates = [t for t in db_candidates if str(t.get("id")) != exclude] or db_candidates
+        db_candidates_filtered = [t for t in db_candidates if t["text"] not in excluded_set] or db_candidates
+        db_unseen = [t for t in db_candidates_filtered if t["text"] not in recent_topic_texts] or db_candidates_filtered
 
-            if exclude_texts:
-                ex_texts = [x.strip() for x in exclude_texts.split(",") if x.strip()]
-                filtered_candidates = [t for t in candidates if t["text"] not in ex_texts]
-                if filtered_candidates:
-                    candidates = filtered_candidates
+        # Narrow by tier from DB
+        db_tier = [t for t in db_unseen if t.get("tier") == diff_tier] or db_unseen
 
-            unseen = [t for t in candidates if t["text"] not in recent_topic_texts]
-            if unseen:
-                candidates = unseen
+        # --- MERGE with TOPIC_POOL when DB has fewer than 15 candidates ---
+        pool_goal = speaking_goal if speaking_goal in TOPIC_POOL else "general"
+        pool_tier = diff_tier if diff_tier in ["easy", "medium", "hard"] else "medium"
+        pool_texts = get_pool_candidates(pool_goal, pool_tier)
 
-            skill_matched = [t for t in candidates if t.get("target_skill") == weakest_skill]
-            if skill_matched:
-                candidates = skill_matched
+        # Build pool candidates as dicts matching DB format
+        pool_candidates = [
+            {"id": str(uuid.uuid4())[:8], "text": t, "tier": pool_tier,
+             "target_skill": weakest_skill, "category": "opinion", "goal_type": pool_goal}
+            for t in pool_texts
+        ]
 
-            tier_matched = [t for t in candidates if t.get("tier") == diff_tier]
-            if tier_matched:
-                candidates = tier_matched
+        if len(db_tier) < 15:
+            # Merge DB + pool, deduplicate by text
+            all_texts_seen = {c["text"] for c in db_tier}
+            extra = [c for c in pool_candidates if c["text"] not in all_texts_seen]
+            merged = db_tier + extra
+        else:
+            merged = db_tier
 
-            chosen = random.choice(candidates)
-            topic_tier = chosen.get("tier", "medium")
-            return {
-                "id": chosen.get("id", "topic"),
-                "text": chosen["text"],
-                "tier": topic_tier,
-                "difficulty": topic_tier,
-                "target_skill": chosen.get("target_skill", "general"),
-                "category": chosen.get("category", "opinion"),
-                "goal_type": chosen.get("goal_type", "general"),
-            }
+        # If still nothing (e.g. completely new user), try adjacent tiers from pool
+        if not merged:
+            for adj in {"easy": ["medium", "hard"], "medium": ["easy", "hard"], "hard": ["medium", "easy"]}.get(pool_tier, []):
+                merged = get_pool_candidates(pool_goal, adj)
+                if merged:
+                    pool_tier = adj
+                    merged = [
+                        {"id": str(uuid.uuid4())[:8], "text": t, "tier": pool_tier,
+                         "target_skill": weakest_skill, "category": "opinion", "goal_type": pool_goal}
+                        for t in merged
+                    ]
+                    break
+
+        if not merged:
+            merged = [{"id": str(uuid.uuid4())[:8], "text": "Describe a memorable experience that changed how you see the world.",
+                       "tier": "medium", "target_skill": "confidence", "category": "opinion", "goal_type": "general"}]
+
+        chosen = random.choice(merged)
+        topic_tier = chosen.get("tier", diff_tier)
+        return {
+            "id": chosen.get("id", str(uuid.uuid4())[:8]),
+            "text": chosen["text"],
+            "tier": topic_tier,
+            "difficulty": topic_tier,
+            "target_skill": chosen.get("target_skill", weakest_skill),
+            "category": chosen.get("category", "opinion"),
+            "goal_type": chosen.get("goal_type", pool_goal),
+        }
+
     except Exception as e:
-        logger.warning(f"[sessions] Supabase topic query failed: {e}")
-
-    # Fallback to TOPIC_POOL
-    goal_type = speaking_goal
-    if goal_type not in TOPIC_POOL:
-        goal_type = "general"
-        
-    tier = diff_tier
-    if tier not in ["easy", "medium", "hard"]:
-        tier = "medium"
-    
-    excluded_set = set(recent_topic_texts)
-    if exclude_texts:
-        excluded_set.update(x.strip() for x in exclude_texts.split(",") if x.strip())
-        
-    def get_candidates_from_pool(g_type, t_tier):
-        if g_type not in TOPIC_POOL or t_tier not in TOPIC_POOL[g_type]:
-            return []
-        pool = TOPIC_POOL[g_type][t_tier]
-        return [text for text in pool if text not in excluded_set]
-        
-    candidates = get_candidates_from_pool(goal_type, tier)
-    if not candidates:
-        # Try adjacent tiers
-        adjacent_tiers = {"easy": ["medium", "hard"], "medium": ["easy", "hard"], "hard": ["medium", "easy"]}.get(tier, [])
-        for adj_tier in adjacent_tiers:
-            candidates = get_candidates_from_pool(goal_type, adj_tier)
-            if candidates:
-                tier = adj_tier
-                break
-                
-    if not candidates:
-        # Final fallback, ignore exclusions or just use general medium
-        pool_opts = TOPIC_POOL.get("general", {}).get("medium", [])
-        candidates = pool_opts if pool_opts else ["Describe a memorable experience."]
-        tier = "medium"
-        goal_type = "general"
-        
-    chosen_text = random.choice(candidates)
-    
-    return {
-        "id": str(uuid.uuid4())[:8],
-        "text": chosen_text,
-        "tier": tier,
-        "difficulty": tier,
-        "goal_type": goal_type,
-        "target_skill": weakest_skill,
-        "category": "opinion",
-    }
+        logger.warning(f"[sessions] Topic selection failed: {e}")
+        # Ultimate fallback from pool
+        pool_goal = speaking_goal if speaking_goal in TOPIC_POOL else "general"
+        pool_tier = diff_tier if diff_tier in ["easy", "medium", "hard"] else "medium"
+        fallback_texts = get_pool_candidates(pool_goal, pool_tier)
+        if not fallback_texts:
+            fallback_texts = list(TOPIC_POOL.get("general", {}).get("medium", ["Describe a memorable experience."]))
+        chosen_text = random.choice(fallback_texts)
+        return {
+            "id": str(uuid.uuid4())[:8],
+            "text": chosen_text,
+            "tier": pool_tier,
+            "difficulty": pool_tier,
+            "goal_type": pool_goal,
+            "target_skill": weakest_skill,
+            "category": "opinion",
+        }
 
 
 @router.post("/upload", status_code=201)

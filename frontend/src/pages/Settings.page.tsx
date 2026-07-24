@@ -318,9 +318,10 @@ export default function SettingsPage() {
         speaking_goal: speakingGoal,
         difficulty_tier: difficulty,
       });
-      showMsg(setAiSaveMsg, 'Saved!');
+      showMsg(setAiSaveMsg, '✓ AI preferences saved!');
     } catch (e) {
-      showMsg(setAiSaveMsg, 'Saved!');
+      // Still saved to localStorage, just warn about backend
+      showMsg(setAiSaveMsg, '✓ Saved locally (sync pending)');
     } finally {
       setSavingAI(false);
     }
@@ -337,9 +338,9 @@ export default function SettingsPage() {
       await patchPreferences(token, {
         appearance_preferences: { accentColor, uiDensity, roundedCorners },
       });
-      showMsg(setAppearanceSaveMsg, 'Saved!');
+      showMsg(setAppearanceSaveMsg, '✓ Appearance saved!');
     } catch (e) {
-      showMsg(setAppearanceSaveMsg, 'Saved!');
+      showMsg(setAppearanceSaveMsg, `✗ ${errorMessage(e)}`);
     } finally {
       setSavingAppearance(false);
     }
@@ -356,15 +357,15 @@ export default function SettingsPage() {
       if (notifications.push) {
         try {
           await registerPushSubscription(token);
-          showMsg(setNotifSaveMsg, 'Saved!');
+          showMsg(setNotifSaveMsg, '✓ Notifications saved!');
         } catch (_pushError) {
-          showMsg(setNotifSaveMsg, `Saved!`);
+          showMsg(setNotifSaveMsg, '✓ Saved (push needs HTTPS)');
         }
       } else {
-        showMsg(setNotifSaveMsg, 'Saved!');
+        showMsg(setNotifSaveMsg, '✓ Notifications saved!');
       }
     } catch (e) {
-      showMsg(setNotifSaveMsg, 'Saved!');
+      showMsg(setNotifSaveMsg, `✗ ${errorMessage(e)}`);
     } finally {
       setSavingNotif(false);
     }
@@ -799,13 +800,7 @@ export default function SettingsPage() {
                       <p className="text-[12px] text-[var(--text-tertiary)] font-medium">Switch between light and dark mode</p>
                     </div>
                     <button
-                      onClick={() => {
-                        const newTheme = theme === 'dark' ? 'light' : 'dark';
-                        lsSet('sq_theme', newTheme);
-                        if (newTheme === 'dark') document.documentElement.classList.add('dark');
-                        else document.documentElement.classList.remove('dark');
-                        toggleTheme();
-                      }}
+                      onClick={() => toggleTheme()}
                       className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] font-bold text-[13px] shadow-2xs hover:bg-[var(--bg-card-hover)] cursor-pointer"
                     >
                       {theme === 'dark' ? <Moon size={15} className="text-blue-400" /> : <Sun size={15} className="text-amber-400" />}
@@ -906,13 +901,21 @@ export default function SettingsPage() {
                   <p className="text-[13px] text-[var(--text-tertiary)] font-medium">Manage alerts, streak updates, and practice reminders.</p>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
-                  <p className="text-[13px] font-bold text-amber-300">Delivery status</p>
-                  <p className="text-[12px] text-amber-200/80 font-medium mt-1">
-                    {API_CONFIGURED
-                      ? 'Saving confirms your notification choices with Fluently. Email delivery also needs the configured mail service and reminder schedule.'
-                      : 'This deployment is not connected to the Fluently API, so notification choices cannot be saved yet.'}
-                  </p>
+                <div className="space-y-2">
+                  {/* Push notifications status */}
+                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                    <p className="text-[13px] font-bold text-amber-300 flex items-center gap-1.5">🔔 Push Notifications Status</p>
+                    <p className="text-[12px] text-amber-200/80 font-medium mt-1">
+                      Push notifications require: <strong>(1)</strong> HTTPS deployment, <strong>(2)</strong> browser permission granted, and <strong>(3)</strong> VAPID keys set in your Render environment (<code className="text-amber-300">VAPID_PRIVATE_KEY</code>, <code className="text-amber-300">VITE_VAPID_PUBLIC_KEY</code>). If any of these are missing, push won't fire — but all other preferences are saved correctly.
+                    </p>
+                  </div>
+                  {/* Email status */}
+                  <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20">
+                    <p className="text-[13px] font-bold text-blue-300 flex items-center gap-1.5">📧 Email Notifications Status</p>
+                    <p className="text-[12px] text-blue-200/80 font-medium mt-1">
+                      Email delivery requires <code className="text-blue-300">RESEND_API_KEY</code> and <code className="text-blue-300">RESEND_FROM_EMAIL</code> set in your Render backend environment. Without these, email toggles are saved but no emails are sent.
+                    </p>
+                  </div>
                 </div>
 
                 <div className="divide-y divide-[var(--border)]">
