@@ -45,6 +45,10 @@ export function useSessionFlow(): UseSessionFlowReturn {
   const topicRef = useRef<Topic | null>(null)
   const sessionOptionsRef = useRef<SessionOptions>({})
   const recordingDurationRef = useRef(recordingDuration)
+  const recordingStartTimeRef = useRef<number | null>(null)  // tracks actual elapsed
+
+  const MIN_RECORDING_SECS = 15  // Whisper needs at least this much speech
+  const MIN_BLOB_BYTES      = 12_000  // ~12KB minimum for 15s of audio
 
   // Load user's preferred recording duration from profile-status endpoint
   useEffect(() => {
@@ -115,6 +119,7 @@ export function useSessionFlow(): UseSessionFlowReturn {
   const startRecording = useCallback(() => {
     const dur = recordingDurationRef.current
     setRecSecsLeft(dur)
+    recordingStartTimeRef.current = Date.now()  // stamp actual start
     if (recIntervalRef.current) clearInterval(recIntervalRef.current)
     recIntervalRef.current = setInterval(() => {
       setRecSecsLeft(prev => {
@@ -152,6 +157,21 @@ export function useSessionFlow(): UseSessionFlowReturn {
 
   const finishRecording = useCallback(async (blob: Blob) => {
     clearIntervals()
+
+    // ── Validate minimum recording length ──────────────────────────────────
+    const elapsedSecs = recordingStartTimeRef.current
+      ? (Date.now() - recordingStartTimeRef.current) / 1000
+      : recordingDurationRef.current  // fallback: assume full duration
+
+    if (elapsedSecs < MIN_RECORDING_SECS || blob.size < MIN_BLOB_BYTES) {
+      setState('error')
+      setError(
+        `Recording too short (${Math.round(elapsedSecs)}s). ` +
+        `Please speak for at least ${MIN_RECORDING_SECS} seconds so Fluently can analyse your speech properly.`
+      )
+      return
+    }
+
     setState('uploading')
     setError(null)
 

@@ -147,39 +147,39 @@ export default function ResultsPage() {
 
           {/* Stage Title & Subtitle */}
           <h2
-            className="text-[26px] font-[800] tracking-[-0.02em] text-center mb-2 text-gray-900"
-            style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+            className="text-[26px] font-[800] tracking-[-0.02em] text-center mb-2"
+            style={{ fontFamily: "'Bricolage Grotesque', sans-serif", color: 'var(--text-primary)' }}
           >
             {stages[loadingStage].main}
           </h2>
-          <p className="text-[15px] font-medium text-center text-gray-500 mb-6">
+          <p className="text-[15px] font-medium text-center mb-6" style={{ color: 'var(--text-secondary)' }}>
             {stages[loadingStage].sub}
           </p>
 
           {/* Step Indicator Chips & Progress Bar */}
-          <div className="w-full bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-6">
-            <div className="flex justify-between items-center text-[12px] font-bold text-gray-400 mb-2">
-              <span className="flex items-center gap-1 text-emerald-600">
+          <div className="w-full rounded-2xl p-4 border shadow-sm mb-6" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
+            <div className="flex justify-between items-center text-[12px] font-bold mb-2" style={{ color: 'var(--text-tertiary)' }}>
+              <span className="flex items-center gap-1" style={{ color: 'var(--accent)' }}>
                 <Activity size={14} className="animate-spin" /> Step {loadingStage + 1} of 5
               </span>
               <span>{Math.min(100, Math.round(((loadingStage + 1) / 5) * 100))}%</span>
             </div>
-            <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden mb-3">
+            <div className="w-full h-2 rounded-full overflow-hidden mb-3" style={{ background: 'var(--bg-hover)' }}>
               <div
-                className="h-full bg-gradient-to-r from-emerald-500 to-green-600 transition-all duration-500 rounded-full"
-                style={{ width: `${((loadingStage + 1) / 5) * 100}%` }}
+                className="h-full transition-all duration-500 rounded-full"
+                style={{ width: `${((loadingStage + 1) / 5) * 100}%`, background: 'var(--accent)' }}
               />
             </div>
             <div className="flex justify-between items-center">
               {[0, 1, 2, 3, 4].map(i => (
                 <div
                   key={i}
-                  className="rounded-full transition-all duration-300 flex items-center justify-center"
+                  className="rounded-full transition-all duration-300"
                   style={{
                     width:  i <= loadingStage ? '10px' : '7px',
                     height: i <= loadingStage ? '10px' : '7px',
-                    background: i <= loadingStage ? '#3E8C00' : '#E5E7EB',
-                    boxShadow: i === loadingStage ? '0 0 10px rgba(62,140,0,0.6)' : 'none',
+                    background: i <= loadingStage ? 'var(--accent)' : 'var(--border)',
+                    boxShadow: i === loadingStage ? '0 0 10px var(--accent-glow)' : 'none',
                   }}
                 />
               ))}
@@ -187,13 +187,15 @@ export default function ResultsPage() {
           </div>
 
           {/* Motivational Guidance Message Card */}
-          <div className="w-full py-3.5 px-4 rounded-2xl bg-emerald-50/90 border border-emerald-200/80 text-[13px] font-semibold text-emerald-900 mb-6 shadow-sm animate-fadeSlideUp">
+          <div className="w-full py-3.5 px-4 rounded-2xl border text-[13px] font-semibold mb-6 shadow-sm animate-fadeSlideUp"
+            style={{ background: 'var(--accent-dim)', borderColor: 'var(--border-accent)', color: 'var(--accent)' }}>
             <span>{motivationalMessages[loadingStage]}</span>
           </div>
 
           {/* Timer Counter Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gray-100 border border-gray-200 text-[11px] font-mono font-bold tracking-widest text-gray-500 uppercase">
-            <Zap size={12} className="text-amber-500" /> {elapsed} SECONDS ELAPSED
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-[11px] font-mono font-bold tracking-widest uppercase"
+            style={{ background: 'var(--bg-hover)', borderColor: 'var(--border)', color: 'var(--text-tertiary)' }}>
+            <Zap size={12} style={{ color: 'var(--accent)' }} /> {elapsed} SECONDS ELAPSED
           </div>
 
         </div>

@@ -31,6 +31,8 @@ services:
         sync: false
       - key: VAPID_SUBJECT
         sync: false
+      - key: SENTRY_DSN
+        sync: false
 
   # The React application must be deployed separately from the API. This builds
   # the `frontend/` package and serves it from a custom domain or Render URL.

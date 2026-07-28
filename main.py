@@ -20,6 +20,26 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+# ── Sentry error monitoring (no-op when SENTRY_DSN is not set) ─────────────────
+_SENTRY_DSN = os.getenv("SENTRY_DSN", "")
+if _SENTRY_DSN:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.fastapi import FastApiIntegration
+        from sentry_sdk.integrations.logging import LoggingIntegration
+        sentry_sdk.init(
+            dsn=_SENTRY_DSN,
+            integrations=[
+                FastApiIntegration(transaction_style="endpoint"),
+                LoggingIntegration(level=logging.WARNING, event_level=logging.ERROR),
+            ],
+            traces_sample_rate=0.2,   # 20% of requests traced
+            send_default_pii=False,    # never send user PII
+            environment=os.getenv("ENVIRONMENT", "development"),
+        )
+    except ImportError:
+        pass  # sentry_sdk not installed — monitoring disabled
+
 from routers import sessions
 from routers.dashboard import router as dashboard_router
 
@@ -105,12 +125,14 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # ── CORS — whitelist only the actual frontend origins ──────────────────────────
-ALLOWED_ORIGINS = [
+# Add FRONTEND_URL env var on Render to include your deployed frontend URL.
+_extra_origins = [o.strip() for o in os.getenv("FRONTEND_URL", "").split(",") if o.strip()]
+ALLOWED_ORIGINS = list(set([
     "https://coder-jane06.github.io",   # GitHub Pages production frontend
     "http://localhost:5173",             # Local Vite dev server
     "http://localhost:4173",             # Local Vite preview
     "http://127.0.0.1:5173",
-]
+] + _extra_origins))
 
 app.add_middleware(
     CORSMiddleware,
