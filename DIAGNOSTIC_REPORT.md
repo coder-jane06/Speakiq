@@ -1,4 +1,4 @@
-# SpeakIQ Diagnostic Report
+# Fluently Diagnostic Report
 **Date:** July 2, 2026  
 **Issue:** Sessions returning 0 scores with no analysis
 

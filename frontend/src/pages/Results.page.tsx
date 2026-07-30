@@ -264,30 +264,26 @@ export default function ResultsPage() {
 
   const streak = streakData?.current_streak || 0;
   const isFirstSession = (streakData?.total_sessions || 0) <= 1;
-  let hookMessage = "";
-  if (streak >= 3) {
-    hookMessage = `🔥 ${streak}-day streak. You're on fire!`;
-  } else if (isFirstSession) {
-    hookMessage = "Day 1 of 30. The journey starts now.";
-  } else if (previousScores && avgScore > (Object.values(previousScores).reduce((a,b)=>a+b,0)/5)) {
-    hookMessage = `↑ You improved your average since yesterday. Brilliant.`;
-  } else if (lowestScore % 10 >= 7) {
-    hookMessage = `You're ${10 - (lowestScore % 10)} points away from your personal best. Tomorrow.`;
-  } else {
-    hookMessage = "Session complete. Get 1% better tomorrow.";
-  }
-  let chartData: any[] = [];
-  if (stats?.sessions && stats.sessions.length > 0) {
+  const hookMessage = streak >= 3
+    ? `🔥 ${streak}-day streak. You're on fire!`
+    : isFirstSession
+      ? "Day 1 of 30. The journey starts now."
+      : previousScores && avgScore > (Object.values(previousScores).reduce((a, b) => a + b, 0) / 5)
+        ? "↑ You improved your average since yesterday. Brilliant."
+        : lowestScore % 10 >= 7
+          ? `You're ${10 - (lowestScore % 10)} points away from your personal best. Tomorrow.`
+          : "Session complete. Get 1% better tomorrow.";
+  const chartData: any[] = stats?.sessions && stats.sessions.length > 0
+    ? (() => {
     const sorted = [...stats.sessions].sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-    chartData = sorted.map((s: any, index: number) => {
+    return sorted.map((s: any, index: number) => {
        const sc = s.scores || {};
        const sKeys = Object.keys(sc);
        const avg = Math.round(sKeys.reduce((acc, k) => acc + sc[k], 0) / (sKeys.length || 1));
        return { session: `S${index + 1}`, score: activeTrendMetric === 'overall' ? avg : (sc[activeTrendMetric] || 0) };
     });
-  } else {
-    chartData = [{ session: 'Current', score: activeTrendMetric === 'overall' ? avgScore : (scores[activeTrendMetric] || 0) }];
-  }
+  })()
+    : [{ session: 'Current', score: activeTrendMetric === 'overall' ? avgScore : (scores[activeTrendMetric] || 0) }];
 
   const displayDuration = (metrics as any)?.duration_s
     ? (metrics as any)?.duration_s.toFixed(1)
@@ -374,7 +370,7 @@ export default function ResultsPage() {
                   )}
                 </div>
                 <p className="text-[16px] font-medium text-[var(--text-secondary)] max-w-[420px]">
-                  "{hookMessage.replace('🔥 ', '')}"
+                  &quot;{hookMessage.replace('🔥 ', '')}&quot;
                 </p>
               </div>
             </div>

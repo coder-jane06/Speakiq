@@ -82,7 +82,7 @@ export function useSessionFlow(): UseSessionFlowReturn {
   // Clean up intervals when component using this hook unmounts
   useEffect(() => {
     return () => clearIntervals()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   const startPrep = useCallback((t: Topic, options: SessionOptions = {}) => {
     setTopic(t)

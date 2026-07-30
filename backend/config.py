@@ -11,24 +11,15 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings
 from supabase import Client, create_client
-from dotenv import dotenv_values
 
 logger = logging.getLogger(__name__)
 BASE_DIR = Path(__file__).resolve().parent
 
-# Fallback: load from frontend/.env if backend/.env is missing
-frontend_env = {}
-try:
-    frontend_env_path = BASE_DIR.parent / "frontend" / ".env"
-    if frontend_env_path.exists():
-        frontend_env = dotenv_values(frontend_env_path)
-except Exception as e:
-    logger.warning(f"Could not load frontend .env: {e}")
-
-
 class Settings(BaseSettings):
-    supabase_url: str = os.getenv("SUPABASE_URL") or frontend_env.get("VITE_SUPABASE_URL") or ""
-    supabase_service_key: str = os.getenv("SUPABASE_SERVICE_KEY") or frontend_env.get("VITE_SUPABASE_ANON_KEY") or ""
+    # The API must use a server-only service role key. Never fall back to a
+    # browser-visible VITE_ key: that can mask a broken production deployment.
+    supabase_url: str = ""
+    supabase_service_key: str = ""
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
     anthropic_api_key: str = os.getenv("ANTHROPIC_API_KEY", "")
     groq_api_key: str = os.getenv("GROQ_API_KEY", "")

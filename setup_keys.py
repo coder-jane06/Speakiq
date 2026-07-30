@@ -21,10 +21,10 @@ try:
     env_path = 'backend/.env'
     
     with open(env_path, 'a') as f:
-        f.write(f"\nRESEND_API_KEY=re_axio6xxB_Pys4qWr7YAPRsDaZsNkBdU1d\n")
+        f.write("\nRESEND_API_KEY=your-resend-api-key-here\n")
         f.write(f"VAPID_PUBLIC_KEY={pub}\n")
         f.write(f"VAPID_PRIVATE_KEY={priv}\n")
-        f.write("VAPID_SUBJECT=mailto:admin@speakiq.com\n")
+        f.write("VAPID_SUBJECT=mailto:admin@fluently.app\n")
         
     print(f"Keys generated and appended to {env_path}")
     print(f"Public Key: {pub}")

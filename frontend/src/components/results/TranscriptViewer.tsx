@@ -69,7 +69,7 @@ export const TranscriptViewer = ({ words, currentTime, onWordClick }: Transcript
       className += 'hover:bg-[var(--bg-hover)] '
     }
 
-    let style: React.CSSProperties = {}
+    const style: React.CSSProperties = {}
 
     if (isFiller) {
       style.color = '#EF4444'

@@ -1,4 +1,4 @@
-# SpeakIQ Testing & Verification Guide
+# Fluently Testing & Verification Guide
 
 ## 🎯 Testing Philosophy
 Every phase MUST be tested and verified before moving to the next. No compromises.

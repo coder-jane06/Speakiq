@@ -1,12 +1,15 @@
 """Sessions router — Phase 3 (with analysis pipeline)"""
 import logging, random, uuid, asyncio
 from typing import Optional
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form, BackgroundTasks, Header
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, BackgroundTasks, Header, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from routers.dashboard import normalize_difficulty, normalize_goal
 from auth import get_user_id
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 FALLBACK_TOPICS = [
     {"id": "fallback", "text": "Should social media have an age limit?"},
@@ -21,14 +24,30 @@ FALLBACK_TOPICS = [
     {"id": "fallback", "text": "Is social media doing more harm than good?"},
 ]
 ALLOWED_AUDIO_TYPES = {
-    "audio/webm","audio/webm;codecs=opus","audio/webm;codecs=vp8",
-    "audio/mp4","audio/wav","audio/mpeg","audio/ogg","application/octet-stream"
+    "audio/webm", "audio/mp4", "audio/wav", "audio/mpeg", "audio/ogg"
 }
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 
 
+def detect_audio_format(data: bytes) -> tuple[str, str] | None:
+    """Return a trusted content type and extension for a supported audio container."""
+    if data.startswith(b"\x1a\x45\xdf\xa3"):
+        return "audio/webm", "webm"
+    if data.startswith(b"RIFF") and data[8:12] == b"WAVE":
+        return "audio/wav", "wav"
+    if data.startswith(b"OggS"):
+        return "audio/ogg", "ogg"
+    if len(data) >= 12 and data[4:8] == b"ftyp":
+        return "audio/mp4", "m4a"
+    if data.startswith(b"ID3") or data.startswith(b"\xff\xfb") or data.startswith(b"\xff\xf3"):
+        return "audio/mpeg", "mp3"
+    return None
+
+
 @router.get("/topic")
+@limiter.limit("30/minute")
 async def get_topic(
+    request: Request,
     authorization: Optional[str] = Header(None),
     exclude: Optional[str] = None,
     goal: Optional[str] = None,
@@ -141,7 +160,9 @@ async def get_topic(
 
 
 @router.post("/upload", status_code=201)
+@limiter.limit("10/minute")
 async def upload_session(
+    request: Request,
     background_tasks: BackgroundTasks,
     audio: UploadFile = File(...),
     topic_id: str = Form(...),
@@ -150,7 +171,7 @@ async def upload_session(
     difficulty_tier: Optional[str] = Form(None),
     authorization: Optional[str] = Header(None)
 ):
-    content_type = audio.content_type or ""
+    content_type = (audio.content_type or "").split(";", 1)[0].lower()
     if content_type not in ALLOWED_AUDIO_TYPES:
         raise HTTPException(status_code=400, detail=f"Unsupported file type: {content_type}")
 
@@ -159,6 +180,10 @@ async def upload_session(
         raise HTTPException(status_code=400, detail="File too large. Max 10MB.")
     if len(audio_bytes) < 1000:
         raise HTTPException(status_code=400, detail="Recording too short.")
+    detected_audio = detect_audio_format(audio_bytes)
+    if not detected_audio:
+        raise HTTPException(status_code=400, detail="The upload is not a supported audio file.")
+    detected_content_type, extension = detected_audio
 
     session_id = str(uuid.uuid4())
     audio_url = None
@@ -172,10 +197,10 @@ async def upload_session(
     try:
         from config import get_db
         db = get_db()
-        storage_path = f"sessions/{session_id}/recording.webm"
+        storage_path = f"sessions/{session_id}/recording.{extension}"
         db.storage.from_("audio-recordings").upload(
             path=storage_path, file=audio_bytes,
-            file_options={"content-type": "audio/webm"},
+            file_options={"content-type": detected_content_type},
         )
         audio_url = storage_path
 
@@ -211,7 +236,7 @@ async def upload_session(
         logger.info(f"[sessions] Created session {session_id}")
     except Exception as e:
         logger.error(f"[sessions] Upload failed {session_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Database or storage error: {e}")
+        raise HTTPException(status_code=500, detail="Unable to save your recording. Please try again.")
 
     # Trigger analysis pipeline in the background
     # BackgroundTasks runs AFTER the response is sent to the user.
@@ -346,7 +371,7 @@ async def get_session(session_id: str, authorization: Optional[str] = Header(Non
         raise
     except Exception as e:
         logger.error(f"[sessions] get failed {session_id}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Unable to load this session. Please try again.")
 @router.get("/{session_id}/transcript")
 async def get_transcript(session_id: str, authorization: Optional[str] = Header(None)):
     """
@@ -404,7 +429,7 @@ async def get_transcript(session_id: str, authorization: Optional[str] = Header(
         raise
     except Exception as e:
         logger.error(f"[sessions] transcript fetch failed {session_id}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Unable to load this transcript. Please try again.")
 
 
 @router.get("/{session_id}/audio-url")
@@ -450,4 +475,4 @@ async def get_audio_url(session_id: str, authorization: Optional[str] = Header(N
         raise
     except Exception as e:
         logger.error(f"[sessions] audio URL generation failed {session_id}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Unable to prepare the audio playback. Please try again.")

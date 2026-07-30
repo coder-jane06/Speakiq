@@ -1,10 +1,10 @@
 <USER_REQUEST>
-# SpeakIQ — Production Master Plan
+# Fluently — Production Master Plan
 ### From working dev sprint → polished, secure, production-grade AI coaching product
 
 > **Audited:** July 2026 · **Stack:** React + Vite + TypeScript + Tailwind · FastAPI + Python · Supabase PostgreSQL + Storage · faster-whisper · Librosa · spaCy · Groq llama · Docker + Render · GitHub Pages
 >
-> **The mission:** Make SpeakIQ the app where users *actually see their speaking improve* — not just scores going up, but understanding exactly what's wrong, why it's wrong, and drilling it out. Duolingo for public speaking.
+> **The mission:** Make Fluently the app where users *actually see their speaking improve* — not just scores going up, but understanding exactly what's wrong, why it's wrong, and drilling it out. Duolingo for public speaking.
 
 ---
 
@@ -657,7 +657,7 @@ Add email/password as fallback.
 
 **What:** New users land with no context. A 3-step onboarding sets goals and makes the first session guided.
 
-**Step 1 — Welcome:** "SpeakIQ coaches your speech using AI. Here's how it works." (30-second explainer)
+**Step 1 — Welcome:** "Fluently coaches your speech using AI. Here's how it works." (30-second explainer)
 **Step 2 — Setup:** Name · Speaking goal (Orator / Debater / Presenter / Interviewer) · Experience level
 **Step 3 — First session:** Guided recording with a beginner-friendly topic pre-selected
 
@@ -862,7 +862,7 @@ Show a "You graduated! 🎓 Advanced topics unlocked" modal on next login.
 **Create `frontend/src/components/ShareCard.tsx`** — uses `html2canvas` → PNG → native Web Share API:
 ```
 ┌─────────────────────────┐
-│  🎙️ SpeakIQ             │
+│  🎙️ Fluently            │
 │  Session #14            │
 │                         │
 │  Overall: 84 ↑ +12      │
@@ -887,7 +887,7 @@ import resend
 
 def send_weekly_digest(user_email: str, stats: dict):
     resend.Emails.send({
-        "from": "coach@speakiq.ai",
+        "from": "coach@fluently.com",
         "to": user_email,
         "subject": f"Your week in speaking — {stats['sessions']} sessions, streak: {stats['streak']} 🔥",
         "html": render_weekly_template(stats)
@@ -1085,11 +1085,11 @@ Already partially supported by `tremor_score` in the `SpeechAnalysis` dataclass 
 ### 9.1 Write a proper README 🟢
 
 ```markdown
-# SpeakIQ — AI Speech Coach
+# Fluently — AI Speech Coach
 
 > Record yourself speaking. Get coaching that quotes exactly what you said.
 
-[Live Demo](https://coder-jane06.github.io/Speakiq) · [API Docs](https://your-render-url.onrender.com/docs)
+[Live Demo](https://app.fluently.example) · [API Docs](https://api.fluently.example/docs)
 
 ## What it does
 [2–3 sentences + one screenshot of the results page]
@@ -1163,7 +1163,7 @@ Record → Transcribe (Whisper) → Analyse (Librosa + spaCy) → Coach (Groq) �
 
 ## Definition of "Production Ready"
 
-SpeakIQ is genuinely production-ready — not just portfolio-ready — when every box below is checked:
+Fluently is genuinely production-ready — not just portfolio-ready — when every box below is checked:
 
 **Security**
 - [ ] No user data in public repo, no UUIDs in code
@@ -1197,7 +1197,7 @@ SpeakIQ is genuinely production-ready — not just portfolio-ready — when ever
 
 ---
 
-*Generated July 2026 — unified from full codebase audit of github.com/coder-jane06/Speakiq*
+*Generated July 2026 — unified from the Fluently codebase audit.*
 *Combines security plan (Plan A) + product roadmap (Plan B) + new suggestions from codebase analysis*
 
 

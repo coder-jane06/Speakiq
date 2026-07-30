@@ -17,9 +17,32 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from routers import sessions
 from routers.dashboard import router as dashboard_router
+
+_SENTRY_DSN = os.getenv("SENTRY_DSN", "")
+if _SENTRY_DSN:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.fastapi import FastApiIntegration
+        from sentry_sdk.integrations.logging import LoggingIntegration
+
+        sentry_sdk.init(
+            dsn=_SENTRY_DSN,
+            integrations=[
+                FastApiIntegration(transaction_style="endpoint"),
+                LoggingIntegration(level=logging.WARNING, event_level=logging.ERROR),
+            ],
+            traces_sample_rate=0.2,
+            send_default_pii=False,
+            environment=os.getenv("ENVIRONMENT", "development"),
+        )
+    except ImportError:
+        logging.getLogger(__name__).warning("SENTRY_DSN is configured but sentry-sdk is unavailable")
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -32,10 +55,20 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler("app.log", encoding="utf-8")
     ],
 )
 logger = logging.getLogger("fluently")
+limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
+
+
+def validate_production_configuration() -> None:
+    """Fail startup rather than serving a partially configured production API."""
+    if os.getenv("ENVIRONMENT", "development").lower() != "production":
+        return
+    required = ("SUPABASE_URL", "SUPABASE_SERVICE_KEY", "FRONTEND_URL")
+    missing = [key for key in required if not os.getenv(key)]
+    if missing:
+        raise RuntimeError(f"Missing required production configuration: {', '.join(missing)}")
 
 
 def check_supabase() -> dict[str, Any]:
@@ -74,6 +107,7 @@ async def lifespan(app: FastAPI):
         if isinstance(obj, uvicorn.Server):
             obj.config.timeout_keep_alive = 75
 
+    validate_production_configuration()
     supabase_status = check_supabase()
     if supabase_status["status"] == "connected":
         logger.info("Supabase      : connected")
@@ -91,13 +125,15 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Fluently API",
     description="AI-powered speech coaching backend",
-    version="0.1.0",
+    version="1.0.0",
     lifespan=lifespan,
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url="/docs" if os.getenv("ENVIRONMENT", "development").lower() != "production" else None,
+    redoc_url="/redoc" if os.getenv("ENVIRONMENT", "development").lower() != "production" else None,
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-frontend_origins = ["http://localhost:3000", "http://localhost:5173"]
+frontend_origins = ["http://localhost:3000", "http://localhost:4173", "http://localhost:5173", "http://127.0.0.1:5173"]
 configured_frontend = os.getenv("FRONTEND_URL", "").rstrip("/")
 if configured_frontend:
     # FRONTEND_URL may include a GitHub Pages project path for report links.
@@ -113,8 +149,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=frontend_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
 
@@ -145,6 +181,8 @@ async def health():
 @app.get("/system/status", tags=["system"])
 async def system_status():
     supabase_status = check_supabase()
+    if os.getenv("ENVIRONMENT", "development").lower() == "production":
+        return {"api": {"status": "connected"}, "supabase": {"status": supabase_status["status"]}}
     return {
         "api": {"status": "connected"},
         "supabase": supabase_status,
@@ -153,39 +191,56 @@ async def system_status():
 
 @app.get("/api", tags=["system"])
 async def root():
-    return {"message": "Fluently API - see /docs for endpoints"}
+    return {"message": "Fluently API — see /docs for endpoints"}
 
 
 # ── Serve built frontend (React SPA) ─────────────────────────────────────────
 # The frontend is built with `npm run build` inside frontend/
 # Vite outputs to frontend/dist — we serve that here so everything
 # runs on ONE server with no CORS issues.
+# NOTE: This block is only relevant on HuggingFace or a self-hosted server that
+#       builds the frontend into the container. When the frontend is deployed
+#       separately (e.g. Render static site), this block is simply skipped.
 
 _FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
 
+# Known API path prefixes — the SPA catch-all must never intercept these.
+_API_PREFIXES = (
+    "sessions", "dashboard", "health", "system", "api", "docs", "redoc", "openapi.json",
+)
+
 if _FRONTEND_DIST.exists():
-    # Mount assets (JS/CSS/images) at their exact paths
-    app.mount(
-        "/assets",
-        StaticFiles(directory=str(_FRONTEND_DIST / "assets")),
-        name="assets",
-    )
+    # Mount static assets (JS / CSS / images) served under /assets/
+    _assets_dir = _FRONTEND_DIST / "assets"
+    if _assets_dir.exists():
+        app.mount(
+            "/assets",
+            StaticFiles(directory=str(_assets_dir)),
+            name="assets",
+        )
 
     @app.get("/{full_path:path}", tags=["frontend"])
     async def serve_spa(full_path: str):
-        """Return index.html for all SPA routes so React Router can handle them."""
+        """
+        Serve index.html for every SPA route so React Router / HashRouter
+        can handle client-side navigation.
+
+        FastAPI resolves named routes before the catch-all, so all /sessions,
+        /dashboard, /health, etc. routes registered above are still reached
+        correctly.  The guard below is a belt-and-suspenders safeguard for
+        any path that somehow slips through.
+        """
+        if any(full_path == p or full_path.startswith(p + "/") for p in _API_PREFIXES):
+            return JSONResponse(status_code=404, content={"detail": "Not found"})
         index = _FRONTEND_DIST / "index.html"
         if index.exists():
             return FileResponse(str(index))
-        return JSONResponse(status_code=404, content={"detail": "Frontend not built yet. Run: npm run build inside frontend/"})
+        return JSONResponse(
+            status_code=404,
+            content={"detail": "Frontend not built yet. Run: npm run build inside frontend/"},
+        )
 
-    @app.get("/", tags=["frontend"])
-    async def serve_root():
-        """Redirect / to the SPA root."""
-        from fastapi.responses import RedirectResponse
-        return RedirectResponse(url="/")
-
-    logger.info(f"Frontend: serving from {_FRONTEND_DIST}")
+    logger.info("Frontend: serving from %s", _FRONTEND_DIST)
 else:
     @app.get("/", tags=["system"])
     async def root_no_frontend():

@@ -92,7 +92,7 @@ function lsGet<T>(key: string, fallback: T): T {
   } catch { return fallback; }
 }
 function lsSet(key: string, value: unknown) {
-  try { localStorage.setItem(key, typeof value === 'object' ? JSON.stringify(value) : String(value)); } catch {}
+  try { localStorage.setItem(key, typeof value === 'object' ? JSON.stringify(value) : String(value)); } catch { /* Storage is optional. */ }
 }
 
 function urlBase64ToUint8Array(base64String: string) {
@@ -319,7 +319,7 @@ export default function SettingsPage() {
         difficulty_tier: difficulty,
       });
       showMsg(setAiSaveMsg, '✓ AI preferences saved!');
-    } catch (e) {
+    } catch {
       // Still saved to localStorage, just warn about backend
       showMsg(setAiSaveMsg, '✓ Saved locally (sync pending)');
     } finally {
@@ -358,7 +358,7 @@ export default function SettingsPage() {
         try {
           await registerPushSubscription(token);
           showMsg(setNotifSaveMsg, '✓ Notifications saved!');
-        } catch (_pushError) {
+        } catch {
           showMsg(setNotifSaveMsg, '✓ Saved (push needs HTTPS)');
         }
       } else {
@@ -427,7 +427,7 @@ export default function SettingsPage() {
         setMicTesting(false);
         setMicLevel(0);
       }, 10000);
-    } catch (e) {
+    } catch {
       alert('Could not access microphone. Please allow microphone permission in your browser.');
       setMicTesting(false);
     }
@@ -451,7 +451,7 @@ export default function SettingsPage() {
       a.download = `fluently-export-${new Date().toISOString().split('T')[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch (e) {
+    } catch {
       alert('Failed to export data. Please try again.');
     } finally {
       setDownloading(false);
@@ -471,7 +471,7 @@ export default function SettingsPage() {
       if (!res.ok) throw new Error('Purge failed');
       showMsg(setPurgeMsg, '✓ Audio recordings purged');
       setPurgeConfirm(false);
-    } catch (e) {
+    } catch {
       showMsg(setPurgeMsg, '✗ Failed to purge');
     } finally {
       setPurging(false);
@@ -491,7 +491,7 @@ export default function SettingsPage() {
       if (!res.ok) throw new Error('Reset failed');
       showMsg(setResetMsg, '✓ AI memory reset');
       setResetConfirm(false);
-    } catch (e) {
+    } catch {
       showMsg(setResetMsg, '✗ Failed to reset');
     } finally {
       setResetting(false);

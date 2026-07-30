@@ -773,7 +773,7 @@ export default function SessionPage() {
                       setSelectedTopic(t)
                       setRecentTopicTexts(prev => {
                         const updated = [...new Set([...prev, t.text])].slice(-25);
-                        try { localStorage.setItem('sq_recent_topics', JSON.stringify(updated)); } catch {}
+                        try { localStorage.setItem('sq_recent_topics', JSON.stringify(updated)); } catch { /* Storage is optional. */ }
                         return updated;
                       })
                     }}

@@ -718,6 +718,32 @@ async def export_user_data(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=500, detail="Data export failed")
 
 
+@router.delete("/purge-audio")
+async def purge_audio(authorization: Optional[str] = Header(None)):
+    """Permanently remove every stored recording owned by the current user."""
+    user_id = get_user_id(authorization)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    db = get_db()
+    try:
+        sessions = (
+            db.table("sessions")
+            .select("id, audio_url")
+            .eq("user_id", user_id)
+            .not_.is_("audio_url", "null")
+            .execute()
+        ).data or []
+        paths = [row["audio_url"] for row in sessions if row.get("audio_url")]
+        if paths:
+            db.storage.from_("audio-recordings").remove(paths)
+            db.table("sessions").update({"audio_url": None}).eq("user_id", user_id).execute()
+        return {"status": "ok", "deleted": len(paths)}
+    except Exception as exc:
+        logger.exception("[dashboard] audio purge failed for user %s", user_id)
+        raise HTTPException(status_code=500, detail="Unable to remove audio recordings. Please try again.") from exc
+
+
 @router.post("/reset-personalization")
 async def reset_personalization(authorization: Optional[str] = Header(None)):
     user_id = get_user_id(authorization)

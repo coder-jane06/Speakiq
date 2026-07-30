@@ -1,6 +1,6 @@
 """
 ╔══════════════════════════════════════════════════════════════╗
-║   SpeakIQ — ULTIMATE PRODUCTION TEST SUITE                  ║
+║   Fluently — ULTIMATE PRODUCTION TEST SUITE                 ║
 ║   Tests every layer: DB, API, Pipeline, Frontend, Security  ║
 ╚══════════════════════════════════════════════════════════════╝
 """
@@ -15,10 +15,13 @@ from supabase import create_client
 
 SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
 SUPABASE_KEY = os.environ.get('SUPABASE_SERVICE_KEY', '')
-HF_URL = "https://shaurya0606-speakiq-backend.hf.space"
+API_URL = os.environ.get('FLUENTLY_API_URL', '')
 
 if not SUPABASE_URL or not SUPABASE_KEY:
     print("❌  FATAL: SUPABASE_URL or SUPABASE_SERVICE_KEY not set in .env")
+    sys.exit(1)
+if not API_URL:
+    print("Fluently API URL is not set in .env")
     sys.exit(1)
 
 sb = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -769,8 +772,8 @@ section(15, "LIVE API HEALTH CHECK (Hugging Face)")
 
 try:
     import urllib.request, urllib.error
-    print(f"  Checking: {HF_URL}/health ...")
-    req = urllib.request.Request(f"{HF_URL}/health", headers={'User-Agent': 'SpeakIQ-Test/1.0'})
+    print(f"  Checking: {API_URL}/health ...")
+    req = urllib.request.Request(f"{API_URL}/health", headers={'User-Agent': 'Fluently-Test/1.0'})
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read().decode())
@@ -791,8 +794,8 @@ except Exception as e:
 # Test /sessions/topic endpoint on HF
 try:
     for goal, tier in [('orator', 'easy'), ('debater', 'hard'), ('interviewer', 'medium')]:
-        url = f"{HF_URL}/sessions/topic?goal={goal}&difficulty={tier}"
-        req = urllib.request.Request(url, headers={'User-Agent': 'SpeakIQ-Test/1.0'})
+        url = f"{API_URL}/sessions/topic?goal={goal}&difficulty={tier}"
+        req = urllib.request.Request(url, headers={'User-Agent': 'Fluently-Test/1.0'})
         try:
             with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read().decode())
@@ -897,11 +900,10 @@ if os.path.exists(workflow_path):
     checks_wf = [
         ('push', 'Workflow triggers on push'),
         ('main', 'Workflow targets main branch'),
+        ('npm run lint', 'Workflow runs frontend linting'),
         ('npm run build', 'Workflow runs npm build'),
         ('VITE_API_URL', 'VITE_API_URL injected as build env var'),
-        ('peaceiris/actions-gh-pages', 'Uses gh-pages action for deployment'),
-        ('gh-pages', 'Deploys to gh-pages branch'),
-        ('shaurya0606-speakiq-backend.hf.space', 'HF backend URL configured in workflow'),
+        ('compileall', 'Workflow verifies backend syntax'),
     ]
     for check, desc in checks_wf:
         if check in wf_src:

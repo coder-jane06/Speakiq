@@ -1,17 +1,16 @@
-name: Deploy to GitHub Pages
+name: Fluently CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+  pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  build-and-deploy:
+  verify:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -23,26 +22,21 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install dependencies
-        run: npm install
+      - name: Install frontend dependencies
+        run: npm ci
         working-directory: frontend
 
-      - name: Build and type-check
+      - name: Lint frontend
+        run: npm run lint
+        working-directory: frontend
+
+      - name: Build frontend
         run: npm run build
         working-directory: frontend
         env:
-          VITE_BASE_PATH: /Speakiq/
-          VITE_API_URL: https://shaurya0606-speakiq-backend.hf.space
-          VITE_SUPABASE_URL: https://gakfjshqzwtgqpkftnyd.supabase.co
-          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdha2Zqc2hxend0Z3Fwa2Z0bnlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NDIwNTcsImV4cCI6MjA5NDUxODA1N30.GA8j5tlSxx8Qpl6I1SA6QJYg97G0oxxp_NayU9z4uMM
-          VITE_VAPID_PUBLIC_KEY: ${{ secrets.VITE_VAPID_PUBLIC_KEY }}
+          VITE_API_URL: https://api.fluently.example
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_ANON_KEY: ci-placeholder
 
-      - name: Copy index.html to 404.html (SPA fallback)
-        run: cp frontend/dist/index.html frontend/dist/404.html
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: frontend/dist
-          publish_branch: gh-pages
+      - name: Verify backend syntax
+        run: python -m compileall -q backend
