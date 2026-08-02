@@ -23,12 +23,12 @@ export const FillerBreakdown = ({ fillers }: FillerBreakdownProps) => {
     return (
       <div className="w-full">
         <h3 className="text-[16px] font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-          <BarChart3 size={18} className="text-emerald-500" />
+          <BarChart3 size={18} style={{ color: 'var(--accent)' }} />
           Filler Word Analysis
         </h3>
         
         <div className="p-8 rounded-[20px] bg-[var(--bg-card)] border border-[var(--border)] shadow-sm text-center">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 rounded-2xl bg-[var(--accent-dim)] flex items-center justify-center mx-auto mb-4">
             <span className="text-3xl">🎉</span>
           </div>
           <h4 className="text-[18px] font-bold text-[var(--text-primary)] mb-2">

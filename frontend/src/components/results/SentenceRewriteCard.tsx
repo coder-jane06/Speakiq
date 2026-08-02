@@ -62,7 +62,7 @@ export const SentenceRewriteCard = ({ rewrites }: SentenceRewriteCardProps) => {
             {/* After */}
             <div className="mb-3">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded">
+                <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded" style={{ color: 'var(--accent)', background: 'var(--accent-dim)' }}>
                   ✓ Better
                 </span>
               </div>

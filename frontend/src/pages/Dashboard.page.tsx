@@ -311,9 +311,9 @@ export default function DashboardPage() {
           <section className="lg:col-span-2 rounded-[28px] p-7 bg-[var(--bg-card)] border border-[var(--border)] shadow-xl">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-[20px] font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
-                <Clock size={20} className="text-emerald-500" /> Recent Activity
+                <Clock size={20} style={{ color: 'var(--accent)' }} /> Recent Activity
               </h3>
-              <button onClick={() => navigate('/session')} className="text-[13px] font-bold text-emerald-400 hover:underline flex items-center gap-1">
+              <button onClick={() => navigate('/session')} className="text-[13px] font-bold hover:underline flex items-center gap-1" style={{ color: 'var(--accent)' }}>
                 New Session <ChevronRight size={14} />
               </button>
             </div>
@@ -325,7 +325,7 @@ export default function DashboardPage() {
                     (act.scores.filler + act.scores.delivery + act.scores.structure + act.scores.vocab + act.scores.confidence) / 5
                   );
                   const badgeColor = score >= 85
-                    ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20'
+                    ? 'bg-[var(--accent-dim)] text-[var(--accent)] border-[var(--border-accent)]'
                     : score >= 70
                       ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20'
                       : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20';
@@ -334,9 +334,9 @@ export default function DashboardPage() {
                     <div
                       key={idx}
                       onClick={() => navigate(`/session/${act.id}/results`)}
-                      className="relative flex items-center justify-between p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs hover:border-emerald-500/30 hover:bg-[var(--bg-hover)] transition-all cursor-pointer"
+                      className="relative flex items-center justify-between p-4 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xs hover:border-[var(--border-accent)] hover:bg-[var(--bg-hover)] transition-all cursor-pointer"
                     >
-                      <div className="absolute -left-[31px] w-5 h-5 rounded-full bg-[var(--bg-card)] border-4 border-emerald-500 shadow-xs" />
+                      <div className="absolute -left-[31px] w-5 h-5 rounded-full bg-[var(--bg-card)] border-4 shadow-xs" style={{ borderColor: 'var(--accent)' }} />
                       <div className="min-w-0 flex-1 mr-4">
                         <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{act.date}</span>
                         <h5 className="text-[15px] font-bold text-[var(--text-primary)] mt-0.5 truncate">{act.topic || 'Speaking Practice'}</h5>
@@ -386,7 +386,7 @@ export default function DashboardPage() {
                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                   />
                   <path
-                    className="text-emerald-500 transition-all duration-1000"
+                    style={{ color: 'var(--accent)' }}
                     strokeDasharray={`${weeklyGoal.percent}, 100`}
                     strokeWidth="3.5"
                     strokeLinecap="round"
@@ -423,7 +423,7 @@ export default function DashboardPage() {
               ) : (
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { key: 'confidence' as const, label: 'Confidence', bg: 'bg-emerald-500/10 border-emerald-500/20', textCol: 'text-emerald-400' },
+                    { key: 'confidence' as const, label: 'Confidence', bg: 'bg-[var(--accent-dim)] border-[var(--border-accent)]', textCol: 'text-[var(--accent)]' },
                     { key: 'vocab' as const, label: 'Vocabulary', bg: 'bg-blue-500/10 border-blue-500/20', textCol: 'text-blue-400' },
                     { key: 'delivery' as const, label: 'Delivery', bg: 'bg-purple-500/10 border-purple-500/20', textCol: 'text-purple-400' },
                     { key: 'structure' as const, label: 'Structure', bg: 'bg-amber-500/10 border-amber-500/20', textCol: 'text-amber-400' },
@@ -467,7 +467,7 @@ export default function DashboardPage() {
                 { card: 'from-amber-500/10 to-orange-500/5 border-amber-500/30 hover:border-amber-500/60', badge: 'bg-amber-500/15 border-amber-500/30 text-amber-500', bar: '#f59e0b' },
                 { card: 'from-blue-500/10 to-indigo-500/5 border-blue-500/30 hover:border-blue-500/60', badge: 'bg-blue-500/15 border-blue-500/30 text-blue-500', bar: '#3b82f6' },
                 { card: 'from-red-500/10 to-orange-500/5 border-red-500/30 hover:border-red-500/60', badge: 'bg-red-500/15 border-red-500/30 text-red-500', bar: '#ef4444' },
-                { card: 'from-emerald-500/10 to-green-500/5 border-emerald-500/30 hover:border-emerald-500/60', badge: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-500', bar: '#10b981' },
+                { card: 'from-[var(--accent-dim)] to-green-500/5 border-[var(--border-accent)] hover:border-[var(--accent)]/60', badge: 'bg-[var(--accent-dim)] border-[var(--border-accent)] text-[var(--accent)]', bar: '#10b981' },
                 { card: 'from-purple-500/10 to-fuchsia-500/5 border-purple-500/30 hover:border-purple-500/60', badge: 'bg-purple-500/15 border-purple-500/30 text-purple-500', bar: '#a855f7' },
                 { card: 'from-cyan-500/10 to-teal-500/5 border-cyan-500/30 hover:border-cyan-500/60', badge: 'bg-cyan-500/15 border-cyan-500/30 text-cyan-500', bar: '#06b6d4' },
                 { card: 'from-rose-500/10 to-pink-500/5 border-rose-500/30 hover:border-rose-500/60', badge: 'bg-rose-500/15 border-rose-500/30 text-rose-500', bar: '#f43f5e' },
@@ -549,20 +549,20 @@ export default function DashboardPage() {
               <div
                 key={i}
                 onClick={() => navigate('/session')}
-                className="p-6 rounded-[24px] bg-[var(--bg-card)] border border-[var(--border)] shadow-md hover:shadow-xl hover:border-emerald-500/40 hover:bg-[var(--bg-hover)] transition-all cursor-pointer flex flex-col justify-between h-[180px] group"
+                className="p-6 rounded-[24px] bg-[var(--bg-card)] border border-[var(--border)] shadow-md hover:shadow-xl hover:border-[var(--border-accent)] hover:bg-[var(--bg-hover)] transition-all cursor-pointer flex flex-col justify-between h-[180px] group"
               >
                 <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20 shadow-2xs">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-md border shadow-2xs" style={{ color: 'var(--accent)', background: 'var(--accent-dim)', borderColor: 'var(--border-accent)' }}>
                     {sug.tag || 'Recommended'}
                   </span>
-                  <h4 className="text-[17px] font-bold text-[var(--text-primary)] mt-3 group-hover:text-emerald-400 transition-colors">
+                  <h4 className="text-[17px] font-bold text-[var(--text-primary)] mt-3 group-hover:text-[var(--accent)] transition-colors">
                     {sug.title}
                   </h4>
                   <p className="text-[12px] text-[var(--text-secondary)] font-medium mt-1">
                     {sug.desc}
                   </p>
                 </div>
-                <div className="flex items-center text-[12px] font-extrabold text-emerald-400 group-hover:translate-x-1 transition-transform">
+                <div className="flex items-center text-[12px] font-extrabold group-hover:translate-x-1 transition-transform" style={{ color: 'var(--accent)' }}>
                   <span>Start Module</span>
                   <ChevronRight size={14} />
                 </div>
@@ -579,7 +579,7 @@ export default function DashboardPage() {
         {/* ── Milestones ── */}
         <section className="w-full rounded-[28px] p-7 bg-[var(--bg-card)] border border-[var(--border)] shadow-xl">
           <h3 className="text-[20px] font-bold text-[var(--text-primary)] mb-5 tracking-tight flex items-center gap-2">
-            <Target size={20} className="text-emerald-500" /> Upcoming Milestones
+            <Target size={20} style={{ color: 'var(--accent)' }} /> Upcoming Milestones
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -616,7 +616,7 @@ export default function DashboardPage() {
                   <span className="text-[13px] font-bold text-[var(--text-primary)] leading-snug">{m.text}</span>
                 </div>
                 <div className="w-full h-2 bg-[var(--bg-card)] rounded-full overflow-hidden border border-[var(--border)]">
-                  <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${Math.max(0, m.progress)}%` }} />
+                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.max(0, m.progress)}%`, background: 'var(--accent)' }} />
                 </div>
               </div>
             ))}

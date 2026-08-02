@@ -171,8 +171,8 @@ export const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-[14px] font-bold text-[var(--text-primary)] flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-              <Volume2 size={16} className="text-emerald-500" />
+            <div className="w-8 h-8 rounded-lg bg-[var(--accent-dim)] flex items-center justify-center">
+              <Volume2 size={16} style={{ color: 'var(--accent)' }} />
             </div>
             Your Speaking Recording
           </h3>

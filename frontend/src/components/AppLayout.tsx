@@ -58,7 +58,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <img 
               src={`${import.meta.env.BASE_URL}logo.png`}
               alt="Fluently logo" 
-              className="w-14 h-14 object-contain flex-shrink-0" 
+              className="w-14 h-14 object-contain flex-shrink-0"
+              style={isDark ? { filter: 'drop-shadow(0 0 6px rgba(200,249,125,0.35)) drop-shadow(0 0 2px rgba(255,255,255,0.2))' } : undefined}
             />
             <span
               className="sidebar-logo-text font-heading font-black text-[20px] tracking-tight bg-gradient-to-r from-[var(--gradient-hero-from)] to-[var(--gradient-hero-to)] bg-clip-text text-transparent"

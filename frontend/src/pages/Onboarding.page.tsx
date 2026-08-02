@@ -84,7 +84,8 @@ export default function OnboardingPage() {
         <img 
           src={`${import.meta.env.BASE_URL}logo.png`}
           alt="Fluently logo" 
-          className="w-24 h-24 object-contain mb-8" 
+          className="w-24 h-24 object-contain mb-8"
+          style={{ filter: 'drop-shadow(0 0 8px rgba(200,249,125,0.4)) drop-shadow(0 0 3px rgba(255,255,255,0.2))' }}
         />
 
         <h1
