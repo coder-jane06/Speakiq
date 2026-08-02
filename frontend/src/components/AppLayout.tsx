@@ -160,7 +160,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       )}
 
       {/* ── MAIN CONTENT ─────────────────────────────────────── */}
-      <div className={hideSidebar ? 'flex-1' : 'page-content'}>
+      <div className={hideSidebar ? 'flex-1 md:pb-0 pb-[72px]' : 'page-content'}>
         {children}
       </div>
 
@@ -211,11 +211,7 @@ function MobileTab({ to, icon, label }: { to: string; icon: ReactNode; label: st
     <NavLink
       to={to}
       end={to === '/'}
-      className={({ isActive }) =>
-        `flex flex-col items-center justify-center gap-0.5 min-w-[52px] py-1 transition-colors ${
-          isActive ? '' : ''
-        }`
-      }
+      className="flex flex-col items-center justify-center gap-0.5 min-w-[52px] py-1 transition-colors"
       style={({ isActive }) => ({
         color: isActive ? 'var(--accent)' : 'var(--text-tertiary)',
       })}

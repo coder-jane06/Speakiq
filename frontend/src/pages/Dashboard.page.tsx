@@ -100,7 +100,10 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-base)' }}>
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 rounded-full border-[3px] border-emerald-200 border-t-emerald-600 animate-spin" />
+          <div
+            className="w-10 h-10 rounded-full border-[3px] animate-spin"
+            style={{ borderColor: 'var(--border-md)', borderTopColor: 'var(--accent)' }}
+          />
           <p className="text-[14px] font-semibold text-[var(--text-secondary)]">Loading your speaking hub…</p>
         </div>
       </div>
