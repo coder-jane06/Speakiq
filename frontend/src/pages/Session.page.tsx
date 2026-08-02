@@ -284,7 +284,7 @@ export default function SessionPage() {
   const brainstormHints = GOAL_BRAINSTORM[selectedGoal] || ['Take a breath and structure your thoughts', 'Start with your main point', 'Use a real example to support your answer']
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden"
+    <main className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-x-hidden"
       style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}
     >
       {/* Ambient recording glow — only when recording */}

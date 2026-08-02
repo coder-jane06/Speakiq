@@ -316,7 +316,7 @@ export default function ResultsPage() {
             </button>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                <span className="text-[11px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full border" style={{ color: 'var(--accent)', background: 'var(--accent-dim)', borderColor: 'var(--border-accent)' }}>
                   🎉 SESSION COMPLETE
                 </span>
                 <span className="text-[12px] text-[var(--text-tertiary)]">• {(session as any)?.topic_text ? `Topic: ${(session as any).topic_text}` : 'AI Coaching Session'}</span>

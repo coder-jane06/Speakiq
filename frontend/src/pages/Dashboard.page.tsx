@@ -149,13 +149,13 @@ export default function DashboardPage() {
 
         {/* ── SECTION 1 — Welcome Hero ── */}
         <section className="w-full rounded-[32px] p-8 sm:p-10 bg-[var(--bg-card)] border border-[var(--border)] shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl pointer-events-none" style={{ background: 'var(--accent-glow)' }} />
 
           <div className="relative z-10 w-full">
             <div className="space-y-4 w-full">
               {/* Profile badge: from backend based on real speaking_goal + difficulty */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[13px] font-bold shadow-xs">
-                <Sparkles size={15} className="text-emerald-400 fill-emerald-400 animate-pulse" />
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--accent-dim)] border border-[var(--border-accent)] text-[var(--accent)] text-[13px] font-bold shadow-xs">
+                <Sparkles size={15} className="animate-pulse" style={{ color: 'var(--accent)', fill: 'var(--accent-dim)' }} />
                 <span>{profileBadge}</span>
               </div>
 
@@ -180,7 +180,7 @@ export default function DashboardPage() {
                   <span>Current streak: <strong className="text-orange-500">{streak} {streak === 1 ? 'Day' : 'Days'}</strong></span>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[var(--bg-hover)] border border-[var(--border)] text-[13px] font-bold text-[var(--text-primary)] shadow-xs">
-                  <Target size={16} className="text-emerald-500" />
+                  <Target size={16} style={{ color: 'var(--accent)' }} />
                   <span>
                     Weekly progress:{' '}
                     <strong>{weeklyGoal.completed}/{weeklyGoal.target} sessions</strong>
@@ -203,7 +203,7 @@ export default function DashboardPage() {
         <section className="w-full">
           <div className="rounded-[28px] p-8 bg-[var(--bg-card)] border border-[var(--border)] shadow-xl relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
             <div className="space-y-3 max-w-xl">
-              <span className="text-[11px] font-extrabold uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+              <span className="text-[11px] font-extrabold uppercase tracking-widest text-[var(--accent)] bg-[var(--accent-dim)] px-3 py-1 rounded-full border border-[var(--border-accent)]">
                 🎯 TODAY'S CHALLENGE
               </span>
               <h2 className="text-[28px] font-[800] text-[var(--text-primary)] tracking-tight" style={{ fontFamily: '"Bricolage Grotesque", sans-serif' }}>
@@ -219,7 +219,7 @@ export default function DashboardPage() {
                   {todayFocus?.estimated_minutes ?? 1} minute{(todayFocus?.estimated_minutes ?? 1) !== 1 ? 's' : ''}
                 </span>
                 {(todayFocus?.tags ?? []).map((tag: string, i: number) => (
-                  <span key={i} className="text-[12px] font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-xl border border-emerald-500/20">
+                  <span key={i} className="text-[12px] font-bold px-3 py-1 rounded-xl border" style={{ color: 'var(--accent)', background: 'var(--accent-dim)', borderColor: 'var(--border-accent)' }}>
                     {tag}
                   </span>
                 ))}
@@ -247,8 +247,8 @@ export default function DashboardPage() {
                 title: 'Start Session',
                 desc: 'Launch AI speaking prompt',
                 icon: Mic,
-                color: 'text-emerald-400',
-                bg: 'bg-emerald-500/10',
+                color: 'text-[var(--accent)]',
+                bg: 'bg-[var(--accent-dim)]',
                 onClick: () => navigate('/session'),
               },
               {
@@ -291,7 +291,7 @@ export default function DashboardPage() {
                   <ChevronRight size={18} className="text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] group-hover:translate-x-1 transition-all" />
                 </div>
                 <div>
-                  <h4 className="text-[16px] font-bold text-[var(--text-primary)] group-hover:text-emerald-400 transition-colors">
+                  <h4 className="text-[16px] font-bold text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">
                     {action.title}
                   </h4>
                   <p className="text-[12px] text-[var(--text-tertiary)] font-medium mt-0.5">

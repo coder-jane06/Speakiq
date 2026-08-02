@@ -266,7 +266,7 @@ export default function LoginPage() {
             }}
           >
             <button
-              className="flex-1 py-2.5 rounded-[14px] text-[13px] font-bold transition-all duration-200"
+              className="flex-1 py-3 rounded-[14px] text-[13px] font-bold transition-all duration-200"
               style={{
                 background: mode === 'signin' ? 'var(--accent)' : 'transparent',
                 color: mode === 'signin' ? 'var(--accent-text)' : 'var(--text-secondary)',
@@ -276,7 +276,7 @@ export default function LoginPage() {
               Sign In
             </button>
             <button
-              className="flex-1 py-2.5 rounded-[14px] text-[13px] font-bold transition-all duration-200"
+              className="flex-1 py-3 rounded-[14px] text-[13px] font-bold transition-all duration-200"
               style={{
                 background: mode === 'signup' ? 'var(--accent)' : 'transparent',
                 color: mode === 'signup' ? 'var(--accent-text)' : 'var(--text-secondary)',
@@ -304,7 +304,7 @@ export default function LoginPage() {
                 onChange={e => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                className="w-full rounded-[14px] px-4 py-3 text-[14px] font-medium outline-none transition-all duration-200"
+                className="w-full rounded-[14px] px-4 py-3.5 text-[14px] font-medium outline-none transition-all duration-200"
                 style={{
                   background: 'var(--bg-hover)',
                   border: '1px solid var(--border)',
@@ -336,7 +336,7 @@ export default function LoginPage() {
                 placeholder={mode === 'signup' ? 'Min 6 characters' : '••••••••'}
                 required
                 minLength={6}
-                className="w-full rounded-[14px] px-4 py-3 text-[14px] font-medium outline-none transition-all duration-200"
+                className="w-full rounded-[14px] px-4 py-3.5 text-[14px] font-medium outline-none transition-all duration-200"
                 style={{
                   background: 'var(--bg-hover)',
                   border: '1px solid var(--border)',
@@ -370,7 +370,7 @@ export default function LoginPage() {
                     setError(err instanceof Error ? err.message : 'Failed to send reset email.')
                   } finally { setLoading(false) }
                 }}
-                className="self-end text-[13px] font-semibold -mt-1 transition-opacity hover:opacity-70"
+                className="self-end text-[13px] font-semibold -mt-1 px-1 py-2 transition-opacity hover:opacity-70"
                 style={{ color: 'var(--accent)' }}
               >
                 Forgot password?
