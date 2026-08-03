@@ -12,16 +12,96 @@ router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
 FALLBACK_TOPICS = [
-    {"id": "fallback", "text": "Should social media have an age limit?"},
-    {"id": "fallback", "text": "Is remote work better than office work?"},
-    {"id": "fallback", "text": "What makes a great leader?"},
-    {"id": "fallback", "text": "Should college education be free?"},
-    {"id": "fallback", "text": "How does technology affect human relationships?"},
-    {"id": "fallback", "text": "Is ambition a virtue or a flaw?"},
-    {"id": "fallback", "text": "What is the most important skill for the future?"},
-    {"id": "fallback", "text": "Should voting be mandatory?"},
-    {"id": "fallback", "text": "How do you define success?"},
-    {"id": "fallback", "text": "Is social media doing more harm than good?"},
+    # ── GENERAL / OPINION (easy) ─────────────────────────────────────────
+    {"id": "fallback", "text": "Should social media have an age limit?", "tier": "easy", "target_skill": "structure", "category": "opinion", "goal_type": "general"},
+    {"id": "fallback", "text": "Is remote work better than office work?", "tier": "easy", "target_skill": "confidence", "category": "opinion", "goal_type": "general"},
+    {"id": "fallback", "text": "What makes a great leader?", "tier": "easy", "target_skill": "vocab", "category": "opinion", "goal_type": "general"},
+    {"id": "fallback", "text": "How do you define success?", "tier": "easy", "target_skill": "structure", "category": "opinion", "goal_type": "general"},
+    {"id": "fallback", "text": "Is technology making us more or less creative?", "tier": "easy", "target_skill": "delivery", "category": "opinion", "goal_type": "general"},
+    {"id": "fallback", "text": "Should students be graded on effort, not just results?", "tier": "easy", "target_skill": "structure", "category": "opinion", "goal_type": "general"},
+    {"id": "fallback", "text": "Is kindness more important than intelligence?", "tier": "easy", "target_skill": "confidence", "category": "opinion", "goal_type": "general"},
+    {"id": "fallback", "text": "What one habit would you recommend to everyone?", "tier": "easy", "target_skill": "vocab", "category": "opinion", "goal_type": "general"},
+    {"id": "fallback", "text": "Does social media help or hurt real friendships?", "tier": "easy", "target_skill": "structure", "category": "opinion", "goal_type": "general"},
+    {"id": "fallback", "text": "Should people follow their passion or follow the money?", "tier": "easy", "target_skill": "confidence", "category": "opinion", "goal_type": "general"},
+
+    # ── GENERAL / OPINION (medium) ───────────────────────────────────────
+    {"id": "fallback", "text": "Should voting be mandatory in a democracy?", "tier": "medium", "target_skill": "structure", "category": "opinion", "goal_type": "general"},
+    {"id": "fallback", "text": "Is ambition a virtue or a flaw?", "tier": "medium", "target_skill": "vocab", "category": "opinion", "goal_type": "general"},
+    {"id": "fallback", "text": "Should college education be free?", "tier": "medium", "target_skill": "structure", "category": "opinion", "goal_type": "general"},
+    {"id": "fallback", "text": "How does technology affect human relationships?", "tier": "medium", "target_skill": "delivery", "category": "opinion", "goal_type": "general"},
+    {"id": "fallback", "text": "Is social media doing more harm than good?", "tier": "medium", "target_skill": "structure", "category": "opinion", "goal_type": "general"},
+    {"id": "fallback", "text": "What is the most important skill for the future?", "tier": "medium", "target_skill": "vocab", "category": "opinion", "goal_type": "general"},
+    {"id": "fallback", "text": "Is it more important to be liked or respected?", "tier": "medium", "target_skill": "confidence", "category": "opinion", "goal_type": "general"},
+    {"id": "fallback", "text": "Should AI-generated art be treated as real art?", "tier": "medium", "target_skill": "structure", "category": "opinion", "goal_type": "general"},
+    {"id": "fallback", "text": "Does failure teach more than success?", "tier": "medium", "target_skill": "delivery", "category": "opinion", "goal_type": "general"},
+    {"id": "fallback", "text": "Is it ethical to eat meat in the modern world?", "tier": "medium", "target_skill": "structure", "category": "opinion", "goal_type": "general"},
+
+    # ── GENERAL / OPINION (hard) ─────────────────────────────────────────
+    {"id": "fallback", "text": "Can democracy survive in the age of misinformation?", "tier": "hard", "target_skill": "structure", "category": "opinion", "goal_type": "general"},
+    {"id": "fallback", "text": "Should governments be allowed to limit free speech online?", "tier": "hard", "target_skill": "vocab", "category": "opinion", "goal_type": "general"},
+    {"id": "fallback", "text": "Is economic growth compatible with fighting climate change?", "tier": "hard", "target_skill": "structure", "category": "opinion", "goal_type": "general"},
+    {"id": "fallback", "text": "Does individual privacy matter more than national security?", "tier": "hard", "target_skill": "confidence", "category": "opinion", "goal_type": "general"},
+    {"id": "fallback", "text": "Should wealthy nations have open borders?", "tier": "hard", "target_skill": "structure", "category": "opinion", "goal_type": "general"},
+
+    # ── STORYTELLING (easy-medium) ───────────────────────────────────────
+    {"id": "fallback", "text": "Tell me about a moment when you surprised yourself.", "tier": "easy", "target_skill": "delivery", "category": "storytelling", "goal_type": "general"},
+    {"id": "fallback", "text": "Describe a time you had to make a difficult choice with no right answer.", "tier": "medium", "target_skill": "structure", "category": "storytelling", "goal_type": "general"},
+    {"id": "fallback", "text": "Talk about a small moment that changed how you see the world.", "tier": "easy", "target_skill": "vocab", "category": "storytelling", "goal_type": "general"},
+    {"id": "fallback", "text": "Describe the most important lesson a failure taught you.", "tier": "medium", "target_skill": "confidence", "category": "storytelling", "goal_type": "general"},
+    {"id": "fallback", "text": "Tell me about someone who changed the way you think.", "tier": "easy", "target_skill": "delivery", "category": "storytelling", "goal_type": "general"},
+
+    # ── INTERVIEW PRACTICE ───────────────────────────────────────────────
+    {"id": "fallback", "text": "Tell me about a time you led without formal authority.", "tier": "medium", "target_skill": "structure", "category": "scenario", "goal_type": "interviewer"},
+    {"id": "fallback", "text": "Describe a situation where you had to convince a skeptical colleague.", "tier": "medium", "target_skill": "confidence", "category": "scenario", "goal_type": "interviewer"},
+    {"id": "fallback", "text": "Tell me about a project that went wrong and how you handled it.", "tier": "medium", "target_skill": "structure", "category": "scenario", "goal_type": "interviewer"},
+    {"id": "fallback", "text": "Give an example of a time you had to learn something new very quickly.", "tier": "easy", "target_skill": "delivery", "category": "scenario", "goal_type": "interviewer"},
+    {"id": "fallback", "text": "Describe a time you had to balance multiple competing priorities.", "tier": "hard", "target_skill": "structure", "category": "scenario", "goal_type": "interviewer"},
+    {"id": "fallback", "text": "Tell me about a time you disagreed with your manager and how you handled it.", "tier": "hard", "target_skill": "confidence", "category": "scenario", "goal_type": "interviewer"},
+    {"id": "fallback", "text": "Walk me through a time you improved a process or system at work.", "tier": "medium", "target_skill": "structure", "category": "scenario", "goal_type": "interviewer"},
+    {"id": "fallback", "text": "Describe your greatest professional achievement and why it matters.", "tier": "medium", "target_skill": "confidence", "category": "scenario", "goal_type": "interviewer"},
+    {"id": "fallback", "text": "Tell me about a time you made a mistake and what you learned from it.", "tier": "easy", "target_skill": "structure", "category": "scenario", "goal_type": "interviewer"},
+    {"id": "fallback", "text": "Describe a moment when you had to adapt quickly to an unexpected change.", "tier": "medium", "target_skill": "delivery", "category": "scenario", "goal_type": "interviewer"},
+
+    # ── DEBATE PRACTICE ──────────────────────────────────────────────────
+    {"id": "fallback", "text": "Smartphones should be banned in schools.", "tier": "easy", "target_skill": "structure", "category": "opinion", "goal_type": "debater"},
+    {"id": "fallback", "text": "The gig economy exploits workers more than it empowers them.", "tier": "medium", "target_skill": "vocab", "category": "opinion", "goal_type": "debater"},
+    {"id": "fallback", "text": "Affirmative action does more harm than good.", "tier": "hard", "target_skill": "structure", "category": "opinion", "goal_type": "debater"},
+    {"id": "fallback", "text": "Space exploration is a waste of money when people are suffering on Earth.", "tier": "medium", "target_skill": "confidence", "category": "opinion", "goal_type": "debater"},
+    {"id": "fallback", "text": "Universal Basic Income would do more harm than good.", "tier": "hard", "target_skill": "structure", "category": "opinion", "goal_type": "debater"},
+    {"id": "fallback", "text": "Zoos should be abolished.", "tier": "easy", "target_skill": "delivery", "category": "opinion", "goal_type": "debater"},
+    {"id": "fallback", "text": "Social media companies should be legally responsible for content on their platforms.", "tier": "hard", "target_skill": "vocab", "category": "opinion", "goal_type": "debater"},
+    {"id": "fallback", "text": "Athletes are paid too much compared to teachers.", "tier": "easy", "target_skill": "structure", "category": "opinion", "goal_type": "debater"},
+    {"id": "fallback", "text": "Nuclear energy is the only realistic solution to climate change.", "tier": "hard", "target_skill": "structure", "category": "opinion", "goal_type": "debater"},
+    {"id": "fallback", "text": "Cancel culture has gone too far.", "tier": "medium", "target_skill": "confidence", "category": "opinion", "goal_type": "debater"},
+
+    # ── PRESENTATION PRACTICE ────────────────────────────────────────────
+    {"id": "fallback", "text": "Present the key benefits and risks of artificial intelligence in three minutes.", "tier": "medium", "target_skill": "structure", "category": "analytical", "goal_type": "presenter"},
+    {"id": "fallback", "text": "Pitch an app idea that solves a real problem you've personally experienced.", "tier": "easy", "target_skill": "delivery", "category": "analytical", "goal_type": "presenter"},
+    {"id": "fallback", "text": "Present a data-backed argument for why your city should invest in public transport.", "tier": "hard", "target_skill": "vocab", "category": "analytical", "goal_type": "presenter"},
+    {"id": "fallback", "text": "Explain to a non-technical audience why cybersecurity matters for individuals.", "tier": "medium", "target_skill": "delivery", "category": "analytical", "goal_type": "presenter"},
+    {"id": "fallback", "text": "Present the top three things a company should do to improve employee wellbeing.", "tier": "medium", "target_skill": "structure", "category": "analytical", "goal_type": "presenter"},
+    {"id": "fallback", "text": "Pitch a solution to the problem of food waste in your community.", "tier": "easy", "target_skill": "confidence", "category": "analytical", "goal_type": "presenter"},
+    {"id": "fallback", "text": "Present the pros and cons of remote work for a company considering going fully remote.", "tier": "medium", "target_skill": "structure", "category": "analytical", "goal_type": "presenter"},
+    {"id": "fallback", "text": "Explain the business case for investing in renewable energy.", "tier": "hard", "target_skill": "vocab", "category": "analytical", "goal_type": "presenter"},
+
+    # ── PUBLIC SPEAKING / ORATOR ─────────────────────────────────────────
+    {"id": "fallback", "text": "Give a motivational 90-second speech about overcoming fear.", "tier": "medium", "target_skill": "delivery", "category": "opinion", "goal_type": "orator"},
+    {"id": "fallback", "text": "Speak passionately about a cause you genuinely care about.", "tier": "easy", "target_skill": "confidence", "category": "opinion", "goal_type": "orator"},
+    {"id": "fallback", "text": "Deliver a short speech convincing someone to take a leap of faith in their career.", "tier": "medium", "target_skill": "delivery", "category": "opinion", "goal_type": "orator"},
+    {"id": "fallback", "text": "Give a speech about what your generation owes to the next one.", "tier": "hard", "target_skill": "vocab", "category": "opinion", "goal_type": "orator"},
+    {"id": "fallback", "text": "Speak about a time resilience changed everything for you or someone you know.", "tier": "medium", "target_skill": "delivery", "category": "storytelling", "goal_type": "orator"},
+    {"id": "fallback", "text": "Convince an audience that small daily actions matter more than grand gestures.", "tier": "easy", "target_skill": "structure", "category": "opinion", "goal_type": "orator"},
+    {"id": "fallback", "text": "Give a 90-second talk about why education needs to be reinvented.", "tier": "hard", "target_skill": "delivery", "category": "opinion", "goal_type": "orator"},
+
+    # ── ANALYTICAL / CREATIVE ────────────────────────────────────────────
+    {"id": "fallback", "text": "If you could redesign one thing about the education system, what would it be and why?", "tier": "medium", "target_skill": "structure", "category": "analytical", "goal_type": "general"},
+    {"id": "fallback", "text": "If you had $1 million to spend solving one problem in your city, what would you do?", "tier": "medium", "target_skill": "delivery", "category": "analytical", "goal_type": "general"},
+    {"id": "fallback", "text": "What does the ideal workplace look like in 2030?", "tier": "medium", "target_skill": "vocab", "category": "analytical", "goal_type": "general"},
+    {"id": "fallback", "text": "If you could give one piece of advice to your 16-year-old self, what would it be and why?", "tier": "easy", "target_skill": "delivery", "category": "storytelling", "goal_type": "general"},
+    {"id": "fallback", "text": "Describe your perfect Saturday and what it reveals about your values.", "tier": "easy", "target_skill": "confidence", "category": "storytelling", "goal_type": "general"},
+    {"id": "fallback", "text": "If you could eliminate one social problem overnight, which would you choose and why?", "tier": "hard", "target_skill": "structure", "category": "analytical", "goal_type": "general"},
+    {"id": "fallback", "text": "What does true confidence look like, and how do you build it?", "tier": "medium", "target_skill": "vocab", "category": "opinion", "goal_type": "general"},
+    {"id": "fallback", "text": "Explain a complex topic you understand well to someone who has never heard of it.", "tier": "hard", "target_skill": "delivery", "category": "analytical", "goal_type": "general"},
 ]
 ALLOWED_AUDIO_TYPES = {
     "audio/webm", "audio/mp4", "audio/wav", "audio/mpeg", "audio/ogg"
@@ -150,12 +230,13 @@ async def get_topic(
 
     chosen = random.choice(FALLBACK_TOPICS)
     return {
-        **chosen,
-        "tier": "medium",
-        "difficulty": "medium",
-        "target_skill": "general",
-        "category": "opinion",
-        "goal_type": "general",
+        "id": chosen.get("id", "fallback"),
+        "text": chosen["text"],
+        "tier": chosen.get("tier", "medium"),
+        "difficulty": chosen.get("tier", "medium"),
+        "target_skill": chosen.get("target_skill", "general"),
+        "category": chosen.get("category", "opinion"),
+        "goal_type": chosen.get("goal_type", "general"),
     }
 
 
@@ -271,22 +352,32 @@ async def trigger_analysis(
             user_profile = profile_result.data[0] if profile_result.data else None
         else:
             user_profile = None
-    except:
+    except Exception:
         user_profile = None
 
     try:
         from analysis.pipeline import run_analysis_pipeline
         logger.info(f"[sessions] Starting pipeline for {session_id[:8]}")
-        await run_analysis_pipeline(
-            session_id=session_id,
-            audio_bytes=audio_bytes,
-            topic=topic_text,
-            user_profile=user_profile,
-            session_number=(user_profile.get("total_sessions") or 0) + 1 if user_profile else 1,
-            user_id=user_id,
-            speaking_goal_override=speaking_goal,
-            difficulty_tier=difficulty_tier,
+        await asyncio.wait_for(
+            run_analysis_pipeline(
+                session_id=session_id,
+                audio_bytes=audio_bytes,
+                topic=topic_text,
+                user_profile=user_profile,
+                session_number=(user_profile.get("total_sessions") or 0) + 1 if user_profile else 1,
+                user_id=user_id,
+                speaking_goal_override=speaking_goal,
+                difficulty_tier=difficulty_tier,
+            ),
+            timeout=300,  # 5-minute hard cap — marks session as failed if exceeded
         )
+    except asyncio.TimeoutError:
+        logger.error(f"[sessions] Pipeline TIMEOUT for {session_id} — marking as failed")
+        try:
+            from config import get_db
+            get_db().table("sessions").update({"status": "failed"}).eq("id", session_id).execute()
+        except Exception as inner_e:
+            logger.error(f"[sessions] Could not mark timed-out session as failed: {inner_e}")
     except Exception as e:
         import traceback
         logger.error(f"[sessions] Pipeline failed for {session_id}:\n{traceback.format_exc()}")
@@ -321,7 +412,8 @@ async def list_sessions(authorization: Optional[str] = Header(None)):
 
 
 @router.get("/{session_id}")
-async def get_session(session_id: str, authorization: Optional[str] = Header(None)):
+@limiter.limit("30/minute")
+async def get_session(request: Request, session_id: str, authorization: Optional[str] = Header(None)):
     try:
         from config import get_db
         db = get_db()
@@ -373,7 +465,8 @@ async def get_session(session_id: str, authorization: Optional[str] = Header(Non
         logger.error(f"[sessions] get failed {session_id}: {e}")
         raise HTTPException(status_code=500, detail="Unable to load this session. Please try again.")
 @router.get("/{session_id}/transcript")
-async def get_transcript(session_id: str, authorization: Optional[str] = Header(None)):
+@limiter.limit("30/minute")
+async def get_transcript(request: Request, session_id: str, authorization: Optional[str] = Header(None)):
     """
     Returns the full transcript with word-level timestamps and semantic labels.
     Used by the interactive Results page for word highlighting and audio sync.
@@ -433,7 +526,8 @@ async def get_transcript(session_id: str, authorization: Optional[str] = Header(
 
 
 @router.get("/{session_id}/audio-url")
-async def get_audio_url(session_id: str, authorization: Optional[str] = Header(None)):
+@limiter.limit("20/minute")
+async def get_audio_url(request: Request, session_id: str, authorization: Optional[str] = Header(None)):
     """
     Returns a signed URL for the audio file stored in Supabase storage.
     The URL is valid for 1 hour and allows the frontend to play the audio.

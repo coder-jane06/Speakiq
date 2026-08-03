@@ -2,19 +2,30 @@ import { HashRouter, Routes, Route, Navigate, useNavigate } from 'react-router-d
 import { ROUTES, API_URL } from './constants'
 import { AppLayout } from './components/AppLayout'
 import { useAuth } from './context/AuthContext'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, lazy, Suspense } from 'react'
 import { supabase } from './services/supabase'
 
-// Pages
+// Pages — eagerly loaded (small, always needed)
 import HomePage     from './pages/Home.page'
-import SessionPage  from './pages/Session.page'
-import ResultsPage  from './pages/Results.page'
-import NotFoundPage from './pages/NotFound.page'
 import LoginPage    from './pages/Login.page'
-import DashboardPage from './pages/Dashboard.page'
-import ProfilePage  from './pages/Profile.page'
-import SettingsPage from './pages/Settings.page'
+import NotFoundPage from './pages/NotFound.page'
 import OnboardingPage from './pages/Onboarding.page'
+
+// Pages — lazy loaded (large, behind auth wall)
+const SessionPage   = lazy(() => import('./pages/Session.page'))
+const ResultsPage   = lazy(() => import('./pages/Results.page'))
+const DashboardPage = lazy(() => import('./pages/Dashboard.page'))
+const ProfilePage   = lazy(() => import('./pages/Profile.page'))
+const SettingsPage  = lazy(() => import('./pages/Settings.page'))
+
+/** Loading spinner for lazy-loaded pages */
+function PageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-base)' }}>
+      <div className="w-8 h-8 rounded-full border-[3px] border-[var(--border-md)] border-t-[var(--accent)] animate-spin" />
+    </div>
+  )
+}
 
 /** Redirects unauthenticated users to /login */
 function ProtectedRoute({ children, requireOnboarding = false }: { children: React.ReactNode, requireOnboarding?: boolean }) {
@@ -91,6 +102,7 @@ export default function App() {
     <HashRouter>
       {/* App Layout Wraps All Routes */}
       <AppLayout>
+      <Suspense fallback={<PageLoader />}>
       <Routes>
         {/* ── Root ── */}
         <Route path="/" element={<HomePage />} />
@@ -175,6 +187,7 @@ export default function App() {
         <Route path="/404" element={<NotFoundPage />} />
         <Route path="*"    element={<Navigate to="/404" replace />} />
       </Routes>
+      </Suspense>
       </AppLayout>
     </HashRouter>
   )

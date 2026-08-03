@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from pydantic import BaseModel
 from typing import Any, Optional
 import json
@@ -8,6 +10,7 @@ from config import get_db
 from auth import get_user_id
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 logger = logging.getLogger(__name__)
 
 
@@ -219,7 +222,8 @@ def build_dashboard_recommendations(
 
 
 @router.get("/stats")
-async def get_dashboard_stats(authorization: Optional[str] = Header(None)):
+@limiter.limit("20/minute")
+async def get_dashboard_stats(request: Request, authorization: Optional[str] = Header(None)):
     user_id = get_user_id(authorization)
     if not user_id:
         # Return an empty dashboard state for unauthenticated requests
@@ -719,7 +723,8 @@ async def export_user_data(authorization: Optional[str] = Header(None)):
 
 
 @router.delete("/purge-audio")
-async def purge_audio(authorization: Optional[str] = Header(None)):
+@limiter.limit("3/hour")
+async def purge_audio(request: Request, authorization: Optional[str] = Header(None)):
     """Permanently remove every stored recording owned by the current user."""
     user_id = get_user_id(authorization)
     if not user_id:

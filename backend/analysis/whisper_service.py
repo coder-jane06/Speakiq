@@ -18,6 +18,7 @@ class WordTimestamp:
     word: str
     start: float
     end: float
+    probability: float = 1.0  # Whisper confidence score (0–1). < 0.65 = potentially misheard.
 
 
 @dataclass
@@ -27,6 +28,8 @@ class TranscriptResult:
     language: str = "en"
     duration_secs: float = 0.0
     word_count: int = 0
+    # Words the model was < 65% confident about — may be mispronounced or misheard.
+    uncertain_words: list[str] = field(default_factory=list)
 
 
 class WhisperService:
@@ -63,6 +66,103 @@ class WhisperService:
             logger.error(f"[WhisperService] Failed to load model: {e}")
             self.model = None
 
+    async def _transcribe_with_groq(
+        self,
+        audio_bytes: bytes,
+        filename: str = "recording.webm"
+    ) -> Optional[TranscriptResult]:
+        """
+        Primary transcription path: Groq's whisper-large-v3-turbo.
+
+        WHY GROQ OVER LOCAL BASE:
+        - whisper-large-v3-turbo is ~8x larger than the local 'base' model
+        - Dramatically better at accents, unclear pronunciation, and non-native speech
+        - Uses the GROQ_API_KEY already configured in the app — no extra cost
+        - Free tier: 2 hours of audio/day (plenty for a coaching app)
+        - Falls back to local faster-whisper if Groq is unavailable
+
+        ACCENT HANDLING:
+        - The 'prompt' parameter biases Whisper toward natural English transcription
+          and reduces hallucinations on accented speech
+        - whisper-large-v3-turbo was specifically trained on diverse accents
+        """
+        import os
+        groq_key = os.getenv("GROQ_API_KEY", "")
+        if not groq_key:
+            return None
+        try:
+            from groq import Groq
+            from fastapi.concurrency import run_in_threadpool
+
+            # Detect actual audio format for correct MIME type
+            # Groq validates file extensions — sending .webm when it's actually .wav will fail
+            ext = "webm"
+            if audio_bytes.startswith(b"RIFF") and audio_bytes[8:12] == b"WAVE":
+                ext = "wav"
+            elif audio_bytes.startswith(b"OggS"):
+                ext = "ogg"
+            elif len(audio_bytes) >= 12 and audio_bytes[4:8] == b"ftyp":
+                ext = "m4a"
+            elif audio_bytes.startswith(b"ID3") or audio_bytes.startswith(b"\xff\xfb"):
+                ext = "mp3"
+            elif audio_bytes.startswith(b"\x1a\x45\xdf\xa3"):
+                ext = "webm"
+
+            actual_filename = f"recording.{ext}"
+
+            client = Groq(api_key=groq_key)
+
+            # The Groq API is synchronous — run in thread pool to avoid blocking the event loop
+            def _call_groq():
+                return client.audio.transcriptions.create(
+                    file=(actual_filename, audio_bytes),
+                    model="whisper-large-v3-turbo",
+                    response_format="verbose_json",
+                    timestamp_granularities=["word"],
+                    language="en",
+                    # Prompt biases the model toward careful English transcription.
+                    # This significantly improves accuracy for accented speakers by
+                    # reducing hallucinated words and misheard syllables.
+                    prompt=(
+                        "Transcribe the following English speech accurately. "
+                        "The speaker may have a non-native accent. Listen carefully "
+                        "to each word and prefer common English words over rare ones "
+                        "when the pronunciation is ambiguous."
+                    ),
+                )
+
+            response = await run_in_threadpool(_call_groq)
+
+            full_text = (response.text or "").strip()
+            words: list[WordTimestamp] = []
+            if hasattr(response, 'words') and response.words:
+                for w in response.words:
+                    words.append(WordTimestamp(
+                        word=str(w.word),
+                        start=round(float(w.start), 2),
+                        end=round(float(w.end), 2),
+                        probability=1.0  # Groq large model — high accuracy
+                    ))
+            word_count  = len(full_text.split()) if full_text else 0
+            duration    = float(getattr(response, 'duration', 0.0))
+            lang        = str(getattr(response, 'language', 'en'))
+            logger.info(
+                f"[WhisperService] Groq transcription done — "
+                f"{word_count} words, {duration:.1f}s, format={ext}"
+            )
+            return TranscriptResult(
+                transcript=full_text,
+                words=words,
+                language=lang,
+                duration_secs=duration,
+                word_count=word_count,
+                uncertain_words=[],  # Large model + accent prompt = trust the output
+            )
+        except Exception as e:
+            logger.warning(f"[WhisperService] Groq transcription failed, will use local model: {e}")
+            return None
+
+
     async def transcribe_from_bytes(
         self,
         audio_bytes: bytes,
@@ -70,10 +170,23 @@ class WhisperService:
     ) -> Optional[TranscriptResult]:
         """
         Transcribe audio from raw bytes.
-        Writes to a temp file, transcribes, deletes temp file.
+        Tries Groq Whisper first (better accuracy, free), then falls back to local faster-whisper.
         """
+        if self.model is None and not os.getenv("GROQ_API_KEY"):
+            logger.error("[WhisperService] No Groq API key and local model failed to load — cannot transcribe")
+            return None
+
+        # --- Primary path: Groq whisper-large-v3-turbo (better accent handling) ---
+        if len(audio_bytes) >= 1000:
+            groq_result = await self._transcribe_with_groq(audio_bytes, filename)
+            if groq_result and groq_result.word_count > 0:
+                return groq_result
+            if groq_result is not None:
+                logger.warning("[WhisperService] Groq returned empty transcript — falling back to local model")
+
+        # --- Fallback path: local faster-whisper base model ---
         if self.model is None:
-            logger.error("[WhisperService] Model not loaded")
+            logger.error("[WhisperService] Local model not available and Groq failed — cannot transcribe")
             return None
 
         # Write bytes to temp file
@@ -173,7 +286,8 @@ class WhisperService:
                         words.append(WordTimestamp(
                             word=w.word.strip(),
                             start=round(float(w.start), 2),
-                            end=round(float(w.end), 2)
+                            end=round(float(w.end), 2),
+                            probability=round(float(getattr(w, 'probability', 1.0)), 3)
                         ))
 
             transcript_text = " ".join(full_text_parts).strip()
@@ -198,19 +312,24 @@ class WhisperService:
                             words.append(WordTimestamp(
                                 word=w.word.strip(),
                                 start=round(float(w.start), 2),
-                                end=round(float(w.end), 2)
+                                end=round(float(w.end), 2),
+                                probability=round(float(getattr(w, 'probability', 1.0)), 3)
                             ))
                 transcript_text = " ".join(full_text_parts).strip()
                 word_count = len(transcript_text.split()) if transcript_text else 0
             duration        = float(info.duration) if hasattr(info, 'duration') else 0.0
             detected_lang   = info.language if hasattr(info, 'language') else language
 
+            # Compute uncertain words (probability < 0.65 = likely misheard or mispronounced)
+            uncertain = [w.word for w in words if w.probability < 0.65]
+
             result = TranscriptResult(
                 transcript=transcript_text,
                 words=words,
                 language=detected_lang,
                 duration_secs=duration,
-                word_count=word_count
+                word_count=word_count,
+                uncertain_words=uncertain
             )
 
             logger.info(

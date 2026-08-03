@@ -38,8 +38,9 @@ def get_settings() -> Settings:
     return Settings()
 
 
+@lru_cache(maxsize=1)
 def get_db() -> Client:
-    """Returns a Supabase client using the service role key. Created per request to avoid stale httpx connection pools."""
+    """Returns a cached Supabase client using the service role key (singleton)."""
     s = get_settings()
     if not s.supabase_url or not s.supabase_service_key:
         logger.warning("Supabase URL or Key is empty. Database queries will fail.")

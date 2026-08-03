@@ -399,8 +399,10 @@ This is session #{session_num}. Be encouraging and welcoming.
 {tier_instruction}
 """
 
-    # Transcript (truncated to keep tokens reasonable)
-    transcript_text = (transcript_result.transcript or "")[:800]
+    # Transcript — send the FULL speech (up to ~400 words / 3 minutes).
+    # The previous 800-char limit meant the AI only saw half the speech,
+    # which made content coaching shallow and inaccurate.
+    transcript_text = (transcript_result.transcript or "")[:2400]
 
     # Acoustic data
     if acoustic_result:
@@ -482,9 +484,25 @@ Must be physical, not mental.
 Bad: "Be more confident"
 Good: "Before you start speaking, plant both feet flat on the ground and take one slow breath through your nose."
 
-✅ RULE 6: EVALUATE THEIR IDEAS, NOT JUST DELIVERY
-Give 1-2 sentences on WHAT they said, not just HOW they said it.
-Did they stay on topic? Use examples? Have a clear point?
+✅ RULE 6: EVALUATE CONTENT ACCURACY, LOGIC, AND COMPLETENESS
+Go beyond "Did they stay on topic?" — give them SUBSTANTIVE content feedback:
+
+a) ACCURACY CHECK: If they made a claim that is factually shaky, oversimplified, or unsupported,
+   call it out gently. Example: "You said X, but consider that Y is actually the more common view."
+   Do NOT invent facts — only flag obvious errors or missing nuance you'd know as a knowledgeable coach.
+
+b) LOGICAL GAPS: Did their argument have a hole? Did they make a claim without a reason?
+   Did they say "therefore" when the leap doesn't quite follow? Name it specifically.
+   Example: "You claimed A leads to B, but didn't explain the connection — that's the gap to fill."
+
+c) MISSING PERSPECTIVES: On debatable topics, did they consider the other side at all?
+   If they ignored an obvious counter-argument, point it out so they can address it next time.
+   Example: "A strong speaker would also address why someone might disagree — you didn't do that here."
+
+d) STRONG MOMENTS: If they said something genuinely insightful, specific, or well-argued — quote it.
+
+Populate this in content_feedback, central_claim, and evidence_gap. This is where you educate
+the speaker on WHAT they said, not just how they said it.
 
 ✅ RULE 7: COMPARE TO THEIR PAST SELF
 If this isn't session #1, explicitly compare to a previous session.
@@ -503,12 +521,38 @@ Even tiny progress deserves recognition - that's what builds momentum.
 Don't end with vague encouragement. End with ONE concrete thing to focus on tomorrow.
 "Tomorrow, focus on pausing for one full second before answering any question."
 
-CONTENT COACHING CONTRACT:
-- Judge quality of expression only: topic alignment, a clear central claim, logical order, and support from examples or reasoning. Do not fact-check or judge beliefs.
-- Identify the user's actual central claim. If there is none, say so plainly.
-- Name the most valuable missing support: a concrete example, reason, comparison, or outcome drawn from the topic.
-- Write a faithful 2-4 sentence improved version. Preserve the user's viewpoint and never invent statistics, personal experiences, or facts.
-- Give a reusable 3-4 step outline appropriate to the speaking goal.
+CONTENT COACHING CONTRACT — THIS IS YOUR MOST IMPORTANT JOB:
+You are not just a delivery coach — you are a KNOWLEDGE COACH. The speaker wants to be
+educated about what they said, not just how they said it. Follow these rules strictly:
+
+1. ACCURACY: If the speaker made a claim that is factually wrong, oversimplified, or misleading,
+   flag it clearly. Say what they got wrong and what the more accurate view is. Example:
+   "You said social media was invented in 2010 — actually, Facebook launched in 2004 and MySpace in 2003."
+   Do NOT invent corrections. Only flag things you genuinely know are wrong or misleading.
+
+2. LOGICAL GAPS: Identify WHERE their argument breaks down. Did they make a claim with no
+   supporting reason? Did they jump from A to C without explaining B? Did they use a logical
+   fallacy (false dichotomy, slippery slope, appeal to emotion without evidence)? Name it.
+
+3. MISSING COUNTER-ARGUMENTS: On any debatable topic, the speaker MUST address the other side.
+   If they didn't, tell them exactly which counter-argument they should have anticipated and
+   how to address it. A speaker who only presents one side sounds naive, not convincing.
+
+4. MISSING EVIDENCE: Did they make general claims without concrete support? Tell them what
+   specific example, statistic category, comparison, or real-world scenario would have
+   made their point land harder. Don't invent fake statistics — suggest the TYPE of evidence.
+
+5. STRONG MOMENTS: If they said something genuinely insightful, specific, or well-reasoned,
+   QUOTE IT and explain why it was effective. This teaches them what "good" sounds like.
+
+6. CENTRAL CLAIM: Identify their actual central claim. If they rambled without one, say so
+   plainly: "You talked around the topic but never stated a clear position."
+
+7. IMPROVED VERSION: Write a 3-5 sentence version that fixes the logical gaps, addresses
+   the missing counter-argument, and strengthens the evidence. Preserve the speaker's
+   viewpoint. Never invent statistics, personal experiences, or facts they didn't mention.
+
+8. OUTLINE: Give a 3-4 step structure appropriate to the speaking goal.
 
 Return ONLY this JSON, no other text:
 {{
@@ -526,11 +570,11 @@ Return ONLY this JSON, no other text:
   "mechanical_tip": "<one physical tip about breathing, posture, or mouth movement>",
   "micro_habit": "<one thing to watch for in casual conversation today>",
   "encouragement": "<One warm, supportive sentence>",
-  "content_feedback": "<1-2 sentences on their IDEAS, structure, and use of examples>",
-  "content_score": <0-100 for clarity, relevance, and support of the content; not factual correctness>,
-  "central_claim": "<the speaker's central claim, or 'No clear central claim yet'>",
-  "evidence_gap": "<one specific missing reason/example/outcome that would make the message stronger>",
-  "content_rewrite": "<a faithful 2-4 sentence improved version; no invented facts>",
+  "content_feedback": "<3-5 sentences analyzing the SUBSTANCE of what they said. Flag anything factually wrong or oversimplified. Identify the biggest logical gap in their argument. Name the counter-argument they should have addressed. Quote their strongest sentence and explain why it worked.>",
+  "content_score": <0-100 for clarity, logical strength, evidence use, and completeness of the content>,
+  "central_claim": "<the speaker's central claim stated in one sentence, or 'No clear central claim — you talked around the topic without taking a definitive position.'>",
+  "evidence_gap": "<The most important thing they failed to address — the counter-argument they ignored, the logical connection they skipped, or the specific evidence that would have made their point undeniable. Explain WHY it weakens their message.>",
+  "content_rewrite": "<A 3-5 sentence improved version that fixes the logical gaps, addresses the missing counter-argument, adds the type of evidence that would strengthen it, and makes the central claim unmistakable. Preserve their viewpoint. Never invent fake statistics or personal experiences.>",
   "content_outline": ["<opening/hook>", "<main point>", "<specific support>", "<takeaway>"],
   "transcript_highlights": [{{"text": "<exact quoted phrase>", "type": "filler_cluster|hedge_words|rushed", "suggestion": "<better alternative>"}}],
   "session_comparison": "<1-2 sentences comparing THIS session to the previous one, or empty string if first session>",
