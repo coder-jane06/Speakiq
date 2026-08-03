@@ -130,6 +130,7 @@ async def get_topic(
     request: Request,
     authorization: Optional[str] = Header(None),
     exclude: Optional[str] = None,
+    exclude_texts: Optional[str] = None,
     goal: Optional[str] = None,
     difficulty: Optional[str] = None
 ):
@@ -141,6 +142,11 @@ async def get_topic(
     weakest_skill = "general"
     diff_tier = difficulty if difficulty else "medium"
     recent_topic_texts = []
+
+    # Parse client-side exclude_texts (comma-separated topic texts sent by the frontend)
+    client_excluded_texts: set[str] = set()
+    if exclude_texts:
+        client_excluded_texts = {t.strip() for t in exclude_texts.split(",") if t.strip()}
 
     if user_id:
         try:
@@ -173,7 +179,7 @@ async def get_topic(
                 .select("topic_text")
                 .eq("user_id", user_id)
                 .order("created_at", desc=True)
-                .limit(50)
+                .limit(100)
                 .execute()
             )
             recent_topic_texts = [
@@ -184,38 +190,50 @@ async def get_topic(
         except Exception as e:
             logger.warning(f"[sessions] Topic personalization skipped: {e}")
 
+    # Merge DB-based recent topics with client-supplied excluded texts
+    all_excluded_texts = set(recent_topic_texts) | client_excluded_texts
+
     try:
-        # DB column is 'tier' (not 'difficulty') — select it correctly
+        # Filter by tier directly in the DB query for better variety.
+        # We run two queries: one scoped to the user's tier (with a generous
+        # limit), and fall back to all tiers only if the tier-specific pool is empty.
         query = db.table("topics").select("id, text, tier, target_skill, category, goal_type")
         if speaking_goal != "general":
             query = query.in_("goal_type", [speaking_goal, "general"])
-        result = query.limit(50).execute()
 
-        if result.data:
-            candidates = [t for t in result.data if t.get("text")]
+        # First attempt: filter by difficulty tier at the DB level
+        tier_query = query.eq("tier", diff_tier)
+        tier_result = tier_query.limit(200).execute()
 
+        if tier_result.data and len(tier_result.data) > 0:
+            candidates = [t for t in tier_result.data if t.get("text")]
+        else:
+            # Fallback: fetch all tiers if no topics exist for this tier
+            all_result = query.limit(200).execute()
+            candidates = [t for t in (all_result.data or []) if t.get("text")]
+
+        if candidates:
+            # Exclude the topic ID currently being shown (for "next" button)
             if exclude:
                 filtered_candidates = [t for t in candidates if str(t.get("id")) != exclude]
                 if filtered_candidates:
                     candidates = filtered_candidates
 
-            # Prefer unseen topics; fall back to full list if all seen
-            unseen = [t for t in candidates if t["text"] not in recent_topic_texts]
+            # Step 1: Prefer unseen topics (exclude both DB history + client-side recents)
+            unseen = [t for t in candidates if t["text"] not in all_excluded_texts]
             if unseen:
                 candidates = unseen
+            # (if all seen, keep full candidate pool so the user still gets a topic)
 
-            # Prefer topics targeting the user's weakest skill
-            skill_matched = [t for t in candidates if t.get("target_skill") == weakest_skill]
-            if skill_matched:
-                candidates = skill_matched
-
-            # Prefer topics matching the user's difficulty tier
-            tier_matched = [t for t in candidates if t.get("tier") == diff_tier]
-            if tier_matched:
-                candidates = tier_matched
+            # Step 2: Prefer topics targeting the user's weakest skill
+            # (only narrow if we have enough choices to stay varied)
+            if len(candidates) > 3:
+                skill_matched = [t for t in candidates if t.get("target_skill") == weakest_skill]
+                if skill_matched:
+                    candidates = skill_matched
 
             chosen = random.choice(candidates)
-            topic_tier = chosen.get("tier", "medium")
+            topic_tier = chosen.get("tier", diff_tier)
             return {
                 "id": chosen.get("id", "topic"),
                 "text": chosen["text"],
@@ -228,12 +246,27 @@ async def get_topic(
     except Exception as e:
         logger.warning(f"[sessions] Supabase topic query failed: {e}")
 
-    chosen = random.choice(FALLBACK_TOPICS)
+    # Fallback: use the hardcoded FALLBACK_TOPICS, respecting difficulty tier
+    fallback_pool = [t for t in FALLBACK_TOPICS if t.get("tier") == diff_tier]
+    if not fallback_pool:
+        fallback_pool = FALLBACK_TOPICS  # last resort: any tier
+
+    # Exclude recently seen topics from fallback pool too
+    unseen_fallbacks = [t for t in fallback_pool if t["text"] not in all_excluded_texts]
+    if unseen_fallbacks:
+        fallback_pool = unseen_fallbacks
+
+    if speaking_goal and speaking_goal != "general":
+        goal_matched = [t for t in fallback_pool if t.get("goal_type") in (speaking_goal, "general")]
+        if goal_matched:
+            fallback_pool = goal_matched
+
+    chosen = random.choice(fallback_pool)
     return {
         "id": chosen.get("id", "fallback"),
         "text": chosen["text"],
-        "tier": chosen.get("tier", "medium"),
-        "difficulty": chosen.get("tier", "medium"),
+        "tier": chosen.get("tier", diff_tier),
+        "difficulty": chosen.get("tier", diff_tier),
         "target_skill": chosen.get("target_skill", "general"),
         "category": chosen.get("category", "opinion"),
         "goal_type": chosen.get("goal_type", "general"),

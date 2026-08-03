@@ -241,20 +241,27 @@ async def get_topic(
         query = db.table("topics").select("id, text, tier, target_skill, category, goal_type")
         if speaking_goal != "general":
             query = query.in_("goal_type", [speaking_goal, "general"])
-        result = query.limit(200).execute()  # Increased from 50
+        # Filter by tier at the DB level for better specificity and variety
+        tier_result = query.eq("tier", diff_tier).limit(200).execute()
+        db_candidates_by_tier = [t for t in (tier_result.data or []) if t.get("text")]
 
-        db_candidates = [t for t in (result.data or []) if t.get("text")]
+        # Also fetch a broader pool (all tiers) as a last resort
+        all_result = query.limit(200).execute()
+        db_candidates_all = [t for t in (all_result.data or []) if t.get("text")]
 
-        # Filter excluded from DB candidates
+        # Remove the currently-displayed topic (for "Get another topic" button)
         if exclude:
-            db_candidates = [t for t in db_candidates if str(t.get("id")) != exclude] or db_candidates
-        db_candidates_filtered = [t for t in db_candidates if t["text"] not in excluded_set] or db_candidates
-        db_unseen = [t for t in db_candidates_filtered if t["text"] not in recent_topic_texts] or db_candidates_filtered
+            db_candidates_by_tier = [t for t in db_candidates_by_tier if str(t.get("id")) != exclude] or db_candidates_by_tier
+            db_candidates_all = [t for t in db_candidates_all if str(t.get("id")) != exclude] or db_candidates_all
 
-        # Narrow by tier from DB
-        db_tier = [t for t in db_unseen if t.get("tier") == diff_tier] or db_unseen
+        # Step 1: Remove seen topics from the tier-specific candidates
+        db_unseen_tier = [t for t in db_candidates_by_tier if t["text"] not in excluded_set]
+        # If all tier-specific topics have been seen, reset the exclusion filter
+        # but still keep the correct tier
+        if not db_unseen_tier:
+            db_unseen_tier = db_candidates_by_tier  # seen all — repeat tier topics
 
-        # --- MERGE with TOPIC_POOL when DB has fewer than 15 candidates ---
+        # --- MERGE with TOPIC_POOL for variety ---
         pool_goal = speaking_goal if speaking_goal in TOPIC_POOL else "general"
         pool_tier = diff_tier if diff_tier in ["easy", "medium", "hard"] else "medium"
         pool_texts = get_pool_candidates(pool_goal, pool_tier)
@@ -266,24 +273,28 @@ async def get_topic(
             for t in pool_texts
         ]
 
-        if len(db_tier) < 15:
-            # Merge DB + pool, deduplicate by text
-            all_texts_seen = {c["text"] for c in db_tier}
-            extra = [c for c in pool_candidates if c["text"] not in all_texts_seen]
-            merged = db_tier + extra
-        else:
-            merged = db_tier
+        # Always merge DB tier results with pool candidates (deduplicate by text)
+        all_texts_in_tier = {c["text"] for c in db_unseen_tier}
+        extra_pool = [c for c in pool_candidates if c["text"] not in all_texts_in_tier]
+        merged = db_unseen_tier + extra_pool
 
-        # If still nothing (e.g. completely new user), try adjacent tiers from pool
+        # If still empty (tier has no topics in DB or pool), try all-tier DB candidates
+        if not merged:
+            unseen_any_tier = [t for t in db_candidates_all if t["text"] not in excluded_set]
+            if not unseen_any_tier:
+                unseen_any_tier = db_candidates_all  # seen everything — still give a topic
+            merged = unseen_any_tier
+
+        # If still nothing (brand-new install, DB unreachable), try adjacent tiers from pool
         if not merged:
             for adj in {"easy": ["medium", "hard"], "medium": ["easy", "hard"], "hard": ["medium", "easy"]}.get(pool_tier, []):
-                merged = get_pool_candidates(pool_goal, adj)
-                if merged:
+                adj_texts = get_pool_candidates(pool_goal, adj)
+                if adj_texts:
                     pool_tier = adj
                     merged = [
                         {"id": str(uuid.uuid4())[:8], "text": t, "tier": pool_tier,
                          "target_skill": weakest_skill, "category": "opinion", "goal_type": pool_goal}
-                        for t in merged
+                        for t in adj_texts
                     ]
                     break
 
