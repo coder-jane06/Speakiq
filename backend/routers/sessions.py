@@ -274,6 +274,9 @@ async def upload_session(
         raise HTTPException(status_code=401, detail="Authentication required")
     normalized_goal = normalize_goal(speaking_goal)
     normalized_difficulty = normalize_difficulty(difficulty_tier)
+    # Sanitize topic_text — strip control chars, enforce max length
+    topic_text = topic_text.strip()[:300] if topic_text else "General speaking practice"
+    topic_text = "".join(c for c in topic_text if c >= " " or c in "\n\r\t")
 
     try:
         from config import get_db
