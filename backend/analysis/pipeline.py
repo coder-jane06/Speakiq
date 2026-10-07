@@ -30,7 +30,7 @@ from typing import Optional
 from analysis.whisper_service  import whisper_service,  TranscriptResult
 from analysis.acoustic_service import acoustic_service, AcousticResult
 from analysis.nlp_service      import nlp_service,      NLPResult
-from analysis.coaching_service import coaching_service, CoachingReport
+from analysis.coaching_service import coaching_service, CoachingReport, CoachingScores
 from services.notification_service import send_session_complete_notifications
 
 logger = logging.getLogger(__name__)
@@ -214,10 +214,42 @@ async def run_analysis_pipeline(
         # ----------------------------------------------------------
         logger.info("[Pipeline] Stage 3: Generating coaching report...")
 
-               # CRITICAL: transcript must be valid at this point
-        if not transcript_result or transcript_result.word_count == 0:
-            logger.error("[Pipeline] Reached Stage 3 with invalid transcript")
-            return None
+        if not transcript_result or transcript_result.word_count < 3:
+            logger.warning(f"[Pipeline] Low speech evidence detected ({transcript_result.word_count if transcript_result else 0} words)")
+            low_evidence_report = CoachingReport(
+                scores=CoachingScores(filler=40, delivery=40, structure=40, vocab=40, confidence=40),
+                what_went_well="You started a recording session. Practicing consistently builds real speaking confidence.",
+                priority_fix="We detected very little or no speech. Speak clearly for at least 15-20 seconds so our AI can accurately measure your pacing, filler words, and structure.",
+                daily_drill="Set a 30-second timer and answer this prompt aloud without stopping.",
+                mechanical_tip="Take a deep breath and project your voice toward your microphone before starting.",
+                encouragement="Don't worry! Try recording again with a longer answer.",
+                content_feedback="Insufficient speech detected to analyze content depth.",
+                content_score=40,
+                focus_area="recording_length",
+                session_number=session_number,
+                primary_weakness="Insufficient Speech Evidence",
+                secondary_weaknesses=["recording_length"],
+                evidence=[{"metric": "word_count", "value": transcript_result.word_count if transcript_result else 0, "context": "Less than 3 words detected"}],
+                explanation="Recording was too brief or quiet to evaluate speaking metrics.",
+                recommended_action="Retry the exercise and speak for 15-30 seconds continuously.",
+                drill={"type": "micro_drill", "prompt": "Speak for 30 seconds continuously on your chosen topic.", "duration_seconds": 30},
+                confidence={"level": "low", "reason": "Insufficient speech captured (<3 words)"},
+                score_version="2.0",
+                provenance={"provider": "quality_gate", "model": "rule_based", "version": "1.0", "latency_ms": 0}
+            )
+            try:
+                await save_results_to_db(
+                    session_id=session_id,
+                    transcript=transcript_result,
+                    acoustic=acoustic_result,
+                    nlp=nlp_result,
+                    coaching=low_evidence_report
+                )
+                from config import get_db
+                get_db().table("sessions").update({"status": "complete"}).eq("id", session_id).execute()
+            except Exception as e:
+                logger.error(f"[Pipeline] Failed saving low evidence report: {e}")
+            return low_evidence_report
 
 
         session_history = []
@@ -663,6 +695,15 @@ async def save_results_to_db(
             "improvement_noted":     coaching.improvement_noted,
             "drill_followup":        coaching.drill_followup,
             "next_session_focus":    coaching.next_session_focus,
+            "primary_weakness":     coaching.primary_weakness,
+            "secondary_weaknesses": coaching.secondary_weaknesses,
+            "evidence":             coaching.evidence,
+            "explanation":          coaching.explanation,
+            "recommended_action":   coaching.recommended_action,
+            "drill":                coaching.drill,
+            "confidence":           coaching.confidence,
+            "score_version":        coaching.score_version,
+            "provenance":           coaching.provenance,
             "advanced_acoustic": {
                 "jitter": getattr(acoustic, 'jitter', 0.0) if acoustic else 0.0,
                 "shimmer": getattr(acoustic, 'shimmer', 0.0) if acoustic else 0.0,

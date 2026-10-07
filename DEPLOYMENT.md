@@ -1,63 +1,176 @@
-# Fluently production launch
+# Fluently — Deployment Guide
 
-This repository uses two Render services defined in `render.yaml`:
+The backend runs on **Hugging Face Spaces** at:
+> `https://shaurya0606-speakiq-backend.hf.space`
 
-- `fluently-api`: the FastAPI API and speech-analysis worker.
-- `fluently-web`: the React static site.
+The frontend is a React SPA **built and served by the same FastAPI backend** — there is no separate static hosting. One URL, no CORS issues.
 
-Deploy the API first so that its public URL can be used as `VITE_API_URL` for the web build.
+---
 
-## 1. Prepare Supabase
+## Architecture
 
-1. In the Supabase SQL Editor, run `backend/scripts/migrate_v3_preferences.sql`, `backend/scripts/migrate_v5_push.sql`, and `backend/scripts/migrate_v6_notification_deliveries.sql`.
-2. In **Authentication → URL Configuration**, set **Site URL** to the final web URL, for example `https://app.example.com`.
-3. Add the exact final URL with a trailing slash to **Redirect URLs**, for example `https://app.example.com/`. Keep `http://localhost:3000/**` and `http://localhost:5173/**` for local work.
-4. In **Authentication → Providers → Email**, keep **Confirm email** enabled for real accounts. The client uses PKCE and now processes the return code after verification.
-5. Ensure the `audio-recordings` bucket and existing tables have the expected policies. The backend uses the service-role key and must never expose it to the frontend.
+```
+Browser
+  ↓
+https://shaurya0606-speakiq-backend.hf.space
+  ↓
+FastAPI (main.py)
+  ├── /sessions        → analysis pipeline
+  ├── /dashboard       → user progress
+  ├── /health          → health check
+  └── /               → serves React SPA from frontend/dist
+```
 
-## 2. Configure email and push delivery
+---
 
-1. Create and verify a sending domain in Resend, such as `mail.example.com`.
-2. Set `RESEND_FROM_EMAIL` to a verified sender such as `Fluently <hello@mail.example.com>`. Do not use `onboarding@resend.dev` outside Resend's testing constraints.
-3. Set `RESEND_API_KEY` on the API service.
-4. Generate VAPID keys and set `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` on the API service. Set the matching public key as `VITE_VAPID_PUBLIC_KEY` on the static site.
+## 1. Supabase Setup (one-time)
 
-Session-report emails are only sent when both `email` and `sessionCompletion` are enabled in a user's saved notification preferences. Daily reminders additionally require a trusted daily scheduler that runs `cd backend && python -m jobs.reminders`; the included delivery table prevents duplicate messages on retry.
+1. In the Supabase SQL Editor, run any pending migration scripts in `backend/scripts/`.
+2. In **Authentication → URL Configuration**, set **Site URL** to:
+   ```
+   https://shaurya0606-speakiq-backend.hf.space
+   ```
+3. Add these to **Redirect URLs**:
+   ```
+   https://shaurya0606-speakiq-backend.hf.space/
+   http://localhost:8002/
+   http://localhost:5173/
+   ```
+4. In **Authentication → Providers → Email**, keep **Confirm email** enabled.
+5. Ensure the `audio-recordings` bucket and RLS policies are configured. The backend uses the service-role key and must never expose it to the frontend.
 
-## 3. Create the Render services
+---
 
-1. In Render, select **New → Blueprint** and connect this GitHub repository. Render reads `render.yaml`.
-2. Enter API secrets on `fluently-api`:
-   - `SUPABASE_URL`
-   - `SUPABASE_SERVICE_KEY`
-   - `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and/or `GROQ_API_KEY` as used by the selected coaching provider
-   - `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`
-   - `FRONTEND_URL` (the final web URL, including its GitHub Pages project path if applicable, with no trailing slash). The API derives the correct CORS origin automatically.
-3. Deploy `fluently-api` and confirm `https://<api-host>/health` returns `{"status":"ok"}`.
-4. Enter these build-time values on `fluently-web` and deploy it:
-   - `VITE_API_URL=https://<api-host>`
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY` (the public anon/publishable key only)
-   - `VITE_VAPID_PUBLIC_KEY`
-5. After the web service has its final URL, update `FRONTEND_URL` on the API and redeploy the API. This activates strict CORS and correct email report links.
+## 2. Environment Variables
 
-## 4. Attach a custom domain
+### Backend (Hugging Face Spaces secrets)
 
-1. Add `app.example.com` to the `fluently-web` custom domains in Render.
-2. At the domain registrar, create exactly the DNS record Render displays (normally a CNAME for a subdomain). Wait for Render to issue HTTPS.
-3. Add `api.example.com` to `fluently-api` only if a public API domain is wanted. Otherwise the generated Render API hostname is sufficient.
-4. Replace the temporary Render values in Supabase Site URL, Redirect URLs, `FRONTEND_URL`, and `VITE_API_URL` with the custom domain values; redeploy the web site after changing `VITE_API_URL`.
+Set these in your HF Space → **Settings → Repository secrets**:
 
-## 5. Final acceptance checks
+| Variable | Required | Description |
+|---|---|---|
+| `SUPABASE_URL` | ✅ | `https://gakfjshqzwtgqpkftnyd.supabase.co` |
+| `SUPABASE_SERVICE_KEY` | ✅ | Service role key (never the anon key) |
+| `OPENAI_API_KEY` | ✅* | For Whisper transcription |
+| `GROQ_API_KEY` | ✅* | For Llama coaching (free tier, preferred) |
+| `ANTHROPIC_API_KEY` | optional | Claude fallback for coaching |
+| `RESEND_API_KEY` | optional | Session completion emails |
+| `RESEND_FROM_EMAIL` | optional | e.g. `Fluently <hello@mail.example.com>` |
+| `VAPID_PRIVATE_KEY` | optional | Push notifications |
+| `VAPID_SUBJECT` | optional | e.g. `mailto:admin@fluently.com` |
+| `ENVIRONMENT` | optional | `production` |
 
-1. Sign up with a new inbox, resend confirmation once, and open the confirmation link in the same browser/device.
+> *At least one of `OPENAI_API_KEY` or `GROQ_API_KEY` is required for the AI pipeline to work.
+
+### Frontend (build-time, baked into `frontend/dist`)
+
+These live in `frontend/.env` for local builds:
+
+| Variable | Value |
+|---|---|
+| `VITE_API_URL` | `https://shaurya0606-speakiq-backend.hf.space` |
+| `VITE_SUPABASE_URL` | `https://gakfjshqzwtgqpkftnyd.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | Public anon key (never the service key) |
+
+---
+
+## 3. Deploying to Hugging Face Spaces
+
+### 3.1 Build the frontend first
+
+```bash
+cd frontend
+npm install
+npm run build
+cd ..
+```
+
+This outputs to `frontend/dist/` which `main.py` automatically serves.
+
+### 3.2 Push to Hugging Face
+
+```bash
+# Add HF remote if not already added
+git remote add hf https://huggingface.co/spaces/shaurya0606/speakiq-backend
+
+# Commit the built frontend dist
+git add frontend/dist
+git commit -m "build: update frontend bundle"
+
+# Push to HF
+git push hf main
+```
+
+> HF Spaces will automatically restart the FastAPI server after the push.
+
+### 3.3 Verify deployment
+
+```bash
+curl https://shaurya0606-speakiq-backend.hf.space/health
+# → {"status": "ok", "service": "fluently-api"}
+
+curl https://shaurya0606-speakiq-backend.hf.space/system/status
+# → {"api": {"status": "connected"}, "supabase": {"status": "connected", ...}}
+```
+
+---
+
+## 4. Running Locally
+
+To run the full app (frontend + backend) on one URL locally:
+
+```bash
+# 1. Build the frontend
+cd frontend
+npm install
+npm run build
+cd ..
+
+# 2. Create backend .env in root (see Environment Variables above)
+
+# 3. Start the server
+python -m uvicorn main:app --host 0.0.0.0 --port 8002 --reload
+```
+
+Open **http://localhost:8002** — the React app loads and API calls go to the same server.
+
+For frontend hot-reload during development:
+
+```bash
+# Terminal 1 — backend
+python -m uvicorn main:app --host 0.0.0.0 --port 8002 --reload
+
+# Terminal 2 — Vite dev server (proxies API calls to backend)
+cd frontend && npm run dev
+# → http://localhost:5173
+```
+
+---
+
+## 5. Configure Email and Push Delivery (optional)
+
+1. Create and verify a sending domain in Resend.
+2. Set `RESEND_FROM_EMAIL` to a verified sender, e.g. `Fluently <hello@mail.example.com>`.
+3. Set `RESEND_API_KEY` in HF Spaces secrets.
+4. Generate VAPID keys and set `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` in HF secrets.
+
+Session-report emails are only sent when both `email` and `sessionCompletion` are enabled in a user's notification preferences. Daily reminders require `python -m jobs.reminders` to be run on a schedule (e.g. a cron job or HF scheduled task).
+
+---
+
+## 6. Final Acceptance Checks
+
+1. Sign up with a new inbox, resend confirmation, and open the confirmation link in the same browser.
 2. Save notification preferences, reload Settings, and confirm the toggles persist.
-3. Enable email plus session-completion notifications, complete a short session, and confirm the report email has the score cards and CTA.
-4. Verify a second user cannot load the first user's session, transcript, signed audio URL, or export.
+3. Enable email + session-completion notifications, complete a short session, and confirm the report email arrives.
+4. Verify a second user cannot access the first user's session, transcript, or audio.
 5. Record a realistic 30–60 second sample and confirm the session reaches `complete`, then inspect the report and dashboard trend.
 
-## Operational notes
+---
 
-- Rotate any Supabase service-role or hosting token that has ever been pasted into a terminal, source file, or remote URL.
-- Do not commit `.env` files. Client-side variables must be prefixed with `VITE_`; all other secrets stay only in Render.
-- The current analysis runs as a FastAPI background task. For higher volume or stronger retry guarantees, move analysis to a durable queue/worker before scaling traffic.
+## Operational Notes
+
+- **Never commit `.env` files.** Client-side variables must be prefixed with `VITE_`; all other secrets stay only in HF Spaces secrets.
+- **Rotate any Supabase service-role key** that has ever been pasted into a terminal, source file, or remote URL.
+- The analysis pipeline runs as a **FastAPI background task**. For higher volume, move to a durable queue before scaling.
+- Daily reminder emails require a scheduled job: `python -m jobs.reminders` run externally.

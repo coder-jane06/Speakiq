@@ -50,6 +50,16 @@ class CoachingReport:
     improvement_noted:     str = ""
     drill_followup:        str = ""
     next_session_focus:    str = ""
+    # Blueprint structured spec fields
+    primary_weakness:     str = ""
+    secondary_weaknesses: list[str] = field(default_factory=list)
+    evidence:             list[dict] = field(default_factory=list)
+    explanation:          str = ""
+    recommended_action:   str = ""
+    drill:                dict = field(default_factory=dict)
+    confidence:           dict = field(default_factory=dict)
+    score_version:        str = "2.0"
+    provenance:           dict = field(default_factory=dict)
 
 
 def pick_focus_area(user_profile: Optional[dict]) -> str:
@@ -702,6 +712,11 @@ class CoachingService:
         try:
             response_text = None
 
+            import time
+            start_time = time.time()
+            used_provider = provider or "fallback"
+            used_model = self.model if used_provider == "groq" else ("gpt-4o-mini" if used_provider == "openai" else "fallback")
+
             # Helper function to call the LLM
             def call_llm(client, is_openai=False):
                 if is_openai:
@@ -730,12 +745,16 @@ class CoachingService:
                     logger.warning(f"[CoachingService] Groq failed: {e}. Trying OpenAI fallback...")
                     if hasattr(self, 'openai_client') and self.openai_client:
                         response_text = call_llm(self.openai_client, is_openai=True)
+                        used_provider = "openai"
+                        used_model = "gpt-4o-mini"
                     else:
                         raise e # No fallback available, raise to trigger _fallback_report
 
             # Attempt OpenAI if it was primary
             elif provider == "openai" and hasattr(self, 'openai_client') and self.openai_client:
                 response_text = call_llm(self.openai_client, is_openai=True)
+                used_provider = "openai"
+                used_model = "gpt-4o-mini"
             else:
                 raise Exception("No valid LLM client configured")
 
@@ -747,6 +766,7 @@ class CoachingService:
                 clean = clean.split("```")[1].split("```")[0]
 
             report_data = json.loads(clean.strip())
+            latency_ms = int((time.time() - start_time) * 1000)
 
             scores = CoachingScores(
                 filler=     pre_computed_scores["filler"]     if pre_computed_scores else report_data["scores"].get("filler", 50),
@@ -756,12 +776,25 @@ class CoachingService:
                 confidence= pre_computed_scores["confidence"] if pre_computed_scores else report_data["scores"].get("confidence", 50),
             )
 
+            primary_fix = report_data.get("priority_fix", "")
+            daily_drill = report_data.get("daily_drill", "")
+            explanation = report_data.get("explanation") or report_data.get("content_feedback", "")
+            recommended_action = report_data.get("recommended_action") or daily_drill
+
+            evidence_items = report_data.get("evidence", [])
+            if not isinstance(evidence_items, list):
+                evidence_items = []
+            if not evidence_items and nlp_result:
+                evidence_items.append({"metric": "filler_rate", "value": nlp_result.fillers_per_minute, "context": f"{nlp_result.filler_count} fillers detected"})
+            if acoustic_result:
+                evidence_items.append({"metric": "wpm", "value": acoustic_result.wpm, "context": f"{acoustic_result.pause_count} pauses detected"})
+
             report = CoachingReport(
                 scores=                scores,
                 what_went_well=        report_data.get("what_went_well", ""),
-                priority_fix=          report_data.get("priority_fix", ""),
+                priority_fix=          primary_fix,
                 example_moment=        report_data.get("example_moment"),
-                daily_drill=           report_data.get("daily_drill", ""),
+                daily_drill=           daily_drill,
                 mechanical_tip=        report_data.get("mechanical_tip", ""),
                 micro_habit=           report_data.get("micro_habit", ""),
                 encouragement=         report_data.get("encouragement", ""),
@@ -779,6 +812,23 @@ class CoachingService:
                 improvement_noted=     report_data.get("improvement_noted", ""),
                 drill_followup=        report_data.get("drill_followup", ""),
                 next_session_focus=    report_data.get("next_session_focus", ""),
+                primary_weakness=     report_data.get("primary_weakness") or primary_fix or focus_area,
+                secondary_weaknesses= report_data.get("secondary_weaknesses", [focus_area]),
+                evidence=             evidence_items,
+                explanation=          explanation,
+                recommended_action=   recommended_action,
+                drill=                report_data.get("drill") or {"type": "micro_drill", "prompt": daily_drill, "duration_seconds": 120},
+                confidence=           report_data.get("confidence") if isinstance(report_data.get("confidence"), dict) else {
+                                          "level": "high" if transcript_result and transcript_result.word_count >= 15 else "medium",
+                                          "reason": "Analysis based on transcribed speech evidence",
+                                      },
+                score_version=        "2.0",
+                provenance=           {
+                                          "provider": used_provider,
+                                          "model": used_model,
+                                          "version": "1.0",
+                                          "latency_ms": latency_ms,
+                                      },
             )
 
             logger.info(
@@ -834,6 +884,15 @@ class CoachingService:
             improvement_noted=d["improvement_noted"],
             drill_followup=d["drill_followup"],
             next_session_focus=d["next_session_focus"],
+            primary_weakness=d["priority_fix"],
+            secondary_weaknesses=[focus_area],
+            evidence=[],
+            explanation=d["content_feedback"],
+            recommended_action=d["daily_drill"],
+            drill={"type": "micro_drill", "prompt": d["daily_drill"], "duration_seconds": 120},
+            confidence={"level": "medium", "reason": "Fallback coaching report issued"},
+            score_version="2.0",
+            provenance={"provider": "fallback", "model": "fallback", "version": "1.0", "latency_ms": 0},
         )
 
 

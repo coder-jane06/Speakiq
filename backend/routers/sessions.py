@@ -234,14 +234,17 @@ async def get_topic(
 
             chosen = random.choice(candidates)
             topic_tier = chosen.get("tier", diff_tier)
+            target_skill = chosen.get("target_skill", "general")
             return {
                 "id": chosen.get("id", "topic"),
                 "text": chosen["text"],
                 "tier": topic_tier,
                 "difficulty": topic_tier,          # alias for frontend
-                "target_skill": chosen.get("target_skill", "general"),
+                "target_skill": target_skill,
                 "category": chosen.get("category", "opinion"),
                 "goal_type": chosen.get("goal_type", "general"),
+                "selection_reason": f"Selected to target {target_skill} for your {speaking_goal} goal at {topic_tier} difficulty.",
+                "selection_policy_version": "2.0",
             }
     except Exception as e:
         logger.warning(f"[sessions] Supabase topic query failed: {e}")
@@ -262,14 +265,18 @@ async def get_topic(
             fallback_pool = goal_matched
 
     chosen = random.choice(fallback_pool)
+    target_skill = chosen.get("target_skill", "general")
+    topic_tier = chosen.get("tier", diff_tier)
     return {
         "id": chosen.get("id", "fallback"),
         "text": chosen["text"],
-        "tier": chosen.get("tier", diff_tier),
-        "difficulty": chosen.get("tier", diff_tier),
-        "target_skill": chosen.get("target_skill", "general"),
+        "tier": topic_tier,
+        "difficulty": topic_tier,
+        "target_skill": target_skill,
         "category": chosen.get("category", "opinion"),
         "goal_type": chosen.get("goal_type", "general"),
+        "selection_reason": f"Selected to target {target_skill} for your {speaking_goal} goal at {topic_tier} difficulty.",
+        "selection_policy_version": "2.0",
     }
 
 
